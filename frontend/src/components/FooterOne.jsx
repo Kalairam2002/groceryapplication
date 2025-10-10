@@ -62,7 +62,7 @@ const FooterOne = () => {
                         </div>
                     </div>
                     <div className="footer-item">
-                        <h6 className="footer-item__title">Information</h6>
+                        <h6 className="footer-item__title">Details</h6>
                         <ul className="footer-menu">
                             <li className="mb-16">
                                 <Link to="/shop" className="text-gray-600 hover-text-main-600">
