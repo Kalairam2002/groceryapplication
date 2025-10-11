@@ -18,7 +18,9 @@ const ProductListOne = () => {
   // Add to cart handler
   const handleAddToCart = (product) => {
     if (!user) {
-      toast.error("Please login to add products to cart");
+      // toast.error("Please login to add products to cart");
+      alert("Please login to add products to cart");
+      navigate("/account");
       return;
     }
 
@@ -81,14 +83,14 @@ const ProductListOne = () => {
               <div key={product._id} className="col-xxl-2 col-lg-3 col-sm-4 col-6">
                 <div className="product-card px-8 py-16 border border-gray-100 hover-border-main-600 rounded-16 position-relative transition-2">
                   {/* Add to Cart Button */}
-                {user && (
+               
                   <button
                     onClick={() => handleAddToCart( product)}
                     className="product-card__cart btn bg-main-50 text-main-600 hover-bg-main-600 hover-text-white py-11 px-24 rounded-pill flex-align gap-8 position-absolute inset-block-start-0 inset-inline-end-0 me-16 mt-16"
                   >
                     Add <i className="ph ph-shopping-cart" />
                   </button>
-                )}
+                
 
                   {/* Product Image */}
                   <Link to='#' className="product-card__thumb flex-center">
