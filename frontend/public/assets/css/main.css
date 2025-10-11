@@ -8768,7 +8768,7 @@ input:focus-visible {
 
 @media screen and (max-width: 1499px) {
     .banner-item__title {
-        font-size: 3.5rem;
+        font-size: 10px;
     }
 }
 
@@ -8791,18 +8791,18 @@ input:focus-visible {
 }
 
 .banner-item__content {
-    max-width: 852px;
+    max-width: 400px;
 }
 
 @media screen and (max-width: 1499px) {
     .banner-item__content {
-        max-width: 750px;
+        max-width: 100px;
     }
 }
 
 @media screen and (max-width: 575px) {
     .banner-item__thumb img {
-        max-width: 350px;
+        max-width: 150px;
         width: 100%;
     }
 }

@@ -740,13 +740,13 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
       </div>
       {/* ======================= Middle Top End ========================= */}
       {/* ======================= Middle Header Start ========================= */}
-      <header className="header-middle border-b border-gray-200" style={{ backgroundColor: "#1B5E20" }}>
-        <div className='container container-lg'>
+      <header className="header-middle border-b border-gray-200 p-0" style={{ backgroundColor: "#1B5E20" }}>
+        <div className='container container-lg '>
           <nav className='header-inner flex-between'>
             {/* Logo Start */}
             <div className='logo'>
               <Link to='/' className='link'>
-                <img src='assets/images/logo/logo.png' alt='Logo' width='50'/>
+                <img src='assets/images/logo/logo.png' alt='Logo' width='80'/>
               </Link>
             </div>
             <div classname='store'>

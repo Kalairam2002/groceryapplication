@@ -1,4 +1,5 @@
 import React from 'react'
+import { BsTypeH6 } from 'react-icons/bs';
 import { Link } from 'react-router-dom';
 import Slider from "react-slick";
 const BannerOne = () => {
@@ -42,9 +43,9 @@ const BannerOne = () => {
 
     };
     return (
-        <div className="banner">
-            <div className="container container-lg">
-                <div className="banner-item rounded-24 overflow-hidden position-relative arrow-center">
+        <div className="banner  ">
+            <div className="container container-lg  ">
+                <div className="banner-item rounded-24 overflow-hidden position-relative arrow-center " style={{paddingTop: "10px" , height:"400px"}}  >
                     <a
                         href="#featureSection"
                         className="scroll-down w-84 h-84 text-center flex-center bg-main-600 rounded-circle border border-5 text-white border-white position-absolute start-50 translate-middle-x bottom-0 hover-bg-main-800"
@@ -63,15 +64,15 @@ const BannerOne = () => {
 
 
                     </div>
-                    <div className="banner-slider">
+                    <div className="banner-slider  "    >
                         <Slider {...settings}>
-                            <div className="banner-slider__item">
-                                <div className="banner-slider__inner flex-between position-relative">
-                                    <div className="banner-item__content">
-                                        <h1 className="banner-item__title bounce ">
+                            <div className="banner-slider__item "   >
+                                <div className="banner-slider__inner flex-between position-relative" >
+                                    <div className="">
+                                        <h6 className="" style={{ fontSize: "30px" }}>
                                             Exclusive deals on fruits, veggies, and daily needs. Fresh quality at unbeatable prices.
-                                        </h1>
-                                        <Link
+                                        </h6>
+                                        {/* <Link
                                             to="/shop"
                                             className="btn btn-main d-inline-flex align-items-center rounded-pill gap-8"
                                         >
@@ -79,20 +80,21 @@ const BannerOne = () => {
                                             <span className="icon text-xl d-flex">
                                                 <i className="ph ph-shopping-cart-simple" />{" "}
                                             </span>
-                                        </Link>
+                                        </Link> */}
                                     </div>
-                                    <div className="banner-item__thumb">
-                                        <img src="assets/images/bg/12.png" alt="" />
-                                    </div>
+                                    <div className="">
+  <img src="assets/images/bg/12.png" alt="" style={{ width: "500px", height: "auto" }} />
+</div>
                                 </div>
                             </div>
                             <div className="banner-slider__item">
                                 <div className="banner-slider__inner flex-between position-relative">
-                                    <div className="banner-item__content">
-                                        <h1 className="banner-item__title ">
+                                    {/* banner-item__content */}
+                                    <div className="">
+                                        <h6 className="" style={{ fontSize: "30px" }}>
                                           From handpicked fruits and vegetables to all your kitchen essentials — shop smarter and spend less.
-                                        </h1>
-                                        <Link
+                                        </h6>
+                                        {/* <Link
                                             to="/shop"
                                             className="btn btn-main d-inline-flex align-items-center rounded-pill gap-8"
                                         >
@@ -100,20 +102,20 @@ const BannerOne = () => {
                                             <span className="icon text-xl d-flex">
                                                 <i className="ph ph-shopping-cart-simple" />{" "}
                                             </span>
-                                        </Link>
+                                        </Link> */}
                                     </div>
-                                    <div className="banner-item__thumb">
-                                        <img src="assets/images/bg/eleven.png" alt="" />
+                                    <div className="">
+                                        <img src="assets/images/bg/eleven.png" alt="" style={{ width: "500px", height: "auto" }} />
                                     </div>
                                 </div>
                             </div>
                                                         <div className="banner-slider__item">
                                 <div className="banner-slider__inner flex-between position-relative">
-                                    <div className="banner-item__content">
-                                        <h1 className="banner-item__title ">
+                                    <div className="">
+                                        <h6 className="" style={{ fontSize: "30px" }}>
                                            Your favorite groceries, delivered fast and FREE — straight to your door.
-                                        </h1>
-                                        <Link
+                                        </h6>
+                                        {/* <Link
                                             to="/shop"
                                             className="btn btn-main d-inline-flex align-items-center rounded-pill gap-8"
                                         >
@@ -121,10 +123,10 @@ const BannerOne = () => {
                                             <span className="icon text-xl d-flex">
                                                 <i className="ph ph-shopping-cart-simple" />{" "}
                                             </span>
-                                        </Link>
+                                        </Link> */}
                                     </div>
                                     <div className="banner-item__thumb">
-                                        <img src="assets/images/bg/13.png" alt="" />
+                                        <img src="assets/images/bg/13.png" alt="" style={{ width: "300px", height: "auto" }} />
                                     </div>
                                 </div>
                             </div>

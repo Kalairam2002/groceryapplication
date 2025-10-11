@@ -32,6 +32,7 @@ import AdminProtectedRoute from "./pages/admin/AdminProtectedRoute";
 import SellerProtectedRoute from "./pages/seller/SellerProtectedRoute";
 import SellerList from "./pages/admin/SellerList";
 import ContactList from "./pages/admin/ContactList";
+import Addcategoryone from "./pages/admin/Addcategoryone";
 
 function App() {
   return (
@@ -84,6 +85,7 @@ function App() {
         <Route exact path='/adminOrderList' element={<AdminProtectedRoute><OrderList /></AdminProtectedRoute>} />
         <Route exact path='/sellerList' element={<AdminProtectedRoute><SellerList /></AdminProtectedRoute>} />
         <Route exact path='/contactList' element={<AdminProtectedRoute><ContactList /></AdminProtectedRoute>} />
+        <Route exact path='/addcategory' element={<AdminProtectedRoute><Addcategoryone /></AdminProtectedRoute>} />
        
        
       </Routes>
