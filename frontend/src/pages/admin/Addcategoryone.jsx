@@ -31,14 +31,14 @@ const Addcategoryone = () => {
 
     const formData = new FormData();
     formData.append("name", categoryName);
-    formData.append("images", categoryImage);
+    formData.append("image", categoryImage);
 
     try {
       setLoading(true);
       const res = await axios.post(
         `${process.env.REACT_APP_API_URL}/api/admindata/addCategory`,
         formData,
-        { withCredentials: true, headers: { "Content-Type": "multipart/form-data" } }
+        
       );
       setLoading(false);
       setSuccess("Category added successfully!");
@@ -47,11 +47,9 @@ const Addcategoryone = () => {
       setPreview(null);
     } catch (err) {
       setLoading(false);
-      console.error(err);
-      alert("Category added successfully!");
-        setCategoryName("");
-      setCategoryImage(null);
-       setPreview(null);
+      console.error(err.response?.data || err.message);
+      alert(err.response?.data?.message || "Error adding category");
+        
     }
   };
 
@@ -86,6 +84,7 @@ const Addcategoryone = () => {
                   accept="image/*"
                   onChange={handleImageChange}
                   required
+                  
                 />
               </div>
 

@@ -5,22 +5,59 @@ import SubCategory from "../../models/admin/SubCategory.model.js";
 
 export const AddCategory = async (req, res) => {
   try {
-    let categoryData = JSON.parse(req.body.categoryData);
+    // let categoryData = JSON.parse(req.body.categoryData);
+      const {name} = req.body;
+      
+      const imageFile = req.file;
+     
+      if(!name){
+        return res.status(400).json({ success: false, message: "category data is not available" });
+      }
+      if (!imageFile) {
+      return res.status(400).json({ success: false, message: "Image file is missing" });
+      }
 
-    const images = req.files;
+      const existingcategory = await category.findOne({ name });
+      if (existingcategory) {
+        return res.status(400).json({ success: false, message: "Category already exists" });
+      }
 
-    let imagesUrl = await Promise.all(
-      images.map(async (item) => {
-        let result = await cloudinary.uploader.upload(item.path, {
-          resource_type: "image",
-        });
-        return result.secure_url;
-      })
-    );
+    const result = await cloudinary.uploader.upload(imageFile.path, {
+      folder: "categories",
+    });
 
-    await category.create({ ...categoryData, image: imagesUrl });
 
-    res.json({ success: true, message: "category Added" });
+    const imageUrl = result.secure_url;
+      
+      const newCategory = new category({ 
+        name : name
+        ,image : imageUrl
+       });
+
+       if(newCategory){
+          await newCategory.save();
+          return res.status(201).json({ success: true, message: "Category Added" });
+
+       }else{
+
+          return res.status(400).json({ success: false, message: "Invalid category data" });
+       }
+       
+
+    // const images = req.files;
+
+    // let imagesUrl = await Promise.all(
+    //   images.map(async (item) => {
+    //     let result = await cloudinary.uploader.upload(item.path, {
+    //       resource_type: "image",
+    //     });
+    //     return result.secure_url;
+    //   })
+    // );
+
+    // await category.create({ ...categoryData, image: imagesUrl });
+
+    
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }

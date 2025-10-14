@@ -4,6 +4,7 @@ import SellerLayout from "./SellerLayout";
 import "./SellerDashboard.css";
 import { image } from "./image";
 import Barcode from "react-barcode"; // ✅ install with: npm install react-barcode
+import {useQuery} from '@tanstack/react-query';
 
 const SellerAddProduct = () => {
   const [files, setFiles] = useState([]);
@@ -15,6 +16,14 @@ const SellerAddProduct = () => {
   const [unit, setUnit] = useState("");
   const [stock, setStock] = useState("");
   const [Brand, setBrand] = useState("");
+
+  const{data:categorydata,isLoading} = useQuery({
+    queryKey:['categorydatakey'],
+    queryFn: async()=>{
+      const {data} = await axios.get(`${process.env.REACT_APP_API_URL}/api/admindata/getCategory`);
+      return data;
+    }
+  })
 
   // ✅ barcode states
   const [barcodeOption, setBarcodeOption] = useState("manual"); // manual | auto
@@ -305,13 +314,23 @@ const SellerAddProduct = () => {
             <option value="" disabled>
               -- Select Category --
             </option>
-            <option value="Fresh Fruits">Fresh Fruits</option>
+              {!isLoading && categorydata && categorydata.length > 0 ? (
+                categorydata.map((item) => (
+                  <option key={item._id} value={item._id}>
+                    {item.name}
+                  </option>
+                ))
+              ) : (
+                <option className="text-lg-center">No data Available </option>
+              )}
+            {isLoading && <option>Loading...</option>}
+            {/* <option value="Fresh Fruits">Fresh Fruits</option>
             <option value="Fresh Vegetables">Fresh Vegetables</option>
             <option value="Dairy Products">Dairy Products</option>
             <option value="Snacks & Namkeen">Snacks & Namkeen</option>
             <option value="Frozen Foods">Frozen Foods</option>
             <option value="Beverages">Beverages</option>
-            <option value="Staples">Staples (Rice, Flour, Pulses)</option>
+            <option value="Staples">Staples (Rice, Flour, Pulses)</option> */}
           </select>
 
           {/* Submit */}

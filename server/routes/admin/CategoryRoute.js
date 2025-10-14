@@ -3,7 +3,7 @@ import {upload} from '../../configs/multer.js';
 const app = express.Router();
 import  {AddCategory,GetCategory,dldCategory,AddsubCategory,getcategorydata,updateCategory,mainCategory,GetMainCategory,dldMainCategory,getMaincategorydata,updateMainCategory,GetSubCategory,dldSubCategory,getSubcategorydata,updateSubCategory}  from '../../controllers/admin/Category.controller.js';
 
-app.post('/addCategory',upload.array(['images']),AddCategory);
+app.post('/addCategory',upload.single("image"),AddCategory);
 app.post('/mainCategory',upload.array(['images']),mainCategory);
 app.get('/getCategory',GetCategory);
 app.get('/getmainCategory',GetMainCategory);

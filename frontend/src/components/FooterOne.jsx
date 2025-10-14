@@ -162,11 +162,11 @@ const FooterOne = () => {
                                     Help Ticket
                                 </Link>
                             </li>
-                            <li className="">
+                            {/* <li className="">
                                 <Link to="/wishlist" className="text-gray-600 hover-text-main-600">
                                     Wishlist
                                 </Link>
-                            </li>
+                            </li> */}
                         </ul>
                     </div>
                     <div className="footer-item">

@@ -3,7 +3,7 @@ import Preloader from "../helper/Preloader";
 
 import HeaderTwo from "../components/HeaderTwo";
 import Breadcrumb from "../components/Breadcrumb";
-import FooterTwo from "../components/FooterTwo";
+import FooterOne from "../components/FooterOne";
 import BottomFooter from "../components/BottomFooter";
 import ShippingOne from "../components/ShippingOne";
 import Account from "../components/Account";
@@ -40,7 +40,7 @@ const AccountPage = () => {
       <ShippingOne />
 
       {/* FooterTwo */}
-      <FooterTwo />
+      <FooterOne />
 
       {/* BottomFooter */}
       <BottomFooter />

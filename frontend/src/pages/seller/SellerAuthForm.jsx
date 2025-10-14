@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import "./SellerAuth.css";
 import { useNavigate } from "react-router-dom";
-const SellerAuth = () => {
+const SellerAuthForm = () => {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState("login");
@@ -163,4 +163,4 @@ const SellerAuth = () => {
   );
 };
 
-export default SellerAuth;
+export default SellerAuthForm;

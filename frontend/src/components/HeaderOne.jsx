@@ -277,7 +277,7 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                       Cart {cartCount > 0 && `(${cartCount})`}
                     </Link>
                   </li>
-                  <li className='common-dropdown__item nav-submenu__item'>
+                  {/* <li className='common-dropdown__item nav-submenu__item'>
                     <Link
                       to='/wishlist'
                       className='common-dropdown__link nav-submenu__link hover-bg-neutral-100'
@@ -285,7 +285,7 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                     >
                       Wishlist
                     </Link>
-                  </li>
+                  </li> */}
                   <li className='common-dropdown__item nav-submenu__item'>
                     <Link
                       to='/checkout'
@@ -831,7 +831,7 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                     <i className='ph ph-magnifying-glass' />
                   </span>
                 </button>
-                <Link to='/wishlist' className='flex-align gap-4 item-hover'>
+                {/* <Link to='/wishlist' className='flex-align gap-4 item-hover'>
                   <span className='text-2xl text-gray-700 d-flex position-relative me-6 mt-6 item-hover__text'>
 <b>
                       <i className='ph ph-heart text-white' />
@@ -843,7 +843,7 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                   <span className='text-md text-white item-hover__text-white d-lg-flex'>
                     <b>Wishlist</b>
                   </span>
-                </Link>
+                </Link> */}
                 <Link to='/cart' className='flex-align gap-4 item-hover'>
                   <span className='text-2xl text-gray-700 d-flex position-relative me-6 mt-6 item-hover__text'>
                     <b>                    <i className='ph ph-shopping-cart-simple text-white text-2xl'  />
@@ -1273,31 +1273,6 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                           Home Grocery
                         </NavLink>
                       </li>
-                      <li className='common-dropdown__item nav-submenu__item'>
-                        <NavLink
-                          to='/index-two'
-                          className={(navData) =>
-                            navData.isActive
-                              ? "common-dropdown__link nav-submenu__link hover-bg-neutral-100 activePage"
-                              : "common-dropdown__link nav-submenu__link hover-bg-neutral-100"
-                          }
-                        >
-                          {" "}
-                          Home Electronics
-                        </NavLink>
-                      </li>
-                      <li className='common-dropdown__item nav-submenu__item'>
-                        <NavLink
-                          to='/index-three'
-                          className={(navData) =>
-                            navData.isActive
-                              ? "common-dropdown__link nav-submenu__link hover-bg-neutral-100 activePage"
-                              : "common-dropdown__link nav-submenu__link hover-bg-neutral-100"
-                          }
-                        >
-                          Home Fashion
-                        </NavLink>
-                      </li>
                     </ul>
                   </li>
                   <li className='on-hover-item nav-menu__item has-submenu'>
@@ -1331,19 +1306,6 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                           Shop Details
                         </NavLink>
                       </li>
-                      <li className='common-dropdown__item nav-submenu__item'>
-                        <NavLink
-                          to='/product-details-two'
-                          className={(navData) =>
-                            navData.isActive
-                              ? "common-dropdown__link nav-submenu__link hover-bg-neutral-100 activePage"
-                              : "common-dropdown__link nav-submenu__link hover-bg-neutral-100"
-                          }
-                        >
-                          {" "}
-                          Shop Details Two
-                        </NavLink>
-                      </li>
                     </ul>
                   </li>
                   <li className='on-hover-item nav-menu__item has-submenu'>
@@ -1367,7 +1329,7 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                           Cart
                         </NavLink>
                       </li>
-                      <li className='common-dropdown__item nav-submenu__item'>
+                      {/* <li className='common-dropdown__item nav-submenu__item'>
                         <NavLink
                           to='/wishlist'
                           className={(navData) =>
@@ -1378,8 +1340,8 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                         >
                           Wishlist
                         </NavLink>
-                      </li>
-                      <li className='common-dropdown__item nav-submenu__item'>
+                      </li> */}
+                      {/* <li className='common-dropdown__item nav-submenu__item'>
                         <NavLink
                           to='/checkout'
                           className={(navData) =>
@@ -1391,9 +1353,9 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                           {" "}
                           Checkout{" "}
                         </NavLink>
-                      </li>
+                      </li> */}
 
-                      <li className='common-dropdown__item nav-submenu__item'>
+                      {/* <li className='common-dropdown__item nav-submenu__item'>
                         <NavLink
                           to='/become-seller'
                           className={(navData) =>
@@ -1404,7 +1366,7 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                         >
                           Become Seller
                         </NavLink>
-                      </li>
+                      </li> */}
                       <li className='common-dropdown__item nav-submenu__item'>
                         <NavLink
                           to='/account'
@@ -1452,7 +1414,7 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                           Vendor Details
                         </NavLink>
                       </li>
-                      <li className='common-dropdown__item nav-submenu__item'>
+                      {/* <li className='common-dropdown__item nav-submenu__item'>
                         <NavLink
                           to='/vendor-two'
                           className={(navData) =>
@@ -1463,9 +1425,9 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                         >
                           Vendors Two
                         </NavLink>
-                      </li>
+                      </li> */}
 
-                      <li className='common-dropdown__item nav-submenu__item'>
+                      {/* <li className='common-dropdown__item nav-submenu__item'>
                         <NavLink
                           to='/vendor-two-details'
                           className={(navData) =>
@@ -1476,7 +1438,7 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                         >
                           Vendors Two Details
                         </NavLink>
-                      </li>
+                      </li> */}
                     </ul>
                   </li>
                   <li className='on-hover-item nav-menu__item has-submenu'>
@@ -1497,7 +1459,7 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                           Blog
                         </NavLink>
                       </li>
-                      <li className='common-dropdown__item nav-submenu__item'>
+                      {/* <li className='common-dropdown__item nav-submenu__item'>
                         <NavLink
                           to='/blog-details'
                           className={(navData) =>
@@ -1509,7 +1471,7 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                           {" "}
                           Blog Details
                         </NavLink>
-                      </li>
+                      </li> */}
                     </ul>
                   </li>
                   <li className='nav-menu__item'>
@@ -1552,7 +1514,7 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                       <i className='ph ph-magnifying-glass' />
                     </span>
                   </button>
-                  <Link to='/wishlist' className='flex-align gap-4 item-hover'>
+                  {/* <Link to='/wishlist' className='flex-align gap-4 item-hover'>
                     <span className='text-2xl text-gray-700 d-flex position-relative me-6 mt-6 item-hover__text'>
                       <i className='ph ph-heart' />
                       <span className='w-16 h-16 flex-center rounded-circle bg-main-600 text-white text-xs position-absolute top-n6 end-n4'>
@@ -1562,7 +1524,7 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                     <span className='text-md text-gray-500 item-hover__text d-none d-lg-flex'>
                       Wishlist
                     </span>
-                  </Link>
+                  </Link> */}
                   <Link to='/cart' className='flex-align gap-4 item-hover'>
                     <span className='text-2xl text-gray-700 d-flex position-relative me-6 mt-6 item-hover__text'>
                       <i className='ph ph-shopping-cart-simple' />
