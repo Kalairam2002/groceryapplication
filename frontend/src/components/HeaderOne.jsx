@@ -831,19 +831,24 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                     <i className='ph ph-magnifying-glass' />
                   </span>
                 </button>
-                {/* <Link to='/wishlist' className='flex-align gap-4 item-hover'>
-                  <span className='text-2xl text-gray-700 d-flex position-relative me-6 mt-6 item-hover__text'>
-<b>
-                      <i className='ph ph-heart text-white' />
-                    <span className='w-16 h-16 flex-center rounded-circle bg-main-600 text-white text-xs position-absolute top-n6 end-n4'>
-                      2
-                    </span>
-</b>
-                  </span>
-                  <span className='text-md text-white item-hover__text-white d-lg-flex'>
-                    <b>Wishlist</b>
-                  </span>
-                </Link> */}
+                {user ? (
+                    <Link to='/wishlist' className='flex-align gap-4 item-hover'>
+                      <span className='text-2xl text-gray-700 d-flex position-relative me-6 mt-6 item-hover__text'>
+                      <b>
+                          <i className='ph ph-heart text-white' />
+                        <span className='w-16 h-16 flex-center rounded-circle bg-main-600 text-white text-xs position-absolute top-n6 end-n4'>
+                          2
+                        </span>
+                      </b>
+                      </span>
+                      <span className='text-md text-white item-hover__text-white d-lg-flex'>
+                        <b>my Orders</b>
+                      </span>
+                    </Link>
+                  ) : (
+                    <>
+                    </>
+                  )}
                 <Link to='/cart' className='flex-align gap-4 item-hover'>
                   <span className='text-2xl text-gray-700 d-flex position-relative me-6 mt-6 item-hover__text'>
                     <b>                    <i className='ph ph-shopping-cart-simple text-white text-2xl'  />

@@ -11,7 +11,7 @@ const productSchema = new mongoose.Schema(
     unit: { type: String, required: true },
     stock: { type: Number, required: true },
     brand: { type: String, required: true },
-    SubCategory: { type: String, required: true },
+    Category: { type: String, required: true },
     barcode: { type: String, unique: true },
     seller: {
       type: mongoose.Schema.Types.ObjectId,

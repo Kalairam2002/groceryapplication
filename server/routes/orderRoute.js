@@ -10,10 +10,12 @@ orderRouter.get('/user', authUser, getUserOrders);
 orderRouter.get('/seller', authSeller, getAllOrders);
 orderRouter.post('/online', placeOrderRazorPay);
 orderRouter.post('/verifyPayment', verifyPayment);
+
 // GET /api/orders/all  → get all orders
 orderRouter.get("/all", getAllOrders);
+
 // GET /api/orders/:userId  → get orders by userId
-orderRouter.get("/:userId", getOrdersByUser);
+orderRouter.get("/user/:userId", getOrdersByUser);
 
 // ✅ Get orders for logged-in seller
 orderRouter.get("/seller/order", authSeller, getOrdersBySeller);

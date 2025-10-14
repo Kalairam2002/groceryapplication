@@ -144,16 +144,37 @@ export const verifyPayment = async (req,res)=> {
 }
 
 
-// Seller Order 
+// get order by user
 export const getOrdersByUser = async (req, res) => {
   try {
     const { userId } = req.params;
-    const orders = await Order.find({ userId }).sort({ createdAt: -1 });
-    res.status(200).json(orders);
-  } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+
+    const orders = await Order.find({ userId })
+      .populate("products.seller", "name email") // optional seller details
+      .sort({ createdAt: -1 });
+
+    if (!orders.length) {
+      return res.status(200).json({
+        success: true,
+        message: "No orders found for this user",
+        orders: [],
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      total: orders.length,
+      orders,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching user orders",
+      error: error.message,
+    });
   }
 };
+
 
 // Get all orders
 export const getAllOrders = async (req, res) => {

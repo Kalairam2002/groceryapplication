@@ -2,6 +2,7 @@ import {v2 as cloudinary} from 'cloudinary';
 import category from "../../models/admin/Category.model.js";
 import MainCategory from "../../models/admin/MainCategory.model.js";
 import SubCategory from "../../models/admin/SubCategory.model.js";
+import Product from '../../models/Product.js';
 
 export const AddCategory = async (req, res) => {
   try {
@@ -145,7 +146,7 @@ export const dldMainCategory = async (req, res) => {
 export const getcategorydata = async (req, res) => {
   try {
     const { id } = req.params;
-    const categoryData = await category.findById(id);
+    const categoryData = await Product.find({Category: id});
     if (!categoryData) {
       return res.status(404).json({ success: false, message: "Category not found" });
     }

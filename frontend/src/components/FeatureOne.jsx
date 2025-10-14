@@ -1,6 +1,8 @@
 import React from 'react'
 import { Link } from 'react-router-dom';
 import Slider from 'react-slick';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
 
 const FeatureOne = () => {
 
@@ -91,6 +93,17 @@ const FeatureOne = () => {
 
         ],
     };
+
+    const {data:categorydata,isLoading}=useQuery({
+        queryKey:['categorydata'],
+        queryFn:async()=>{
+            const res=await axios.get(`${process.env.REACT_APP_API_URL}/api/admindata/getCategory`);
+            return res.data
+        }
+            
+    })
+       
+      
     return (
         <div className="feature" id="featureSection">
             <div className="container container-lg">
@@ -113,7 +126,30 @@ const FeatureOne = () => {
                     </div>
                     <div className="feature-item-wrapper">
                         <Slider {...settings}>
-                            <div className="feature-item text-center">
+                            {
+                                !isLoading && categorydata && categorydata.length > 0 ? (
+                                    categorydata.map((category) => (
+                                        <div className="feature-item text-center" key={category._id}>
+                                            <div className="feature-item__thumb rounded-circle">
+                                                <Link to={`/shop/${category._id}`} className="w-100 h-100 flex-center">
+                                                    <img src={category.image} alt={category.name} />
+                                                </Link>
+                                            </div>
+                                            <div className="feature-item__content mt-16">
+                                                <h6 className="text-lg mb-8">
+                                                    <Link to={`/shop/${category._id}`} className="text-inherit">
+                                                        {category.name}
+                                                    </Link>
+                                                </h6>
+                                                <span className="text-sm text-gray-400">{category.productCount}+ Products</span>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    !isLoading && <p>No categories available</p>
+                                )   
+                            }
+                            {/* <div className="feature-item text-center">
                                 <div className="feature-item__thumb rounded-circle">
                                     <Link to="/shop" className="w-100 h-100 flex-center">
                                         <img src="assets/images/thumbs/veg.png" alt="" />
@@ -122,13 +158,13 @@ const FeatureOne = () => {
                                 <div className="feature-item__content mt-16">
                                     <h6 className="text-lg mb-8">
                                         <Link to="/shop" className="text-inherit">
-                                            Vegetables
+                                            Vegetabless
                                         </Link>
                                     </h6>
                                     <span className="text-sm text-gray-400">125+ Products</span>
                                 </div>
-                            </div>
-                            <div className="feature-item text-center">
+                            </div> */}
+                            {/* <div className="feature-item text-center">
                                 <div className="feature-item__thumb rounded-circle">
                                     <Link to="/shop" className="w-100 h-100 flex-center">
                                         <img src="assets/images/thumbs/fish.png" alt="" />
@@ -142,8 +178,8 @@ const FeatureOne = () => {
                                     </h6>
                                     <span className="text-sm text-gray-400">125+ Products</span>
                                 </div>
-                            </div>
-                            <div className="feature-item text-center">
+                            </div> */}
+                            {/* <div className="feature-item text-center">
                                 <div className="feature-item__thumb rounded-circle">
                                     <Link to="/shop" className="w-100 h-100 flex-center">
                                         <img src="assets/images/thumbs/d1.png" alt="" />
@@ -262,7 +298,7 @@ const FeatureOne = () => {
                                     </h6>
                                     <span className="text-sm text-gray-400">125+ Products</span>
                                 </div>
-                            </div>
+                            </div> */}
                           
                         </Slider>
                     </div>

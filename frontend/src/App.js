@@ -4,6 +4,7 @@ import HomePageOne from "./pages/HomePageOne";
 import HomePageTwo from "./pages/HomePageTwo";
 import HomePageThree from "./pages/HomePageThree";
 import ShopPage from "./pages/ShopPage";
+import ShopPagecopy from "./pages/ShopPage";
 import ProductDetailsPageOne from "./pages/ProductDetailsPageOne";
 import ProductDetailsPageTwo from "./pages/ProductDetailsPageTwo";
 import CartPage from "./pages/CartPage";
@@ -44,7 +45,8 @@ function App() {
         <Route exact path='/' element={<HomePageOne />} />
         <Route exact path='/index-two' element={<HomePageTwo />} />
         <Route exact path='/index-three' element={<HomePageThree />} />
-        <Route exact path='/shop' element={<ShopPage />} />
+        <Route exact path='/shop/:id' element={<ShopPage />} />
+        <Route exact path='/shop' element={<ShopPagecopy />} />
         <Route
           exact
           path='/product-details'

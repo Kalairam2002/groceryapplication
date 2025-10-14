@@ -10,7 +10,7 @@ const SellerAddProduct = () => {
   const [files, setFiles] = useState([]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [SubCategory, setSubCategory] = useState("");
+  const [Category, setCategory] = useState("");
   const [price, setPrice] = useState("");
   const [offerPrice, setOfferPrice] = useState("");
   const [unit, setUnit] = useState("");
@@ -95,7 +95,7 @@ const SellerAddProduct = () => {
         unit,
         stock,
         brand: Brand,
-        SubCategory,
+        Category,
         barcode: finalBarcode,
       };
 
@@ -122,7 +122,7 @@ const SellerAddProduct = () => {
         setStock("");
         setFiles([]);
         setBrand("");
-        setSubCategory("");
+        setCategory("");
         setBarcode("");
         setBarcodeOption("manual");
       }
@@ -307,8 +307,8 @@ const SellerAddProduct = () => {
           {/* Category */}
           <select
             className="form-select mt-2"
-            value={SubCategory}
-            onChange={(e) => setSubCategory(e.target.value)}
+            value={Category}
+            onChange={(e) => setCategory(e.target.value)}
             required
           >
             <option value="" disabled>
@@ -324,13 +324,7 @@ const SellerAddProduct = () => {
                 <option className="text-lg-center">No data Available </option>
               )}
             {isLoading && <option>Loading...</option>}
-            {/* <option value="Fresh Fruits">Fresh Fruits</option>
-            <option value="Fresh Vegetables">Fresh Vegetables</option>
-            <option value="Dairy Products">Dairy Products</option>
-            <option value="Snacks & Namkeen">Snacks & Namkeen</option>
-            <option value="Frozen Foods">Frozen Foods</option>
-            <option value="Beverages">Beverages</option>
-            <option value="Staples">Staples (Rice, Flour, Pulses)</option> */}
+            
           </select>
 
           {/* Submit */}

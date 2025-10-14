@@ -4,8 +4,10 @@ import ReactSlider from 'react-slider'
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import axios from "axios";
+import { useQuery } from "@tanstack/react-query";
 
-const ShopSection = () => {
+
+const ShopSection = ({id}) => {
 
     let [grid, setGrid] = useState(false)
 
@@ -13,6 +15,24 @@ const ShopSection = () => {
     let sidebarController = () => {
         setActive(!active)
     }
+
+    const {data: categorydata, isLoading, error} = useQuery({
+    queryKey: ['categorydatakey', id],
+    queryFn: async () => {
+      const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/admindata/GetCategoryData/${id}`);
+      return res.data;
+    }
+   
+    })
+
+    const {data:categorydatalist ,isLoading:iscategoryLoading, error:errorcategory} = useQuery({
+      queryKey: ['categorydatalistkey'],
+      queryFn: async () => {
+        const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/admindata/getCategory`);
+        return res.data;
+      }
+     
+      })
 
     const navigate = useNavigate();
       const [products, setProducts] = useState([]);
@@ -80,8 +100,10 @@ const ShopSection = () => {
     );
   }
 
+
+
     return (
-        <section className="shop py-80">
+        <section className="shop py-80" >
             <div className={`side-overlay ${active && "show"}`}></div>
             <div className="container container-lg">
                 <div className="row">
@@ -99,15 +121,26 @@ const ShopSection = () => {
                                     Product Category
                                 </h6>
                                 <ul className="max-h-540 overflow-y-auto scroll-sm">
-                                    <li className="mb-24">
+                                    {!iscategoryLoading && categorydatalist && categorydatalist.length > 0 && categorydatalist.map((category) => (
+                                        <li className="mb-24" key={category._id}>
+                                            <Link
+                                                to={`/shop/${category._id}`}
+                                                className="text-gray-900 hover-text-main-600"
+                                            >
+                                                {category.name} ({products.filter(product => product.Category === category._id).length})
+                                            </Link>
+                                        </li>
+                                    ))}
+                                    {/* <li className="mb-24">
                                         <Link
                                             to="/shop"
                                             className="text-gray-900 hover-text-main-600"
                                         >
                                             Fresh Vegetables (12)
+                                            
                                         </Link>
-                                    </li>
-                                    <li className="mb-24">
+                                    </li> */}
+                                    {/* <li className="mb-24">
                                         <Link
                                             to="/shop"
                                             className="text-gray-900 hover-text-main-600"
@@ -154,7 +187,7 @@ const ShopSection = () => {
                                         >
                                             Staples (12)
                                         </Link>
-                                    </li>
+                                    </li> */}
                                     {/* <li className="mb-24">
                                         <Link
                                             to="/shop"
@@ -723,10 +756,14 @@ const ShopSection = () => {
                             </div>
                         </div>
                         {/* Top End */}
-                        <div className={`list-grid-wrapper ${grid && "list-view"}`}>
+
+
+                        { id?(
+                              <div className={`list-grid-wrapper ${grid && "list-view"}`}>
+
                                     <div className="row gy-4 g-12">
-                                      {products.length > 0 ? (
-                                        products.map((product) => (
+                                      {!isLoading && categorydata && categorydata.length > 0 ? (
+                                        categorydata.map((product) => (
                                           <div key={product._id} className="col-xxl-2 col-lg-3 col-sm-4 col-6">
                                             <div className="product-card px-8 py-16 border border-gray-100 hover-border-main-600 rounded-16 position-relative transition-2">
                                               {/* Add to Cart Button */}
@@ -804,74 +841,183 @@ const ShopSection = () => {
                                         </div>
                                       )}
                                     </div>
-                            {/* <div className="product-card h-100 p-16 border border-gray-100 hover-border-main-600 rounded-16 position-relative transition-2">
-                                <Link
-                                    to="/product-details-two"
-                                    className="product-card__thumb flex-center rounded-8 bg-gray-50 position-relative"
-                                >
-                                    <img
-                                        src="assets/images/thumbs/product-two-img1.png"
-                                        alt=""
-                                        className="w-auto max-w-unset"
-                                    />
-                                    <span className="product-card__badge bg-primary-600 px-8 py-4 text-sm text-white position-absolute inset-inline-start-0 inset-block-start-0">
-                                        Best Sale{" "}
-                                    </span>
-                                </Link>
-                                <div className="product-card__content mt-16">
-                                    <h6 className="title text-lg fw-semibold mt-12 mb-8">
-                                        <Link
-                                            to="/product-details-two"
-                                            className="link text-line-2"
-                                            tabIndex={0}
-                                        >
-                                            Taylor Farms Broccoli Florets Vegetables
-                                        </Link>
-                                    </h6>
-                                    <div className="flex-align mb-20 mt-16 gap-6">
-                                        <span className="text-xs fw-medium text-gray-500">4.8</span>
-                                        <span className="text-15 fw-medium text-warning-600 d-flex">
-                                            <i className="ph-fill ph-star" />
-                                        </span>
-                                        <span className="text-xs fw-medium text-gray-500">(17k)</span>
-                                    </div>
-                                    <div className="mt-8">
-                                        <div
-                                            className="progress w-100 bg-color-three rounded-pill h-4"
-                                            role="progressbar"
-                                            aria-label="Basic example"
-                                            aria-valuenow={35}
-                                            aria-valuemin={0}
-                                            aria-valuemax={100}
-                                        >
-                                            <div
-                                                className="progress-bar bg-main-two-600 rounded-pill"
-                                                style={{ width: "35%" }}
-                                            />
-                                        </div>
-                                        <span className="text-gray-900 text-xs fw-medium mt-8">
-                                            Sold: 18/35
-                                        </span>
-                                    </div>
-                                    <div className="product-card__price my-20">
-                                        <span className="text-gray-400 text-md fw-semibold text-decoration-line-through">
-                                            $28.99
-                                        </span>
-                                        <span className="text-heading text-md fw-semibold ">
-                                            $14.99 <span className="text-gray-500 fw-normal">/Qty</span>{" "}
-                                        </span>
-                                    </div>
-                                    <Link
-                                        to="/cart"
-                                        className="product-card__cart btn bg-gray-50 text-heading hover-bg-main-600 hover-text-white py-11 px-24 rounded-8 flex-center gap-8 fw-medium"
-                                        tabIndex={0}
-                                    >
-                                        Add To Cart <i className="ph ph-shopping-cart" />
-                                    </Link>
-                                </div>
-                            </div> */}
+
+                               
+                         
                             
                         </div>
+                        ):(
+                                 <div className={`list-grid-wrapper ${grid && "list-view"}`}>    
+                                         <div className="row gy-4 g-12">
+                                      { products && products.length > 0 ? (
+                                        products.map((product) => (
+                                          <div key={product._id} className="col-xxl-2 col-lg-3 col-sm-4 col-6">
+                                            <div className="product-card px-8 py-16 border border-gray-100 hover-border-main-600 rounded-16 position-relative transition-2">
+                                              
+                                           
+                                              <button
+                                                onClick={() => handleAddToCart( product)}
+                                                className="product-card__cart btn bg-main-50 text-main-600 hover-bg-main-600 hover-text-white py-11 px-24 rounded-pill flex-align gap-8 position-absolute inset-block-start-0 inset-inline-end-0 me-16 mt-16"
+                                              >
+                                                Add <i className="ph ph-shopping-cart" />
+                                              </button>
+                                            
+                            
+                                             
+                                              <Link to='#' className="product-card__thumb flex-center">
+                                                <img
+                                                  src={product.image[0] || "/assets/images/thumbs/placeholder.jpg"}
+                                                  alt={product.name}
+                                                  style={{ maxHeight: "180px", objectFit: "cover" }}
+                                                />
+                                              </Link>
+                            
+                                              <div className="product-card__content mt-12">
+                                               
+                                                <div className="product-card__price mb-16">
+                                                  {product.offerPrice && product.offerPrice < product.price && (
+                                                    <span className="text-gray-400 text-md fw-semibold text-decoration-line-through">
+                                                      ${product.price}
+                                                    </span>
+                                                  )}
+                                                  <span className="text-heading text-md fw-semibold ms-2">
+                                                    ${product.offerPrice || product.price}{" "}
+                                                    <span className="text-gray-500 fw-normal">/{product.unit}</span>
+                                                  </span>
+                                                </div>
+                            
+                                               
+                                                <h6 className="title text-lg fw-semibold mt-12 mb-8">
+                                                  <Link to={`/product-details/${product._id}`} className="link text-line-2">
+                                                    {product.name}
+                                                  </Link>
+                                                </h6>
+                            
+                                               
+                                                <div className="mt-12">
+                                                  <div
+                                                    className="progress w-100 bg-color-three rounded-pill h-4"
+                                                    role="progressbar"
+                                                    aria-valuenow={product.stock}
+                                                    aria-valuemin={0}
+                                                    aria-valuemax={100}
+                                                  >
+                                                    <div
+                                                      className="progress-bar bg-main-600 rounded-pill"
+                                                      style={{
+                                                        width: `${Math.min((product.stock / 1000) * 100, 100)}%`,
+                                                      }}
+                                                    />
+                                                  </div>
+                                                  <span className="text-gray-900 text-xs fw-medium mt-8">
+                                                    {product.inStock ? `In Stock: ${product.stock}` : "Out of Stock"}
+                                                  </span>
+                                                  
+                                                
+                                                  <p className="text-sm text-gray-500">
+                                                    Sold by: <span className="fw-medium">{product.seller?.name || "Unknown Vendor"}</span>
+                                                  </p>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        ))
+                                      ) : (
+                                        <div className="col-12 text-center">
+                                          <h5>No products available</h5>
+                                        </div>
+                                      )}
+                                    </div>
+
+                        </div>
+                        )}
+                      
+                        
+                        {/* <div className={`list-grid-wrapper ${grid && "list-view"}`}>    
+                                         <div className="row gy-4 g-12">
+                                      { products && products.length > 0 ? (
+                                        products.map((product) => (
+                                          <div key={product._id} className="col-xxl-2 col-lg-3 col-sm-4 col-6">
+                                            <div className="product-card px-8 py-16 border border-gray-100 hover-border-main-600 rounded-16 position-relative transition-2">
+                                              
+                                           
+                                              <button
+                                                onClick={() => handleAddToCart( product)}
+                                                className="product-card__cart btn bg-main-50 text-main-600 hover-bg-main-600 hover-text-white py-11 px-24 rounded-pill flex-align gap-8 position-absolute inset-block-start-0 inset-inline-end-0 me-16 mt-16"
+                                              >
+                                                Add <i className="ph ph-shopping-cart" />
+                                              </button>
+                                            
+                            
+                                             
+                                              <Link to='#' className="product-card__thumb flex-center">
+                                                <img
+                                                  src={product.image[0] || "/assets/images/thumbs/placeholder.jpg"}
+                                                  alt={product.name}
+                                                  style={{ maxHeight: "180px", objectFit: "cover" }}
+                                                />
+                                              </Link>
+                            
+                                              <div className="product-card__content mt-12">
+                                               
+                                                <div className="product-card__price mb-16">
+                                                  {product.offerPrice && product.offerPrice < product.price && (
+                                                    <span className="text-gray-400 text-md fw-semibold text-decoration-line-through">
+                                                      ${product.price}
+                                                    </span>
+                                                  )}
+                                                  <span className="text-heading text-md fw-semibold ms-2">
+                                                    ${product.offerPrice || product.price}{" "}
+                                                    <span className="text-gray-500 fw-normal">/{product.unit}</span>
+                                                  </span>
+                                                </div>
+                            
+                                               
+                                                <h6 className="title text-lg fw-semibold mt-12 mb-8">
+                                                  <Link to={`/product-details/${product._id}`} className="link text-line-2">
+                                                    {product.name}
+                                                  </Link>
+                                                </h6>
+                            
+                                               
+                                                <div className="mt-12">
+                                                  <div
+                                                    className="progress w-100 bg-color-three rounded-pill h-4"
+                                                    role="progressbar"
+                                                    aria-valuenow={product.stock}
+                                                    aria-valuemin={0}
+                                                    aria-valuemax={100}
+                                                  >
+                                                    <div
+                                                      className="progress-bar bg-main-600 rounded-pill"
+                                                      style={{
+                                                        width: `${Math.min((product.stock / 1000) * 100, 100)}%`,
+                                                      }}
+                                                    />
+                                                  </div>
+                                                  <span className="text-gray-900 text-xs fw-medium mt-8">
+                                                    {product.inStock ? `In Stock: ${product.stock}` : "Out of Stock"}
+                                                  </span>
+                                                  
+                                                
+                                                  <p className="text-sm text-gray-500">
+                                                    Sold by: <span className="fw-medium">{product.seller?.name || "Unknown Vendor"}</span>
+                                                  </p>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        ))
+                                      ) : (
+                                        <div className="col-12 text-center">
+                                          <h5>No products available</h5>
+                                        </div>
+                                      )}
+                                    </div>
+
+                        </div> */}
+
+                            
                         {/* Pagination Start */}
                         <ul className="pagination flex-center flex-wrap gap-16">
                             <li className="page-item">

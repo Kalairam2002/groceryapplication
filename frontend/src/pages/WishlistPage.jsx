@@ -2,11 +2,11 @@ import React from "react";
 import ColorInit from "../helper/ColorInit";
 import ScrollToTop from "react-scroll-to-top";
 import Preloader from "../helper/Preloader";
-import HeaderTwo from "../components/HeaderTwo";
+import HeaderOne from "../components/HeaderOne";
 import Breadcrumb from "../components/Breadcrumb";
 import WishListSection from "../components/WishListSection";
 import ShippingOne from "../components/ShippingOne";
-import FooterTwo from "../components/FooterTwo";
+import FooterOne from "../components/FooterOne";
 import BottomFooter from "../components/BottomFooter";
 
 function WishlistPage() {
@@ -22,10 +22,10 @@ function WishlistPage() {
       <Preloader />
 
       {/* HeaderTwo */}
-      <HeaderTwo category={true} />
+      <HeaderOne category={true} />
 
       {/* Breadcrumb */}
-      <Breadcrumb title={"My Wishlist"} />
+      <Breadcrumb title={"My Orders"} />
 
       {/* WishListSection */}
       <WishListSection />
@@ -34,7 +34,7 @@ function WishlistPage() {
       <ShippingOne />
 
       {/* FooterTwo */}
-      <FooterTwo />
+      <FooterOne />
 
       {/* BottomFooter */}
       <BottomFooter />

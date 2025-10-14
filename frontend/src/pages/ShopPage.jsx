@@ -8,8 +8,10 @@ import FooterOne from "../components/FooterOne";
 import ColorInit from "../helper/ColorInit";
 import ScrollToTop from "react-scroll-to-top";
 import HeaderOne from "../components/HeaderOne";
+import { useParams } from "react-router-dom";
 
-const ShopPage = () => {
+const ShopPage = () => {  
+  const { id } = useParams();
 
   return (
     <>
@@ -23,13 +25,13 @@ const ShopPage = () => {
       <Preloader />
 
       {/* HeaderOne */}
-      <HeaderOne category={true} />
+      {/* <HeaderOne category={true} /> */}
 
       {/* Breadcrumb */}
       <Breadcrumb title={"Shop"} />
 
       {/* ShopSection */}
-      <ShopSection />
+      <ShopSection  id={id} />
 
       {/* ShippingTwo */}
       <ShippingTwo />
