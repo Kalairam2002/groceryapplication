@@ -2,6 +2,7 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import sendEmail from "../utils/sendEmail.js"; 
+// import sendMobileOtp from "../utils/sendMobileOtp.js";
 
 // Register User with OTP
 export const registerUser = async (req, res) => {
@@ -13,9 +14,8 @@ export const registerUser = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Generate OTP and expiration
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+    const otpExpires = Date.now() + 10 * 60 * 1000;
 
     const newUser = new User({
       username,
@@ -28,17 +28,16 @@ export const registerUser = async (req, res) => {
 
     await newUser.save();
 
-    // Send OTP via email
     const html = `<p>Hello ${username},</p><p>Your OTP is: <strong>${otp}</strong></p>`;
     await sendEmail(email, "Verify your account - OTP", html);
 
     res.status(201).json({ message: "OTP sent to your email. Please verify to complete registration." });
-
- } catch (error) {
-  console.error("Registration error:", error); 
-  res.status(500).json({ message: "Server error" });
-}
+  } catch (error) {
+    console.error("Registration error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
 };
+
 
 // Verify OTP
 export const verifyOtp = async (req, res) => {
@@ -96,3 +95,51 @@ export const loginUser = async (req, res) => {
 export const logoutUser = async (req, res) => {
   res.status(200).json({ message: "Logged out successfully" });
 };
+
+// Send OTP to Mobile Number
+// export const sendMobileOtpToUser = async (req, res) => {
+//   try {
+//     const { phoneNumber } = req.body;
+
+//     const user = await User.findOne({ phoneNumber });
+//     if (!user) return res.status(404).json({ message: "User with this mobile number not found" });
+
+//     const otp = Math.floor(100000 + Math.random() * 900000).toString();
+//     const otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+//     user.otp = otp;
+//     user.otpExpires = otpExpires;
+//     await user.save();
+
+//     await sendMobileOtp(phoneNumber, otp);
+
+//     res.status(200).json({ message: "OTP sent to your mobile number" });
+//   } catch (error) {
+//     console.error("Mobile OTP error:", error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
+// Verify Mobile OTP
+// export const verifyMobileOtp = async (req, res) => {
+//   try {
+//     const { phoneNumber, otp } = req.body;
+
+//     const user = await User.findOne({ phoneNumber });
+//     if (!user) return res.status(404).json({ message: "User not found" });
+
+//     if (user.otp !== otp || user.otpExpires < Date.now()) {
+//       return res.status(400).json({ message: "Invalid or expired OTP" });
+//     }
+
+//     user.isVerified = true;
+//     user.otp = undefined;
+//     user.otpExpires = undefined;
+//     await user.save();
+
+//     res.status(200).json({ message: "Mobile OTP verified successfully" });
+//   } catch (error) {
+//     console.error("OTP verification error:", error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
