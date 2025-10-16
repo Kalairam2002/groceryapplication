@@ -5,6 +5,7 @@ import SellerLayout from "./SellerLayout";
 import { image } from "./image";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useQuery } from "@tanstack/react-query";
 
 const SellerEditProduct = () => {
   const { id } = useParams();
@@ -14,7 +15,7 @@ const SellerEditProduct = () => {
   const [form, setForm] = useState({
     name: "",
     description: "",
-    SubCategory: "",
+    Category: "", // ✅ use same field as add product
     price: "",
     offerPrice: "",
     unit: "",
@@ -25,7 +26,16 @@ const SellerEditProduct = () => {
   const [loading, setLoading] = useState(true);
   const [isPending, setIsPending] = useState(false);
 
-  // Fetch product
+  // ✅ Fetch categories
+  const { data: categorydata, isLoading: isCategoryLoading, isError: isCategoryError } = useQuery({
+    queryKey: ["categorydatakey"],
+    queryFn: async () => {
+      const { data } = await axios.get(`${process.env.REACT_APP_API_URL}/api/admindata/getCategory`);
+      return data;
+    },
+  });
+
+  // ✅ Fetch product details
   useEffect(() => {
     const fetchProduct = async () => {
       try {
@@ -34,8 +44,8 @@ const SellerEditProduct = () => {
           const p = data.product;
           setForm({
             name: p.name,
-            description: p.description.join("\n"),
-            SubCategory: p.SubCategory,
+            description: Array.isArray(p.description) ? p.description.join("\n") : p.description,
+            Category: typeof p.Category === "object" ? p.Category._id : p.Category || "",
             price: p.price,
             offerPrice: p.offerPrice,
             unit: p.unit,
@@ -55,15 +65,20 @@ const SellerEditProduct = () => {
     fetchProduct();
   }, [id]);
 
-  // Handle input changes
+  // ✅ Handle input changes
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  // Update product
+  // ✅ Submit handler
   const onSubmitHandler = async (e) => {
     e.preventDefault();
     setIsPending(true);
     try {
-      const productData = { ...form, description: form.description.split("\n") };
+      const productData = {
+        ...form,
+        Category: form.Category.toString(), // ✅ ensure string
+        description: form.description.split("\n"),
+      };
+
       const formData = new FormData();
       formData.append("productData", JSON.stringify(productData));
 
@@ -217,29 +232,39 @@ const SellerEditProduct = () => {
             />
           </div>
 
-          {/* Category */}
+          {/* ✅ Dynamic Category Dropdown */}
           <select
             className="form-select mt-2"
-            name="SubCategory"
-            value={form.SubCategory}
+            name="Category"
+            value={form.Category}
             onChange={handleChange}
             required
           >
             <option value="" disabled>
               -- Select Category --
             </option>
-            <option value="Fresh Fruits">Fresh Fruits</option>
-            <option value="Fresh Vegetables">Fresh Vegetables</option>
-            <option value="Dairy Products">Dairy Products</option>
-            <option value="Snacks & Namkeen">Snacks & Namkeen</option>
-            <option value="Frozen Foods">Frozen Foods</option>
-            <option value="Beverages">Beverages</option>
-            <option value="Staples">Staples (Rice, Flour, Pulses)</option>
+
+            {isCategoryLoading && <option>Loading...</option>}
+
+            {!isCategoryLoading &&
+              categorydata &&
+              categorydata.length > 0 &&
+              categorydata.map((item) => (
+                <option key={item._id} value={item._id}>
+                  {item.name}
+                </option>
+              ))}
+
+            {isCategoryError && <option disabled>Error loading categories</option>}
           </select>
 
           {/* Buttons */}
           <div className="form-actions">
-            <button type="submit" className="btn btn-primary w-100 mt-4" disabled={isPending}>
+            <button
+              type="submit"
+              className="btn btn-primary w-100 mt-4"
+              disabled={isPending}
+            >
               {isPending ? "Updating..." : "Update Product"}
             </button>
             <button

@@ -6,12 +6,15 @@ import "react-toastify/dist/ReactToastify.css";
 const WishListSection = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ordersPerPage = 5; // ✅ Change this to control how many orders per page
 
-  // ✅ Get user details safely from localStorage after login
+  // ✅ Get user details from localStorage
   const storedUser = localStorage.getItem("user");
   const username = storedUser ? JSON.parse(storedUser).username : null;
   const token = localStorage.getItem("token");
 
+  // ✅ Fetch orders
   useEffect(() => {
     const fetchOrders = async () => {
       if (!username || !token) {
@@ -24,9 +27,7 @@ const WishListSection = () => {
         const res = await axios.get(
           `${process.env.REACT_APP_API_URL}/api/order/user/${username}`,
           {
-            headers: {
-              Authorization: `Bearer ${token}`, // ✅ JWT token for secure route (if required)
-            },
+            headers: { Authorization: `Bearer ${token}` },
           }
         );
 
@@ -46,6 +47,17 @@ const WishListSection = () => {
     fetchOrders();
   }, [username, token]);
 
+  // ✅ Pagination logic
+  const indexOfLastOrder = currentPage * ordersPerPage;
+  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
+  const currentOrders = orders.slice(indexOfFirstOrder, indexOfLastOrder);
+  const totalPages = Math.ceil(orders.length / ordersPerPage);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   if (loading) {
     return (
       <section className="py-80 text-center">
@@ -64,18 +76,30 @@ const WishListSection = () => {
                 <table className="table rounded-8 overflow-hidden">
                   <thead>
                     <tr className="border-bottom border-neutral-100 bg-light">
-                      <th className="h6 fw-bold px-40 py-20 border-end">Order ID</th>
-                      <th className="h6 fw-bold px-40 py-20 border-end">Product</th>
-                      <th className="h6 fw-bold px-40 py-20 border-end">Seller</th>
-                      <th className="h6 fw-bold px-40 py-20 border-end">Quantity</th>
-                      <th className="h6 fw-bold px-40 py-20 border-end">Price</th>
-                      <th className="h6 fw-bold px-40 py-20 border-end">Status</th>
+                      <th className="h6 fw-bold px-40 py-20 border-end">
+                        Order ID
+                      </th>
+                      <th className="h6 fw-bold px-40 py-20 border-end">
+                        Product
+                      </th>
+                      <th className="h6 fw-bold px-40 py-20 border-end">
+                        Seller
+                      </th>
+                      <th className="h6 fw-bold px-40 py-20 border-end">
+                        Quantity
+                      </th>
+                      <th className="h6 fw-bold px-40 py-20 border-end">
+                        Price
+                      </th>
+                      <th className="h6 fw-bold px-40 py-20 border-end">
+                        Status
+                      </th>
                       <th className="h6 fw-bold px-40 py-20">Date</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {orders.length > 0 ? (
-                      orders.map((order) =>
+                    {currentOrders.length > 0 ? (
+                      currentOrders.map((order) =>
                         order.products.map((product, index) => (
                           <tr
                             key={`${order._id}-${index}`}
@@ -100,7 +124,6 @@ const WishListSection = () => {
                               {product.quantity}
                             </td>
                             <td className="px-40 py-20 border-end">
-                              {/* ₹{(product.price * product.quantity).toFixed(2)} */}
                               ₹{order.amount}
                             </td>
                             <td className="px-40 py-20 border-end">
@@ -133,9 +156,55 @@ const WishListSection = () => {
                 </table>
               </div>
             </div>
+
+            {/* ✅ Pagination Controls */}
+            {totalPages > 1 && (
+              <nav className="d-flex justify-content-center mt-4">
+                <ul className="pagination">
+                  <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+                    <button
+                      className="page-link"
+                      onClick={() => handlePageChange(currentPage - 1)}
+                    >
+                      Previous
+                    </button>
+                  </li>
+
+                  {Array.from({ length: totalPages }, (_, i) => (
+                    <li
+                      key={i + 1}
+                      className={`page-item ${
+                        currentPage === i + 1 ? "active" : ""
+                      }`}
+                    >
+                      <button
+                        className="page-link"
+                        onClick={() => handlePageChange(i + 1)}
+                      >
+                        {i + 1}
+                      </button>
+                    </li>
+                  ))}
+
+                  <li
+                    className={`page-item ${
+                      currentPage === totalPages ? "disabled" : ""
+                    }`}
+                  >
+                    <button
+                      className="page-link"
+                      onClick={() => handlePageChange(currentPage + 1)}
+                    >
+                      Next
+                    </button>
+                  </li>
+                </ul>
+              </nav>
+            )}
           </div>
         </div>
       </div>
+
       <ToastContainer position="bottom-right" />
     </section>
   );

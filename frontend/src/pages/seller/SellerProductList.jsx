@@ -31,9 +31,25 @@ const SellerProductList = () => {
     }
   };
 
+  // ✅ Fetch products on mount
   useEffect(() => {
-    fetchProducts();
+    const getProducts = async () => {
+      await fetchProducts();
+    };
+    getProducts();
   }, []);
+
+  // ✅ Check for low stock after fetching
+  useEffect(() => {
+    if (!loading && products.length > 0) {
+      const lowStockItems = products.filter((p) => p.stock < 10);
+      if (lowStockItems.length > 0) {
+        toast.warning(`⚠️ ${lowStockItems.length} product(s) are low on stock!`, {
+          autoClose: 3000,
+        });
+      }
+    }
+  }, [loading, products]);
 
   const handleSaveEdit = async () => {
     try {
@@ -61,7 +77,9 @@ const SellerProductList = () => {
 
     try {
       setDeletingId(id);
-      const { data } = await axios.delete(`${process.env.REACT_APP_API_URL}/api/product/${id}`);
+      const { data } = await axios.delete(
+        `${process.env.REACT_APP_API_URL}/api/product/${id}`
+      );
       if (data.success) {
         toast.success("✅ Product deleted successfully!");
         setProducts(products.filter((p) => p._id !== id));
@@ -79,7 +97,10 @@ const SellerProductList = () => {
   // ✅ Pagination logic
   const indexOfLastProduct = currentPage * productsPerPage;
   const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
-  const currentProducts = products.slice(indexOfFirstProduct, indexOfLastProduct);
+  const currentProducts = products.slice(
+    indexOfFirstProduct,
+    indexOfLastProduct
+  );
   const totalPages = Math.ceil(products.length / productsPerPage);
 
   return (
@@ -106,15 +127,26 @@ const SellerProductList = () => {
                   <p className="product-price">
                     Price: ₹{product.price}{" "}
                     {product.offerPrice && (
-                      <span className="offer-price">Offer: ₹{product.offerPrice}</span>
+                      <span className="offer-price">
+                        Offer: ₹{product.offerPrice}
+                      </span>
                     )}
                   </p>
-                  <p className="product-stock">Stock: {product.stock}</p>
+
+                  {/* ✅ Low Stock Alert Visual */}
+                  <p className="product-stock">
+                    Stock: {product.stock}{" "}
+                    {product.stock < 10 && (
+                      <span className="low-stock-alert">⚠️ Low Stock</span>
+                    )}
+                  </p>
 
                   <div className="product-actions">
                     <button
                       className="btn btn-edit"
-                      onClick={() => navigate(`/seller/edit-product/${product._id}`)}
+                      onClick={() =>
+                        navigate(`/seller/edit-product/${product._id}`)
+                      }
                     >
                       Edit
                     </button>
@@ -204,7 +236,10 @@ const SellerProductList = () => {
             />
 
             <div className="modal-actions">
-              <button className="btn btn-secondary" onClick={() => setEditProduct(null)}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setEditProduct(null)}
+              >
                 Cancel
               </button>
               <button className="btn btn-primary" onClick={handleSaveEdit}>

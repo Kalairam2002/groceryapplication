@@ -146,7 +146,7 @@ export const updateProduct = async (req, res) => {
 
     if (!product) return res.status(404).json({ success: false, message: "Product not found" });
 
-    // ✅ Update fields
+    // Update fields
     product.name = data.name;
     product.description = data.description;
     product.price = data.price;
@@ -154,14 +154,12 @@ export const updateProduct = async (req, res) => {
     product.unit = data.unit;
     product.stock = data.stock;
     product.brand = data.brand;
-    product.SubCategory = data.SubCategory;
+    product.Category = data.Category; // ✅ FIXED
     product.barcode = data.barcode;
 
-    // ✅ Handle images: only append new files
+    // Handle images
     if (req.files && req.files.length > 0) {
-      // Optionally delete old images from server if needed
-      // product.image.forEach(imgPath => fs.unlinkSync(path.join(__dirname, "..", imgPath)));
-      product.image = req.files.map(f => f.path); // store paths of new images
+      product.image = req.files.map(f => f.path);
     }
 
     await product.save();
@@ -172,6 +170,7 @@ export const updateProduct = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
 
 export const getSingleProduct = async (req, res) => {
   try {

@@ -7,7 +7,6 @@ const CartSection = () => {
   // Load cart from localStorage
   useEffect(() => {
     const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
-    // Ensure each item has a unique id
     const cartWithId = storedCart.map(item => ({
       ...item,
       id: item.id || item._id || `${item.name}-${Math.random()}`,
@@ -32,12 +31,16 @@ const CartSection = () => {
     setCart(cart.filter(item => item.id !== id));
   };
 
-  // Calculate totals
-  const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const tax = 10; // example
+  // 🧮 Calculate totals using offerPrice (fallback to price)
+  const subtotal = cart.reduce(
+    (sum, item) =>
+      sum + (item.offerPrice || item.price) * item.quantity,
+    0
+  );
+  const tax = 10; // example fixed tax
   const total = subtotal + tax;
 
-  // Razorpay payment (unchanged)
+  // Razorpay setup
   const loadRazorpayScript = () => {
     return new Promise(resolve => {
       if (window.Razorpay) return resolve(true);
@@ -65,7 +68,7 @@ const CartSection = () => {
           amount: Math.round(total * 100),
           currency: "INR",
           products: cart,
-          userId: username,  // ✅ now dynamic
+          userId: username,
         }),
       });
 
@@ -129,7 +132,7 @@ const CartSection = () => {
                     <tr>
                       <th>Delete</th>
                       <th>Product</th>
-                      <th>Price</th>
+                      <th>Offer Price</th>
                       <th>Quantity</th>
                       <th>Subtotal</th>
                     </tr>
@@ -150,17 +153,25 @@ const CartSection = () => {
                             </button>
                           </td>
                           <td className="d-flex align-items-center gap-12">
-                            <img src={item.image} alt={item.name} style={{width: "50px", height: "50px", objectFit: "cover"}} />
+                            <img
+                              src={item.image}
+                              alt={item.name}
+                              style={{ width: "50px", height: "50px", objectFit: "cover" }}
+                            />
                             <span>{item.name}</span>
                           </td>
-                          <td>₹{item.price}</td>
+                          <td>
+                            ₹{(item.offerPrice || item.price).toFixed(2)}
+                          </td>
                           <td>
                             <QuantityControl
                               value={item.quantity}
                               onQuantityChange={(q) => handleQuantityChange(item.id, q)}
                             />
                           </td>
-                          <td>₹{(item.price * item.quantity).toFixed(2)}</td>
+                          <td>
+                            ₹{((item.offerPrice || item.price) * item.quantity).toFixed(2)}
+                          </td>
                         </tr>
                       ))
                     )}

@@ -9,7 +9,7 @@ const BarcodeScanner = () => {
 
   const totalQuantity = cart.reduce((acc, item) => acc + item.quantity, 0);
   const totalPrice = cart.reduce(
-    (acc, item) => acc + item.quantity * item.price,
+    (acc, item) => acc + item.quantity * (item.offerPrice || item.price),
     0
   );
 
@@ -98,7 +98,7 @@ const BarcodeScanner = () => {
                   <th>Image</th>
                   <th>Name</th>
                   <th>Brand</th>
-                  <th>Price</th>
+                  <th>Offer Price</th>
                   <th>Quantity</th>
                   <th>Subtotal</th>
                   <th>Action</th>
@@ -119,7 +119,7 @@ const BarcodeScanner = () => {
                     </td>
                     <td>{item.name}</td>
                     <td>{item.brand}</td>
-                    <td>₹{item.price}</td>
+                    <td>₹{(item.offerPrice || item.price).toFixed(2)}</td>
                     <td>
                       <div className="d-flex align-items-center">
                         <button
@@ -137,7 +137,9 @@ const BarcodeScanner = () => {
                         </button>
                       </div>
                     </td>
-                    <td>₹{item.price * item.quantity}</td>
+                    <td>
+                      ₹{((item.offerPrice || item.price) * item.quantity).toFixed(2)}
+                    </td>
                     <td>
                       <button
                         className="btn btn-sm btn-danger"
@@ -160,7 +162,7 @@ const BarcodeScanner = () => {
               <strong>Total Items:</strong> {totalQuantity}
             </div>
             <div>
-              <strong>Total Price:</strong> ₹{totalPrice}
+              <strong>Total Price:</strong> ₹{totalPrice.toFixed(2)}
             </div>
           </div>
         )}
