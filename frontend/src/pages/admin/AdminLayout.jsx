@@ -6,6 +6,7 @@ const AdminLayout = ({ children, page }) => {
   const sidebarLinks = [
     { name: "Dashboard", href: "#" },
     { name: "Add Category", href: "/addcategory" },
+    { name: "Category List", href: "/listCategory" },
     { name: "Product List", href: "/adminProductList" },
     { name: "Order List", href: "/adminOrderList" },
     { name: "Seller List", href: "/sellerList" },

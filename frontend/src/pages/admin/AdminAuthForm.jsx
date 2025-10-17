@@ -1,18 +1,19 @@
 import React, { useState } from "react";
 import "./AdminAuth.css";
 import { useNavigate } from "react-router-dom";
+
 const AdminAuthForm = () => {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState("login");
+  const [step, setStep] = useState("register"); // "register" or "otp"
   const [loginData, setLoginData] = useState({ email: "", password: "" });
   const [registerData, setRegisterData] = useState({
     name: "",
     email: "",
     password: "",
-    phonenumber: "",
-    gstnumber: "",
   });
+  const [otp, setOtp] = useState("");
   const [message, setMessage] = useState("");
 
   const handleInputChange = (e, type) => {
@@ -34,7 +35,7 @@ const AdminAuthForm = () => {
       const data = await res.json();
       setMessage(data.message || (data.success ? "Login Successful!" : ""));
       setLoginData({ email: "", password: "" });
-      if (data.success) navigate('/adminProductList');
+      if (data.success) navigate("/adminProductList");
     } catch {
       setMessage("Something went wrong!");
     }
@@ -51,15 +52,35 @@ const AdminAuthForm = () => {
         body: JSON.stringify(registerData),
       });
       const data = await res.json();
-      setMessage(data.message || (data.success ? "Registration Successful!" : ""));
-      setRegisterData({
-        name: "",
-        email: "",
-        password: "",
-      });
-      if (data.success) setActiveTab("login");
+      setMessage(data.message || "OTP sent to your email.");
+      if (data.success) {
+        setStep("otp"); // show OTP card
+      }
     } catch {
       setMessage("Something went wrong!");
+    }
+  };
+
+  const handleOtpSubmit = async (e) => {
+    e.preventDefault();
+    setMessage("");
+    try {
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/admin/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email: registerData.email, otp }),
+      });
+      const data = await res.json();
+      setMessage(data.message || "OTP verified.");
+      if (data.success) {
+        setRegisterData({ name: "", email: "", password: "" });
+        setOtp("");
+        setStep("register");
+        setActiveTab("login");
+      }
+    } catch {
+      setMessage("OTP verification failed!");
     }
   };
 
@@ -71,13 +92,21 @@ const AdminAuthForm = () => {
         <div className="auth-tabs">
           <button
             className={`auth-tab ${activeTab === "login" ? "active" : ""}`}
-            onClick={() => setActiveTab("login")}
+            onClick={() => {
+              setActiveTab("login");
+              setMessage("");
+              setStep("register");
+            }}
           >
             Login
           </button>
           <button
             className={`auth-tab ${activeTab === "register" ? "active" : ""}`}
-            onClick={() => setActiveTab("register")}
+            onClick={() => {
+              setActiveTab("register");
+              setMessage("");
+              setStep("register");
+            }}
           >
             Register
           </button>
@@ -107,7 +136,7 @@ const AdminAuthForm = () => {
           </form>
         )}
 
-        {activeTab === "register" && (
+        {activeTab === "register" && step === "register" && (
           <form className="auth-form" onSubmit={handleRegister}>
             <input
               type="text"
@@ -135,6 +164,21 @@ const AdminAuthForm = () => {
             />
             <button type="submit" className="auth-btn register-btn">
               Register
+            </button>
+          </form>
+        )}
+
+        {activeTab === "register" && step === "otp" && (
+          <form className="auth-form" onSubmit={handleOtpSubmit}>
+            <input
+              type="text"
+              placeholder="Enter OTP"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              required
+            />
+            <button type="submit" className="auth-btn">
+              Verify OTP
             </button>
           </form>
         )}
