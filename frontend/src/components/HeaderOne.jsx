@@ -150,7 +150,7 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
         </button>
         <div className='mobile-menu__inner'>
           <Link to='/' className='mobile-menu__logo'>
-            <img src='assets/images/logo/logo_grocery.jpeg' alt='Logo' />
+            <img src='public/assets/images/logo/logo_grocery.jpeg' alt='Logo' />
           </Link>
           <div className='mobile-menu__menu'>
             {/* Nav Menu Start */}
@@ -746,7 +746,7 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
             {/* Logo Start */}
             <div className='logo'>
               <Link to='/' className='link'>
-                <img src='assets/images/logo/logo.png' alt='Logo' width='80'/>
+                <img src='../../assets/images/logo/logo.png' alt='Logo' width='80'/>
               </Link>
             </div>
             <div classname='store'>
@@ -1295,12 +1295,12 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                           }
                         >
                           {" "}
-                          Shop
+                          products
                         </NavLink>
                       </li>
                       <li className='common-dropdown__item nav-submenu__item'>
                         <NavLink
-                          to='/product-details'
+                          to='/seller-details'
                           className={(navData) =>
                             navData.isActive
                               ? "common-dropdown__link nav-submenu__link hover-bg-neutral-100 activePage"
@@ -1308,7 +1308,7 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                           }
                         >
                           {" "}
-                          Shop Details
+                          Vendor
                         </NavLink>
                       </li>
                     </ul>

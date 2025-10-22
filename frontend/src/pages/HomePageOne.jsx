@@ -77,34 +77,34 @@ const HomePageOne = () => {
 
       {/* RecommendedOne */}
       <div ref={recommendedRef}>
-        <RecommendedOne />
+        {/* <RecommendedOne /> */}
       </div>
 
       {/* HotDealsOne */}
-      <HotDealsOne />
+      {/* <HotDealsOne /> */}
 
       {/* TopVendorsOne */}
       {/* <TopVendorsOne /> */}
 
       {/* BestSellsOne */}
-      <BestSellsOne />
+      {/* <BestSellsOne /> */}
 
       {/* DeliveryOne */}
-      <DeliveryOne />
+      {/* <DeliveryOne /> */}
 
       {/* OrganicOne */}
-      <OrganicOne />
+      {/* <OrganicOne /> */}
 
       {/* ShortProductOne */}
-      <ShortProductOne />
+      {/* <ShortProductOne /> */}
 
       {/* BrandOne */}
       <div ref={brandRef}>
-        <BrandOne />
+        {/* <BrandOne /> */}
       </div>
 
       {/* NewArrivalOne */}
-      <NewArrivalOne />
+      {/* <NewArrivalOne /> */}
 
       {/* ShippingOne */}
       <ShippingOne />

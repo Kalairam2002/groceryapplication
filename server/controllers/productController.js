@@ -185,3 +185,42 @@ export const getSingleProduct = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
+
+// ✅ Get all products for a specific seller
+export const getProductsBySeller = async (req, res) => {
+  try {
+    const { sellerId } = req.params;
+
+    if (!sellerId) {
+      return res.status(400).json({
+        success: false,
+        message: "Seller ID is required",
+      });
+    }
+
+    const products = await Product.find({ seller: sellerId })
+      .populate("seller", "name email") // only show name & email from Seller
+      .sort({ createdAt: -1 }); // latest first
+
+    if (!products.length) {
+      return res.status(200).json({
+        success: true,
+        message: "No products found for this seller",
+        data: [],
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Products fetched successfully",
+      data: products,
+    });
+  } catch (error) {
+    console.error("Error fetching seller products:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching seller products",
+    });
+  }
+};

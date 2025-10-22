@@ -9,6 +9,7 @@ import ColorInit from "../helper/ColorInit";
 import ScrollToTop from "react-scroll-to-top";
 import HeaderOne from "../components/HeaderOne";
 import { useParams } from "react-router-dom";
+import SellerProductList from "../components/SellerProductList";
 
 const ShopPage = () => {  
   const { id } = useParams();
@@ -31,7 +32,9 @@ const ShopPage = () => {
       <Breadcrumb title={"Products"} />
 
       {/* ShopSection */}
-      <ShopSection  id={id} />
+      {/* <ShopSection  id={id} /> */}
+
+      <SellerProductList />
 
       {/* ShippingTwo */}
       <ShippingTwo />

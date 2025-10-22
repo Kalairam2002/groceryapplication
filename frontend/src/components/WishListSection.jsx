@@ -7,9 +7,8 @@ const WishListSection = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const ordersPerPage = 5; // ✅ Change this to control how many orders per page
+  const ordersPerPage = 5;
 
-  // ✅ Get user details from localStorage
   const storedUser = localStorage.getItem("user");
   const username = storedUser ? JSON.parse(storedUser).username : null;
   const token = localStorage.getItem("token");
@@ -31,13 +30,24 @@ const WishListSection = () => {
           }
         );
 
-        if (res.data.success) {
-          setOrders(res.data.orders);
+        if (res.data.success && Array.isArray(res.data.orders)) {
+          // ✅ Group orders by order ID
+          const groupedOrders = res.data.orders.reduce((acc, order) => {
+            const existing = acc.find((o) => o._id === order._id);
+            if (existing) {
+              existing.products.push(...order.products);
+            } else {
+              acc.push({ ...order, products: [...order.products] });
+            }
+            return acc;
+          }, []);
+
+          setOrders(groupedOrders);
         } else {
           toast.info(res.data.message || "No orders found");
         }
-      } catch (error) {
-        console.error("Error fetching orders:", error);
+      } catch (err) {
+        console.error("Error fetching orders:", err);
         toast.error("Failed to load orders");
       } finally {
         setLoading(false);
@@ -53,15 +63,15 @@ const WishListSection = () => {
   const currentOrders = orders.slice(indexOfFirstOrder, indexOfLastOrder);
   const totalPages = Math.ceil(orders.length / ordersPerPage);
 
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   if (loading) {
     return (
       <section className="py-80 text-center">
-        <h4>Loading your orders...</h4>
+        <h5>Loading your orders...</h5>
       </section>
     );
   }
@@ -76,79 +86,83 @@ const WishListSection = () => {
                 <table className="table rounded-8 overflow-hidden">
                   <thead>
                     <tr className="border-bottom border-neutral-100 bg-light">
-                      <th className="h6 fw-bold px-40 py-20 border-end">
-                        Order ID
-                      </th>
-                      <th className="h6 fw-bold px-40 py-20 border-end">
-                        Product
-                      </th>
-                      <th className="h6 fw-bold px-40 py-20 border-end">
-                        Seller
-                      </th>
-                      <th className="h6 fw-bold px-40 py-20 border-end">
-                        Quantity
-                      </th>
-                      <th className="h6 fw-bold px-40 py-20 border-end">
-                        Price
-                      </th>
-                      <th className="h6 fw-bold px-40 py-20 border-end">
-                        Status
-                      </th>
-                      <th className="h6 fw-bold px-40 py-20">Date</th>
+                      <th className="px-40 py-20 border-end fw-bold">Order ID</th>
+                      <th className="px-40 py-20 border-end fw-bold">Products</th>
+                      <th className="px-40 py-20 border-end fw-bold">Sellers</th>
+                      <th className="px-40 py-20 border-end fw-bold">Quantities</th>
+                      {/* <th className="px-40 py-20 border-end fw-bold">Subtotals</th> */}
+                      <th className="px-40 py-20 border-end fw-bold">Cart Amount</th>
+                      <th className="px-40 py-20 border-end fw-bold">Status</th>
+                      <th className="px-40 py-20 fw-bold">Date</th>
                     </tr>
                   </thead>
                   <tbody>
                     {currentOrders.length > 0 ? (
-                      currentOrders.map((order) =>
-                        order.products.map((product, index) => (
-                          <tr
-                            key={`${order._id}-${index}`}
-                            className="border-bottom border-neutral-100"
-                          >
-                            <td className="px-40 py-20 text-sm fw-semibold text-gray-700">
-                              {order._id}
-                            </td>
-                            <td className="px-40 py-20 border-end">
-                              <div className="d-flex align-items-center gap-16">
-                                <div>
-                                  <div className="fw-semibold text-gray-900">
-                                    {product.name}
-                                  </div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-40 py-20 border-end text-gray-700">
-                              {product.seller?.name || "Unknown"}
-                            </td>
-                            <td className="px-40 py-20 border-end">
-                              {product.quantity}
-                            </td>
-                            <td className="px-40 py-20 border-end">
-                              ₹{order.amount}
-                            </td>
-                            <td className="px-40 py-20 border-end">
-                              <span
-                                className={`badge rounded-pill ${
-                                  order.status === "Pending"
-                                    ? "bg-warning text-dark"
-                                    : order.status === "Delivered"
-                                    ? "bg-success"
-                                    : "bg-secondary"
-                                }`}
-                              >
-                                {order.status}
-                              </span>
-                            </td>
-                            <td className="px-40 py-20 text-gray-600">
-                              {new Date(order.createdAt).toLocaleDateString()}
-                            </td>
-                          </tr>
-                        ))
-                      )
+                      currentOrders.map((order) => (
+                        <tr key={order._id} className="align-middle border-bottom border-neutral-100">
+                          {/* ✅ Order ID */}
+                          <td className="px-40 py-20 border-end fw-semibold">
+                            {order._id}
+                          </td>
+
+                          {/* ✅ Products */}
+                          <td className="px-40 py-20 border-end">
+                            {order.products.map((p, i) => (
+                              <div key={i}>{p.name}</div>
+                            ))}
+                          </td>
+
+                          {/* ✅ Sellers */}
+                          <td className="px-40 py-20 border-end">
+                            {order.products.map((p, i) => (
+                              <div key={i}>{p.seller?.name || "Unknown"}</div>
+                            ))}
+                          </td>
+
+                          {/* ✅ Quantities */}
+                          <td className="px-40 py-20 border-end">
+                            {order.products.map((p, i) => (
+                              <div key={i}>{p.quantity}</div>
+                            ))}
+                          </td>
+
+                          {/* ✅ Subtotals (for each product) */}
+                          {/* <td className="px-40 py-20 border-end">
+                            {order.products.map((p, i) => (
+                              <div key={i}>₹{(p.price * p.quantity).toFixed(2)}</div>
+                            ))}
+                          </td> */}
+
+                          {/* ✅ Cart Amount (order.amount, displayed once) */}
+                          <td className="px-40 py-20 border-end fw-bold text-gray-900">
+                            ₹{order.amount?.toFixed(2) || "0.00"}
+                          </td>
+
+                          {/* ✅ Status */}
+                          <td className="px-40 py-20 border-end">
+                            <span
+                              className={`badge rounded-pill ${
+                                order.status === "Pending"
+                                  ? "bg-warning text-dark"
+                                  : order.status === "Delivered"
+                                  ? "bg-success"
+                                  : "bg-secondary"
+                              }`}
+                            >
+                              {order.status}
+                            </span>
+                          </td>
+
+                          {/* ✅ Date */}
+                          <td className="px-40 py-20">
+                            {new Date(order.createdAt).toLocaleDateString()}
+                          </td>
+                        </tr>
+                      ))
                     ) : (
                       <tr>
-                        <td colSpan="7" className="text-center py-40">
-                          No orders found.
+                        <td colSpan="8" className="text-center py-40">
+                          No orders found
                         </td>
                       </tr>
                     )}
@@ -157,7 +171,7 @@ const WishListSection = () => {
               </div>
             </div>
 
-            {/* ✅ Pagination Controls */}
+            {/* ✅ Pagination */}
             {totalPages > 1 && (
               <nav className="d-flex justify-content-center mt-4">
                 <ul className="pagination">
@@ -173,9 +187,7 @@ const WishListSection = () => {
                   {Array.from({ length: totalPages }, (_, i) => (
                     <li
                       key={i + 1}
-                      className={`page-item ${
-                        currentPage === i + 1 ? "active" : ""
-                      }`}
+                      className={`page-item ${currentPage === i + 1 ? "active" : ""}`}
                     >
                       <button
                         className="page-link"

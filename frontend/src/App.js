@@ -35,6 +35,7 @@ import SellerList from "./pages/admin/SellerList";
 import ContactList from "./pages/admin/ContactList";
 import Addcategoryone from "./pages/admin/Addcategoryone";
 import AdminCategoryList from "./pages/admin/AdminCategoryList";
+import SellerProductPage from "./pages/SellerProductPage";
 
 function App() {
   return (
@@ -50,9 +51,10 @@ function App() {
         <Route exact path='/shop' element={<ShopPagecopy />} />
         <Route
           exact
-          path='/product-details'
+          path='/seller-details'
           element={<ProductDetailsPageOne />}
         />
+        <Route path="/seller/:id/products" element={<SellerProductPage />} />
         <Route
           exact
           path='/product-details-two'
