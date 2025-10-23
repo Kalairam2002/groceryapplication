@@ -1,6 +1,10 @@
 import nodemailer from "nodemailer";
 
 const sendEmail = async (to, subject, html) => {
+
+  console.log("EMAIL_PASS:", process.env.EMAIL_PASS);
+  console.log("VERIFIED_SENDER:", process.env.VERIFIED_SENDER);
+
   const transporter = nodemailer.createTransport({
     host: "smtp.sendgrid.net",      //  SendGrid SMTP host
     port: 587,                      //  TLS port

@@ -2,6 +2,9 @@ import Razorpay from "razorpay";
 import crypto from "crypto";
 import Order from "../models/orderModel.js";
 import Product from "../models/Product.js"; 
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,

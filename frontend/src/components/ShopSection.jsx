@@ -1,13 +1,18 @@
 import React, { useEffect, useState } from "react";
 import ReactSlider from 'react-slider'
 
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
 
 
-const ShopSection = ({id}) => {
+const ShopSection = ({id, searchProducts}) => {
+
+    const location = useLocation();
+    const [searchFiltered, setSearchFiltered] = useState([]);
+
+    
 
     let [grid, setGrid] = useState(false)
 
@@ -37,6 +42,25 @@ const ShopSection = ({id}) => {
     const navigate = useNavigate();
       const [products, setProducts] = useState([]);
       const [loading, setLoading] = useState(true);
+
+      //   Search Products 
+    useEffect(() => {
+    if (!products || products.length === 0) return; // ✅ condition goes inside the effect
+
+    const params = new URLSearchParams(location.search);
+    const searchQuery = params.get("product")?.toLowerCase() || "";
+
+    if (searchQuery) {
+        const filtered = products.filter((p) =>
+        p.name?.toLowerCase().includes(searchQuery)
+        );
+        setSearchFiltered(filtered);
+    } else {
+        setSearchFiltered(products);
+    }
+    }, [location.search, products]);
+
+    // Search Products 
 
         const user = localStorage.getItem("user")
           ? JSON.parse(localStorage.getItem("user"))
@@ -99,6 +123,8 @@ const ShopSection = ({id}) => {
       </div>
     );
   }
+
+ 
 
 
 
@@ -237,277 +263,6 @@ const ShopSection = ({id}) => {
                                         </Link>
                                     </li> */}
                                 </ul>
-                            </div>
-                            <div className="shop-sidebar__box border border-gray-100 rounded-8 p-32 mb-32">
-                                <h6 className="text-xl border-bottom border-gray-100 pb-24 mb-24">
-                                    Filter by Price
-                                </h6>
-                                <div className="custom--range">
-                                    <ReactSlider
-                                        className="horizontal-slider"
-                                        thumbClassName="example-thumb"
-                                        trackClassName="example-track"
-                                        defaultValue={[0, 100]}
-                                        ariaLabel={['Lower thumb', 'Upper thumb']}
-                                        ariaValuetext={state => `Thumb value ${state.valueNow}`}
-                                        renderThumb={(props, state) => {
-                                            const { key, ...restProps } = props;
-                                            return <div {...restProps} key={state.index}>{state.valueNow}</div>;
-                                        }}
-                                        pearling
-                                        minDistance={10}
-                                    />
-
-                                    <br />
-                                    <br />
-                                    <div className="flex-between flex-wrap-reverse gap-8 mt-24 ">
-                                        <button type="button" className="btn btn-main h-40 flex-align">
-                                            Filter{" "}
-                                        </button>
-
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="shop-sidebar__box border border-gray-100 rounded-8 p-32 mb-32">
-                                <h6 className="text-xl border-bottom border-gray-100 pb-24 mb-24">
-                                    Filter by Rating
-                                </h6>
-                                <div className="flex-align gap-8 position-relative mb-20">
-                                    <label
-                                        className="position-absolute w-100 h-100 cursor-pointer"
-                                        htmlFor="rating5"
-                                    >
-                                        {" "}
-                                    </label>
-                                    <div className="common-check common-radio mb-0">
-                                        <input
-                                            className="form-check-input"
-                                            type="radio"
-                                            name="flexRadioDefault"
-                                            id="rating5"
-                                        />
-                                    </div>
-                                    <div
-                                        className="progress w-100 bg-gray-100 rounded-pill h-8"
-                                        role="progressbar"
-                                        aria-label="Basic example"
-                                        aria-valuenow={70}
-                                        aria-valuemin={0}
-                                        aria-valuemax={100}
-                                    >
-                                        <div
-                                            className="progress-bar bg-main-600 rounded-pill"
-                                            style={{ width: "70%" }}
-                                        />
-                                    </div>
-                                    <div className="flex-align gap-4">
-                                        <span className="text-xs fw-medium text-warning-600 d-flex">
-                                            <i className="ph-fill ph-star" />
-                                        </span>
-                                        <span className="text-xs fw-medium text-warning-600 d-flex">
-                                            <i className="ph-fill ph-star" />
-                                        </span>
-                                        <span className="text-xs fw-medium text-warning-600 d-flex">
-                                            <i className="ph-fill ph-star" />
-                                        </span>
-                                        <span className="text-xs fw-medium text-warning-600 d-flex">
-                                            <i className="ph-fill ph-star" />
-                                        </span>
-                                        <span className="text-xs fw-medium text-warning-600 d-flex">
-                                            <i className="ph-fill ph-star" />
-                                        </span>
-                                    </div>
-                                    <span className="text-gray-900 flex-shrink-0">124</span>
-                                </div>
-                                <div className="flex-align gap-8 position-relative mb-20">
-                                    <label
-                                        className="position-absolute w-100 h-100 cursor-pointer"
-                                        htmlFor="rating4"
-                                    >
-                                        {" "}
-                                    </label>
-                                    <div className="common-check common-radio mb-0">
-                                        <input
-                                            className="form-check-input"
-                                            type="radio"
-                                            name="flexRadioDefault"
-                                            id="rating4"
-                                        />
-                                    </div>
-                                    <div
-                                        className="progress w-100 bg-gray-100 rounded-pill h-8"
-                                        role="progressbar"
-                                        aria-label="Basic example"
-                                        aria-valuenow={50}
-                                        aria-valuemin={0}
-                                        aria-valuemax={100}
-                                    >
-                                        <div
-                                            className="progress-bar bg-main-600 rounded-pill"
-                                            style={{ width: "50%" }}
-                                        />
-                                    </div>
-                                    <div className="flex-align gap-4">
-                                        <span className="text-xs fw-medium text-warning-600 d-flex">
-                                            <i className="ph-fill ph-star" />
-                                        </span>
-                                        <span className="text-xs fw-medium text-warning-600 d-flex">
-                                            <i className="ph-fill ph-star" />
-                                        </span>
-                                        <span className="text-xs fw-medium text-warning-600 d-flex">
-                                            <i className="ph-fill ph-star" />
-                                        </span>
-                                        <span className="text-xs fw-medium text-warning-600 d-flex">
-                                            <i className="ph-fill ph-star" />
-                                        </span>
-                                        <span className="text-xs fw-medium text-gray-400 d-flex">
-                                            <i className="ph-fill ph-star" />
-                                        </span>
-                                    </div>
-                                    <span className="text-gray-900 flex-shrink-0">52</span>
-                                </div>
-                                <div className="flex-align gap-8 position-relative mb-20">
-                                    <label
-                                        className="position-absolute w-100 h-100 cursor-pointer"
-                                        htmlFor="rating3"
-                                    >
-                                        {" "}
-                                    </label>
-                                    <div className="common-check common-radio mb-0">
-                                        <input
-                                            className="form-check-input"
-                                            type="radio"
-                                            name="flexRadioDefault"
-                                            id="rating3"
-                                        />
-                                    </div>
-                                    <div
-                                        className="progress w-100 bg-gray-100 rounded-pill h-8"
-                                        role="progressbar"
-                                        aria-label="Basic example"
-                                        aria-valuenow={35}
-                                        aria-valuemin={0}
-                                        aria-valuemax={100}
-                                    >
-                                        <div
-                                            className="progress-bar bg-main-600 rounded-pill"
-                                            style={{ width: "35%" }}
-                                        />
-                                    </div>
-                                    <div className="flex-align gap-4">
-                                        <span className="text-xs fw-medium text-warning-600 d-flex">
-                                            <i className="ph-fill ph-star" />
-                                        </span>
-                                        <span className="text-xs fw-medium text-warning-600 d-flex">
-                                            <i className="ph-fill ph-star" />
-                                        </span>
-                                        <span className="text-xs fw-medium text-warning-600 d-flex">
-                                            <i className="ph-fill ph-star" />
-                                        </span>
-                                        <span className="text-xs fw-medium text-gray-400 d-flex">
-                                            <i className="ph-fill ph-star" />
-                                        </span>
-                                        <span className="text-xs fw-medium text-gray-400 d-flex">
-                                            <i className="ph-fill ph-star" />
-                                        </span>
-                                    </div>
-                                    <span className="text-gray-900 flex-shrink-0">12</span>
-                                </div>
-                                <div className="flex-align gap-8 position-relative mb-20">
-                                    <label
-                                        className="position-absolute w-100 h-100 cursor-pointer"
-                                        htmlFor="rating2"
-                                    >
-                                        {" "}
-                                    </label>
-                                    <div className="common-check common-radio mb-0">
-                                        <input
-                                            className="form-check-input"
-                                            type="radio"
-                                            name="flexRadioDefault"
-                                            id="rating2"
-                                        />
-                                    </div>
-                                    <div
-                                        className="progress w-100 bg-gray-100 rounded-pill h-8"
-                                        role="progressbar"
-                                        aria-label="Basic example"
-                                        aria-valuenow={20}
-                                        aria-valuemin={0}
-                                        aria-valuemax={100}
-                                    >
-                                        <div
-                                            className="progress-bar bg-main-600 rounded-pill"
-                                            style={{ width: "20%" }}
-                                        />
-                                    </div>
-                                    <div className="flex-align gap-4">
-                                        <span className="text-xs fw-medium text-warning-600 d-flex">
-                                            <i className="ph-fill ph-star" />
-                                        </span>
-                                        <span className="text-xs fw-medium text-warning-600 d-flex">
-                                            <i className="ph-fill ph-star" />
-                                        </span>
-                                        <span className="text-xs fw-medium text-gray-400 d-flex">
-                                            <i className="ph-fill ph-star" />
-                                        </span>
-                                        <span className="text-xs fw-medium text-gray-400 d-flex">
-                                            <i className="ph-fill ph-star" />
-                                        </span>
-                                        <span className="text-xs fw-medium text-gray-400 d-flex">
-                                            <i className="ph-fill ph-star" />
-                                        </span>
-                                    </div>
-                                    <span className="text-gray-900 flex-shrink-0">5</span>
-                                </div>
-                                <div className="flex-align gap-8 position-relative mb-0">
-                                    <label
-                                        className="position-absolute w-100 h-100 cursor-pointer"
-                                        htmlFor="rating1"
-                                    >
-                                        {" "}
-                                    </label>
-                                    <div className="common-check common-radio mb-0">
-                                        <input
-                                            className="form-check-input"
-                                            type="radio"
-                                            name="flexRadioDefault"
-                                            id="rating1"
-                                        />
-                                    </div>
-                                    <div
-                                        className="progress w-100 bg-gray-100 rounded-pill h-8"
-                                        role="progressbar"
-                                        aria-label="Basic example"
-                                        aria-valuenow={5}
-                                        aria-valuemin={0}
-                                        aria-valuemax={100}
-                                    >
-                                        <div
-                                            className="progress-bar bg-main-600 rounded-pill"
-                                            style={{ width: "5%" }}
-                                        />
-                                    </div>
-                                    <div className="flex-align gap-4">
-                                        <span className="text-xs fw-medium text-warning-600 d-flex">
-                                            <i className="ph-fill ph-star" />
-                                        </span>
-                                        <span className="text-xs fw-medium text-gray-400 d-flex">
-                                            <i className="ph-fill ph-star" />
-                                        </span>
-                                        <span className="text-xs fw-medium text-gray-400 d-flex">
-                                            <i className="ph-fill ph-star" />
-                                        </span>
-                                        <span className="text-xs fw-medium text-gray-400 d-flex">
-                                            <i className="ph-fill ph-star" />
-                                        </span>
-                                        <span className="text-xs fw-medium text-gray-400 d-flex">
-                                            <i className="ph-fill ph-star" />
-                                        </span>
-                                    </div>
-                                    <span className="text-gray-900 flex-shrink-0">2</span>
-                                </div>
                             </div>
                             {/* <div className="shop-sidebar__box border border-gray-100 rounded-8 p-32 mb-32">
                                 <h6 className="text-xl border-bottom border-gray-100 pb-24 mb-24">
@@ -790,11 +545,11 @@ const ShopSection = ({id}) => {
                                                 <div className="product-card__price mb-16">
                                                   {product.offerPrice && product.offerPrice < product.price && (
                                                     <span className="text-gray-400 text-md fw-semibold text-decoration-line-through">
-                                                      ${product.price}
+                                                      ₹{product.price}
                                                     </span>
                                                   )}
                                                   <span className="text-heading text-md fw-semibold ms-2">
-                                                    ${product.offerPrice || product.price}{" "}
+                                                    ₹{product.offerPrice || product.price}{" "}
                                                     <span className="text-gray-500 fw-normal">/{product.unit}</span>
                                                   </span>
                                                 </div>
@@ -849,8 +604,15 @@ const ShopSection = ({id}) => {
                         ):(
                                  <div className={`list-grid-wrapper ${grid && "list-view"}`}>    
                                          <div className="row gy-4 g-12">
-                                      { products && products.length > 0 ? (
-                                        products.map((product) => (
+                                        {(searchFiltered && searchFiltered.length > 0
+                                            ? searchFiltered
+                                            : products
+                                            ).length > 0 ? (
+                                            (searchFiltered && searchFiltered.length > 0
+                                                ? searchFiltered
+                                                : products
+                                            ).map((product) => (
+
                                           <div key={product._id} className="col-xxl-2 col-lg-3 col-sm-4 col-6">
                                             <div className="product-card px-8 py-16 border border-gray-100 hover-border-main-600 rounded-16 position-relative transition-2">
                                               
@@ -877,11 +639,11 @@ const ShopSection = ({id}) => {
                                                 <div className="product-card__price mb-16">
                                                   {product.offerPrice && product.offerPrice < product.price && (
                                                     <span className="text-gray-400 text-md fw-semibold text-decoration-line-through">
-                                                      ${product.price}
+                                                      ₹{product.price}
                                                     </span>
                                                   )}
                                                   <span className="text-heading text-md fw-semibold ms-2">
-                                                    ${product.offerPrice || product.price}{" "}
+                                                    ₹{product.offerPrice || product.price}{" "}
                                                     <span className="text-gray-500 fw-normal">/{product.unit}</span>
                                                   </span>
                                                 </div>
