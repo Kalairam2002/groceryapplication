@@ -257,7 +257,7 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
           <Link to='/' className='mobile-menu__logo'>
             <img src='public/assets/images/logo/logo_grocery.jpeg' alt='Logo' />
           </Link>
-          <div className='mobile-menu__menu'>
+          <div className='mobile-menu__menu' >
             {/* Nav Menu Start */}
             <ul className='nav-menu flex-align nav-menu--mobile'>
               {/* Home Menu */}
@@ -925,7 +925,7 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
         }`}
       >
         <div className='container container-lg'>
-          <nav className='header-inner d-flex justify-content-between gap-8' style={{backgroundColor:'#F9F9F9'}}>
+          <nav className='header-inner d-flex justify-content-between gap-8' style={{backgroundColor:'#2e7d32'}}>
             <div className='flex-align menu-category-wrapper'>
               {/* Category Dropdown Start */}
               <div className="category on-hover-item position-relative" ref={dropdownRef}>
@@ -938,8 +938,8 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                   <span className="icon text-2xl d-xs-flex d-none">
                     <i className="ph ph-dots-nine" />
                   </span>
-                  <span className="d-sm-flex d-none">All Categories</span>
-                  <span className="arrow-icon text-xl d-flex">
+                  <span className="d-sm-flex d-none"style={{ color: '#ffffff' }}>All Categories</span>
+                  <span className="arrow-icon text-xl d-flex ">
                     <i className={`ph ${activeCategory ? "ph-caret-up" : "ph-caret-down"}`} />
                   </span>
                 </button>
@@ -987,10 +987,10 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                 {/* Nav Menu Start */}
                 <ul className='nav-menu flex-align '>
                   <li className='on-hover-item nav-menu__item has-submenu '>
-                    <Link to='#' className='nav-menu__link'>
+                    <Link to='#' className='nav-menu__link'style={{ color: '#ffffff' }}>
                       Home
                     </Link>
-                    <ul className='on-hover-dropdown common-dropdown nav-submenu scroll-sm'>
+                    <ul className='on-hover-dropdown common-dropdown nav-submenu scroll-sm'style={{ color: '#ffffff' }}>
                       <li className='common-dropdown__item nav-submenu__item'>
                         <NavLink
                           to='/'
@@ -1006,10 +1006,10 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                     </ul>
                   </li>
                   <li className='on-hover-item nav-menu__item has-submenu'>
-                    <Link to='#' className='nav-menu__link'>
+                    <Link to='#' className='nav-menu__link'style={{ color: '#ffffff' }}>
                       Shop
                     </Link>
-                    <ul className='on-hover-dropdown common-dropdown nav-submenu scroll-sm'>
+                    <ul className='on-hover-dropdown common-dropdown nav-submenu scroll-sm'style={{ color: '#ffffff' }}>
                       <li className='common-dropdown__item nav-submenu__item'>
                         <NavLink
                           to='/shop'
@@ -1042,7 +1042,7 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                     <span className='badge-notification bg-warning-600 text-white text-sm py-2 px-8 rounded-4'>
                       New
                     </span>
-                    <Link to='#' className='nav-menu__link'>
+                    <Link to='#' className='nav-menu__link' style={{ color: '#ffffff' }}>
                       Pages
                     </Link>
                     <ul className='on-hover-dropdown common-dropdown nav-submenu scroll-sm'>
@@ -1113,7 +1113,7 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                     </ul>
                   </li>
                   <li className='on-hover-item nav-menu__item has-submenu'>
-                    <Link to='#' className='nav-menu__link'>
+                    <Link to='#' className='nav-menu__link' style={{ color: '#ffffff' }}>
                       Blog
                     </Link>
                     <ul className='on-hover-dropdown common-dropdown nav-submenu scroll-sm'>
@@ -1153,7 +1153,7 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                           ? "nav-menu__link activePage"
                           : "nav-menu__link"
                       }
-                    >
+                    style={{ color: '#ffffff' }}>
                       Contact Us
                     </NavLink>
                   </li>

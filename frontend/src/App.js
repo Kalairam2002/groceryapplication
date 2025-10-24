@@ -36,6 +36,10 @@ import ContactList from "./pages/admin/ContactList";
 import Addcategoryone from "./pages/admin/Addcategoryone";
 import AdminCategoryList from "./pages/admin/AdminCategoryList";
 import SellerProductPage from "./pages/SellerProductPage";
+import AddBrand from './pages/admin/AddBrand'
+import BrandList from "./pages/admin/BrandList";
+import AddAdminSubCategory from './pages/admin/AddAdminSubcategory'
+import AdminSubCategoryList from './pages/admin/AdminSubCategoryList'
 
 function App() {
   return (
@@ -92,6 +96,10 @@ function App() {
         <Route exact path='/contactList' element={<AdminProtectedRoute><ContactList /></AdminProtectedRoute>} />
         <Route exact path='/addcategory' element={<AdminProtectedRoute><Addcategoryone /></AdminProtectedRoute>} />
         <Route exact path='/listCategory' element={<AdminProtectedRoute><AdminCategoryList /></AdminProtectedRoute>} />
+        <Route exact path='/addBrand' element={<AdminProtectedRoute><AddBrand /></AdminProtectedRoute>} />
+        <Route exact path='/listBrand' element={<AdminProtectedRoute><BrandList /></AdminProtectedRoute>} />
+        <Route exact path='/addSubCategory' element={<AdminProtectedRoute><AddAdminSubCategory /></AdminProtectedRoute>} />
+        <Route exact path='/listSubCategory' element={<AdminProtectedRoute><AdminSubCategoryList /></AdminProtectedRoute>} />
        
        
       </Routes>

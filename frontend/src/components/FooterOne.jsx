@@ -65,71 +65,37 @@ const FooterOne = () => {
                         <h6 className="footer-item__title">Details</h6>
                         <ul className="footer-menu">
                             <li className="mb-16">
-                                <Link to="/shop" className="text-gray-600 hover-text-main-600">
+                                <Link to="/seller" className="text-gray-600 hover-text-main-600">
                                     Become a Vendor
                                 </Link>
                             </li>
-                            <li className="mb-16">
-                                <Link to="/shop" className="text-gray-600 hover-text-main-600">
-                                    Affiliate Program
-                                </Link>
-                            </li>
+                           
                             <li className="mb-16">
                                 <Link to="/shop" className="text-gray-600 hover-text-main-600">
                                     Privacy Policy
                                 </Link>
                             </li>
                             <li className="mb-16">
-                                <Link to="/shop" className="text-gray-600 hover-text-main-600">
+                                <Link to="/seller-details" className="text-gray-600 hover-text-main-600">
                                     Our Suppliers
                                 </Link>
                             </li>
-                            <li className="mb-16">
-                                <Link to="/shop" className="text-gray-600 hover-text-main-600">
-                                    Extended Plan
-                                </Link>
-                            </li>
-                            <li className="">
-                                <Link to="/shop" className="text-gray-600 hover-text-main-600">
-                                    Community
-                                </Link>
-                            </li>
+                            
+                            
                         </ul>
                     </div>
                     <div className="footer-item">
                         <h6 className="footer-item__title">Customer Support</h6>
                         <ul className="footer-menu">
                             <li className="mb-16">
-                                <Link to="/shop" className="text-gray-600 hover-text-main-600">
+                                <Link to="/contact" className="text-gray-600 hover-text-main-600">
                                     Help Center
                                 </Link>
                             </li>
-                            <li className="mb-16">
-                                <Link
-                                    to="/contact"
-                                    className="text-gray-600 hover-text-main-600"
-                                >
-                                    Contact Us
-                                </Link>
-                            </li>
-                            <li className="mb-16">
-                                <Link to="/shop" className="text-gray-600 hover-text-main-600">
-                                    Report Abuse
-                                </Link>
-                            </li>
-                            <li className="mb-16">
-                                <Link to="/shop" className="text-gray-600 hover-text-main-600">
-                                    Submit and Dispute
-                                </Link>
-                            </li>
+                            
                             <li className="mb-16">
                                 <Link to="/shop" className="text-gray-600 hover-text-main-600">
                                     Policies &amp; Rules
-                                </Link>
-                            </li>
-                            <li className="">
-                                <Link to="/shop" className="text-gray-600 hover-text-main-600">
-                                    Online Shopping
                                 </Link>
                             </li>
                         </ul>
@@ -138,28 +104,23 @@ const FooterOne = () => {
                         <h6 className="footer-item__title">My Account</h6>
                         <ul className="footer-menu">
                             <li className="mb-16">
-                                <Link to="/shop" className="text-gray-600 hover-text-main-600">
+                                <Link to="/account" className="text-gray-600 hover-text-main-600">
                                     My Account
                                 </Link>
                             </li>
                             <li className="mb-16">
-                                <Link to="/shop" className="text-gray-600 hover-text-main-600">
+                                <Link to="/wishlist" className="text-gray-600 hover-text-main-600">
                                     Order History
                                 </Link>
                             </li>
                             <li className="mb-16">
-                                <Link to="/shop" className="text-gray-600 hover-text-main-600">
-                                    Shoping Cart
+                                <Link to="/cart" className="text-gray-600 hover-text-main-600">
+                                    Shopping Cart
                                 </Link>
                             </li>
                             <li className="mb-16">
                                 <Link to="/shop" className="text-gray-600 hover-text-main-600">
                                     Compare
-                                </Link>
-                            </li>
-                            <li className="mb-16">
-                                <Link to="/shop" className="text-gray-600 hover-text-main-600">
-                                    Help Ticket
                                 </Link>
                             </li>
                             {/* <li className="">
@@ -169,41 +130,7 @@ const FooterOne = () => {
                             </li> */}
                         </ul>
                     </div>
-                    <div className="footer-item">
-                        <h6 className="footer-item__title">Daily Groceries</h6>
-                        <ul className="footer-menu">
-                            <li className="mb-16">
-                                <Link to="/shop" className="text-gray-600 hover-text-main-600">
-                                    Dairy &amp; Eggs
-                                </Link>
-                            </li>
-                            <li className="mb-16">
-                                <Link to="/shop" className="text-gray-600 hover-text-main-600">
-                                    Meat &amp; Seafood
-                                </Link>
-                            </li>
-                            <li className="mb-16">
-                                <Link to="/shop" className="text-gray-600 hover-text-main-600">
-                                    Breakfast Food
-                                </Link>
-                            </li>
-                            <li className="mb-16">
-                                <Link to="/shop" className="text-gray-600 hover-text-main-600">
-                                    Household Supplies
-                                </Link>
-                            </li>
-                            <li className="mb-16">
-                                <Link to="/shop" className="text-gray-600 hover-text-main-600">
-                                    Bread &amp; Bakery
-                                </Link>
-                            </li>
-                            <li className="">
-                                <Link to="/shop" className="text-gray-600 hover-text-main-600">
-                                    Pantry Staples
-                                </Link>
-                            </li>
-                        </ul>
-                    </div>
+                   
                     {/* <div className="footer-item">
                         <h6 className="">Shop on The Go</h6>
                         <p className="mb-16">Marketpro App is available. Get it now</p>

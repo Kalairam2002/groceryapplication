@@ -13,6 +13,7 @@ import addressRouter from './routes/addressRoute.js'
 import orderRouter from './routes/orderRoute.js';
 import adminRouter from './routes/adminRoutes.js';
 import contactRouter from './routes/contactRoute.js';
+import brandRouter from './routes/admin/Brandroute.js'
 
 import admin from './models/Admin.js';
 import adminRouterData from './routes/admin/CategoryRoute.js'
@@ -33,7 +34,7 @@ await connectCloudinary();
 const allowedOrigins = [
   "http://localhost:3000",           // local React dev
   "http://localhost:4000",  
-  "http://31.97.237.98:5000" ,"http://onlinestore.staging-rdegi.com"// replace with actual Render frontend URL
+  "http://31.97.237.98:5000" ,"https://onlinestore.staging-rdegi.com"// replace with actual Render frontend URL
 ];
 
 // ✅ Define corsOptions BEFORE using it
@@ -70,6 +71,7 @@ app.use('/api/order', orderRouter);
 app.use('/api/contact', contactRouter);
 // Routes
 app.use("/api/payment", paymentRoutes);
+app.use("/api/brand", brandRouter);
 
 if(process.env.NODE_ENV === "Production"){
     console.log("Production mode")
