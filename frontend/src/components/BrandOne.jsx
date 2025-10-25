@@ -1,8 +1,21 @@
 import React from 'react'
 import { Link } from 'react-router-dom';
 import Slider from 'react-slick';
-
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
 const BrandOne = () => {
+
+    const { data:brandsData, isLoading, isError } = useQuery({
+        queryKey: ['brands'],
+        queryFn: async () => {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/brand`);
+            return response.data;
+            
+            
+        },
+        
+    });
+    
     function SampleNextArrow(props) {
         const { className, onClick } = props;
         return (
@@ -77,6 +90,9 @@ const BrandOne = () => {
             },
         ],
     };
+
+
+
     return (
         <div className="brand py-80">
             <div className="container container-lg">
@@ -86,20 +102,28 @@ const BrandOne = () => {
                             <h5 className="mb-0">Shop by Brands</h5>
                             <div className="flex-align mr-point gap-16">
                                 <Link
-                                    to="/shop"
+                                    to="/Brand"
                                     className="text-sm fw-medium text-gray-700 hover-text-main-600 hover-text-decoration-underline"
                                 >
-                                    View All Deals
+                                    View All Brands
                                 </Link>
                             </div>
                         </div>
                     </div>
                     <div className="brand-slider arrow-style-two">
                         <Slider {...settings}>
-                            <div className="brand-item">
+                            {!isLoading && brandsData && brandsData.brands.map((brand) => (
+                                <div className="brand-item" key={brand._id}>
+                                    <Link to={`/brandlist/${brand._id}`}>
+                                        <img src={brand.image} alt={brand.name} />
+                                    </Link>
+                                </div>
+                            )) }
+
+                            {/* <div className="brand-item">
                                 <img src="assets/images/thumbs/27.jpg" alt="" />
-                            </div>
-                            <div className="brand-item">
+                            </div> */}
+                            {/* <div className="brand-item">
                                 <img src="assets/images/thumbs/28.jpg" alt="" />
                             </div>
                             <div className="brand-item">
@@ -122,7 +146,7 @@ const BrandOne = () => {
                             </div>
                             <div className="brand-item">
                                 <img src="assets/images/thumbs/26.jpg" alt="" />
-                            </div>
+                            </div> */}
                         </Slider>
                     </div>
                 </div>

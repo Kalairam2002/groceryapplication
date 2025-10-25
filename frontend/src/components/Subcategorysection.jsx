@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
 
-const ShopSection = ({ id }) => {
+const Subcategorysection = ({ id }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -55,13 +55,13 @@ const ShopSection = ({ id }) => {
   }, [location.search, products]);
 
   // Fetch categories for sidebar
-  const { data: categories = [], isLoading: isCategoryLoading } = useQuery({
-  queryKey: ["categories"],
+  const { data: subcategoriesdata , isLoading: isCategoryLoading } = useQuery({
+  queryKey: ["subcategoriesdatakey"],
   queryFn: async () => {
     const res = await axios.get(
-      `${process.env.REACT_APP_API_URL}/api/admindata/category`
+      `${process.env.REACT_APP_API_URL}/api/subcategory`
     );
-    return res.data.categories || []; // <-- important change
+    return res.data || []; // <-- important change
   },
 });
 
@@ -103,7 +103,7 @@ const ShopSection = ({ id }) => {
 
   // Filtered products for display
   const displayedProducts = id
-    ? products.filter((p) => String(p.category) === String(id))
+    ? products.filter((p) => String(p.subcategory) === String(id))
     : searchFiltered.length > 0
     ? searchFiltered
     : products;
@@ -125,23 +125,23 @@ const ShopSection = ({ id }) => {
               </button>
               <div className="shop-sidebar__box border border-gray-100 rounded-8 p-32 mb-32">
                 <h6 className="text-xl border-bottom border-gray-100 pb-24 mb-24">
-                  Product Category
+                  Product Sub Category
                 </h6>
                 <ul className="max-h-540 overflow-y-auto scroll-sm">
-                  {isCategoryLoading && <li>Loading categories...</li>}
-                  {!isCategoryLoading && categories.length === 0 && <li>No categories found</li>}
+                  {isCategoryLoading && <li>Loading Sub categories...</li>}
+                  {!isCategoryLoading && subcategoriesdata.length < 0  && <li>No Sub categories found</li>}
                   {!isCategoryLoading &&
-                    categories.length > 0 &&
-                    categories.map((category) => (
-                      <li className="mb-24" key={category._id}>
+                    subcategoriesdata.length > 0 &&
+                    subcategoriesdata.map((subcategoriesdata) => (
+                      <li className="mb-24" key={subcategoriesdata._id}>
                         <Link
-                          to={`/shop/${category._id}`}
+                          to={`/subcategory/${subcategoriesdata._id}`}
                           className="text-gray-900 hover-text-main-600"
                         >
-                          {category.name} (
+                          {subcategoriesdata.name} (
                           {
                             products.filter(
-                              (product) => String(product.category) === String(category._id)
+                              (product) => String(product.subcategory) === String(subcategoriesdata._id)
                             ).length
                           }
                           )
@@ -158,7 +158,7 @@ const ShopSection = ({ id }) => {
           {/* Content Start */}
           <div className="col-lg-9">
             <div className="flex-between gap-16 flex-wrap mb-40">
-              <span className="text-gray-900">Category Product</span>
+              <span className="text-gray-900">Sub Category Product</span>
               <div className="position-relative flex-align gap-16 flex-wrap">
                 <div className="list-grid-btns flex-align gap-16">
                   <button
@@ -278,4 +278,4 @@ const ShopSection = ({ id }) => {
   );
 };
 
-export default ShopSection;
+export default Subcategorysection;

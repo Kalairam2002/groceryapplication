@@ -5,28 +5,63 @@ import SubCategory from "../../models/admin/SubCategory.model.js";
 import Product from '../../models/Product.js';
 
 // Add Category
+// ✅ Add Category Controller (Improved)
 export const AddCategory = async (req, res) => {
   try {
     const { name } = req.body;
     const imageFile = req.file;
 
-    if (!name) return res.status(400).json({ success: false, message: "Category data is not available" });
-    if (!imageFile) return res.status(400).json({ success: false, message: "Image file is missing" });
+    // 1️⃣ Validate name
+    if (!name) {
+      return res.status(400).json({
+        success: false,
+        message: "Category name is required",
+      });
+    }
 
-    const existingCategory = await Category.findOne({ name });
-    if (existingCategory) return res.status(400).json({ success: false, message: "Category already exists" });
+    // 2️⃣ Check for duplicate (case-insensitive)
+    const existingCategory = await Category.findOne({
+      name: { $regex: `^${name}$`, $options: "i" },
+    });
+    if (existingCategory) {
+      return res.status(400).json({
+        success: false,
+        message: "Category already exists",
+      });
+    }
 
-    const result = await cloudinary.uploader.upload(imageFile.path, { folder: "categories" });
-    const imageUrl = result.secure_url;
+    // 3️⃣ Upload image (optional)
+    let imageUrl = "";
+    if (imageFile) {
+      const result = await cloudinary.uploader.upload(imageFile.path, {
+        folder: "categories",
+      });
+      imageUrl = result.secure_url;
+    }
 
-    const newCategory = new Category({ name, image: imageUrl });
+    // 4️⃣ Create new category
+    const newCategory = new Category({
+      name,
+      image: imageUrl,
+    });
+
     await newCategory.save();
-    return res.status(201).json({ success: true, message: "Category Added" });
 
+    // 5️⃣ Send response
+    return res.status(201).json({
+      success: true,
+      message: "Category added successfully",
+      category: newCategory,
+    });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    console.error("Error adding category:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error: " + error.message,
+    });
   }
 };
+
 
 // Main Category
 export const mainCategory = async (req, res) => {
@@ -289,29 +324,62 @@ export const adminGetCategoryById = async (req, res) => {
   }
 };
 
-// Update Category
+// ✅ Update Category (Improved)
 export const adminUpdateCategory = async (req, res) => {
   try {
     const { name } = req.body;
-    const category = await Category.findById(req.params.id);
+    const { id } = req.params;
 
-    if (!category)
-      return res.status(404).json({ success: false, message: "Category not found" });
-
-    if (req.file) {
-      category.image = (
-        await cloudinary.uploader.upload(req.file.path, { folder: "categories" })
-      ).secure_url;
+    // 1️⃣ Find category
+    const category = await Category.findById(id);
+    if (!category) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Category not found" });
     }
 
+    // 2️⃣ Prevent duplicate category names (case-insensitive)
+    if (name && name.toLowerCase() !== category.name.toLowerCase()) {
+      const duplicate = await Category.findOne({
+        name: { $regex: `^${name}$`, $options: "i" },
+      });
+
+      if (duplicate) {
+        return res.status(400).json({
+          success: false,
+          message: "Category name already exists",
+        });
+      }
+    }
+
+    // 3️⃣ Handle image upload (if new file is provided)
+    if (req.file) {
+      const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+        folder: "categories",
+      });
+      category.image = uploadResult.secure_url;
+    }
+
+    // 4️⃣ Update category fields
     category.name = name || category.name;
+
     await category.save();
 
-    res.status(200).json({ success: true, message: "Category updated successfully", category });
+    // 5️⃣ Send success response
+    return res.status(200).json({
+      success: true,
+      message: "✅ Category updated successfully",
+      category,
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error("Error updating category:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error: " + error.message,
+    });
   }
 };
+
 
 // Delete Category
 export const adminDeleteCategory = async (req, res) => {

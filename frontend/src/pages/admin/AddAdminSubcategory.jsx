@@ -1,20 +1,41 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import AdminLayout from "./AdminLayout";
 import axios from "axios";
-import "./AdminDashboard.css"; // keep your admin CSS
+import "./AdminDashboard.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const AddAdminSubCategory = () => {
-  const [brandName, setBrandName] = useState("");
-  const [brandImage, setBrandImage] = useState(null);
+  const [subCategoryName, setSubCategoryName] = useState("");
+  const [subCategoryImage, setSubCategoryImage] = useState(null);
   const [preview, setPreview] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  // ✅ Fetch all categories for dropdown
+  const fetchCategories = async () => {
+    try {
+      const res = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/admindata/category`
+      );
+      if (res.data.success) {
+        setCategories(res.data.categories);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load categories");
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
   // ✅ Handle image preview
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    setBrandImage(file);
+    setSubCategoryImage(file);
 
     if (file) {
       const reader = new FileReader();
@@ -29,61 +50,86 @@ const AddAdminSubCategory = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!brandName || !brandImage) {
+    if (!subCategoryName || !subCategoryImage || !selectedCategory) {
       toast.warn("Please fill all fields!");
       return;
     }
 
     const formData = new FormData();
-    formData.append("name", brandName);
-    formData.append("image", brandImage);
+    formData.append("name", subCategoryName);
+    formData.append("category", selectedCategory);
+    formData.append("image", subCategoryImage);
 
     try {
       setLoading(true);
       const res = await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/brand`, // ✅ Correct endpoint
+        `${process.env.REACT_APP_API_URL}/api/subcategory`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
         }
       );
 
-      toast.success(res.data?.message || "Brand added successfully!");
-      setBrandName("");
-      setBrandImage(null);
-      setPreview(null);
+      if (res.data.success) {
+        toast.success("Subcategory added successfully!");
+        setSubCategoryName("");
+        setSubCategoryImage(null);
+        setPreview(null);
+        setSelectedCategory("");
+      } else {
+        toast.error(res.data.message || "Error adding subcategory");
+      }
     } catch (err) {
       console.error(err.response?.data || err.message);
-      toast.error(err.response?.data?.message || "Error adding brand");
+      toast.error(err.response?.data?.message || "Error adding subcategory");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <AdminLayout page="add-brand">
+    <AdminLayout page="add-subcategory">
       <section className="orders py-5">
         <div className="container">
-          <h3 className="mb-4">Add New Brand</h3>
+          <h3 className="mb-4">Add New Subcategory</h3>
 
           <div className="add-category-card p-4 bg-white rounded shadow-sm">
             <form onSubmit={handleSubmit} className="d-flex flex-column gap-3">
-              {/* Brand Name */}
+              
+              {/* Subcategory Name */}
               <div>
-                <label className="form-label fw-semibold">Brand Name</label>
+                <label className="form-label fw-semibold">Subcategory Name</label>
                 <input
                   type="text"
                   className="form-control"
-                  placeholder="Enter brand name"
-                  value={brandName}
-                  onChange={(e) => setBrandName(e.target.value)}
+                  placeholder="Enter subcategory name"
+                  value={subCategoryName}
+                  onChange={(e) => setSubCategoryName(e.target.value)}
                   required
                 />
               </div>
 
-              {/* Brand Image */}
+              {/* Select Category */}
               <div>
-                <label className="form-label fw-semibold">Brand Image</label>
+                <label className="form-label fw-semibold">Select Category</label>
+                <select
+                  className="form-control"
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  required
+                >
+                  <option value="">-- Select Category --</option>
+                  {categories.map((cat) => (
+                    <option key={cat._id} value={cat._id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Subcategory Image */}
+              <div>
+                <label className="form-label fw-semibold">Subcategory Image</label>
                 <input
                   type="file"
                   className="form-control"
@@ -116,7 +162,7 @@ const AddAdminSubCategory = () => {
                 className="btn btn-primary mt-2"
                 disabled={loading}
               >
-                {loading ? "Adding..." : "Add Brand"}
+                {loading ? "Adding..." : "Add Subcategory"}
               </button>
             </form>
           </div>

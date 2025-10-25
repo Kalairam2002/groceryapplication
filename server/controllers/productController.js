@@ -6,8 +6,8 @@ import path from "path";
 // Add Product : /api/product/add
 export const addProduct = async (req, res) => {
   try {
-    const sellerId = req.sellerId; // ✅ from middleware
-    const productData = JSON.parse(req.body.productData);
+    const sellerId = req.sellerId; // from middleware
+    const productData = JSON.parse(req.body.productData); // includes category & subcategory
     const images = req.files;
 
     const imagesUrl = await Promise.all(
@@ -26,7 +26,9 @@ export const addProduct = async (req, res) => {
     await Product.create({
       ...productData,
       image: imagesUrl,
-      seller: sellerId, // ✅ linked automatically
+      seller: sellerId,
+      category: productData.category,       // ✅ keep as string
+      subcategory: productData.subcategory, // ✅ keep as string
     });
 
     res.json({ success: true, message: "Product Added Successfully" });
@@ -35,6 +37,7 @@ export const addProduct = async (req, res) => {
     res.json({ success: false, message: error.message });
   }
 };
+
 
 // Get all products (for admin or customers): /api/product/list
 export const productList = async (req, res) => {
@@ -154,12 +157,20 @@ export const updateProduct = async (req, res) => {
     product.unit = data.unit;
     product.stock = data.stock;
     product.brand = data.brand;
-    product.Category = data.Category; // ✅ FIXED
+    product.category = data.category;       // ✅ string like category
+    product.subcategory = data.subcategory; // ✅ string like category
     product.barcode = data.barcode;
 
     // Handle images
     if (req.files && req.files.length > 0) {
-      product.image = req.files.map(f => f.path);
+      product.image = await Promise.all(
+        req.files.map(async (file) => {
+          const result = await cloudinary.uploader.upload(file.path, {
+            resource_type: "image",
+          });
+          return result.secure_url;
+        })
+      );
     }
 
     await product.save();
@@ -170,6 +181,7 @@ export const updateProduct = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
 
 
 export const getSingleProduct = async (req, res) => {

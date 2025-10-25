@@ -925,7 +925,7 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
         }`}
       >
         <div className='container container-lg'>
-          <nav className='header-inner d-flex justify-content-between gap-8' style={{backgroundColor:'#2e7d32'}}>
+          <nav className='header-inner d-flex justify-content-between gap-8' style={{backgroundColor: '#4CAF50'}}>
             <div className='flex-align menu-category-wrapper'>
               {/* Category Dropdown Start */}
               <div className="category on-hover-item position-relative" ref={dropdownRef}>

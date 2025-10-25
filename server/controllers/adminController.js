@@ -13,7 +13,14 @@ export const register = async (req, res) => {
     }
 
     const existingAdmin = await Admin.findOne({ email });
-    if (existingAdmin) {
+
+    //  If admin exists but not verified, delete and allow re-registration
+    if (existingAdmin && !existingAdmin.isVerified) {
+      await Admin.deleteOne({ email });
+    }
+
+    //  If admin exists and is verified, block re-registration
+    if (existingAdmin && existingAdmin.isVerified) {
       return res.json({ success: false, message: "Admin Already Exists" });
     }
 
@@ -45,6 +52,7 @@ export const register = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
 
 // Verify Admin OTP
 export const verifyOtp = async (req, res) => {

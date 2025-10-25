@@ -6,13 +6,15 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const AdminSubCategoryList = () => {
-  const [brands, setBrands] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editingBrand, setEditingBrand] = useState(null);
+  const [editingSubCategory, setEditingSubCategory] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
+    category: "",
     image: null,
     preview: "",
   });
@@ -20,39 +22,53 @@ const AdminSubCategoryList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // ✅ Fetch all brands
-  const fetchBrands = async () => {
+  // ✅ Fetch all subcategories
+  const fetchSubcategories = async () => {
     try {
       const { data } = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/brand`
+        `${process.env.REACT_APP_API_URL}/api/subcategory`
       );
-      if (data.success) setBrands(data.brands || []);
+      setSubcategories(data || []);
     } catch (error) {
-      toast.error("Failed to fetch brands");
+      toast.error("Failed to fetch subcategories");
     } finally {
       setLoading(false);
     }
   };
 
+  // ✅ Fetch categories for dropdown in edit modal
+  const fetchCategories = async () => {
+    try {
+      const { data } = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/admindata/category`
+      );
+      if (data.success) setCategories(data.categories || []);
+    } catch (error) {
+      toast.error("Failed to fetch categories");
+    }
+  };
+
   useEffect(() => {
-    fetchBrands();
+    fetchSubcategories();
+    fetchCategories();
   }, []);
 
   // ✅ Open edit modal
-  const openEditModal = (brand) => {
-    setEditingBrand(brand);
+  const openEditModal = (subcategory) => {
+    setEditingSubCategory(subcategory);
     setFormData({
-      name: brand.name,
+      name: subcategory.name,
+      category: subcategory.category?._id || "",
       image: null,
-      preview: brand.image || "",
+      preview: subcategory.image || "",
     });
     setShowEditModal(true);
   };
 
   const closeEditModal = () => {
     setShowEditModal(false);
-    setEditingBrand(null);
-    setFormData({ name: "", image: null, preview: "" });
+    setEditingSubCategory(null);
+    setFormData({ name: "", category: "", image: null, preview: "" });
   };
 
   // ✅ Handle image change
@@ -67,70 +83,71 @@ const AdminSubCategoryList = () => {
     }
   };
 
-  // ✅ Save edited brand
+  // ✅ Save edited subcategory
   const handleSave = async () => {
-    if (!formData.name.trim()) {
-      toast.error("Brand name is required");
+    if (!formData.name.trim() || !formData.category) {
+      toast.error("Please enter all required fields");
       return;
     }
 
     const fd = new FormData();
     fd.append("name", formData.name);
+    fd.append("category", formData.category);
     if (formData.image) fd.append("image", formData.image);
 
     try {
       const { data } = await axios.put(
-        `${process.env.REACT_APP_API_URL}/api/brand/${editingBrand._id}`,
+        `${process.env.REACT_APP_API_URL}/api/subcategory/${editingSubCategory._id}`,
         fd
       );
       if (data.success) {
-        toast.success("Brand updated successfully!");
-        fetchBrands();
+        toast.success("Subcategory updated successfully!");
+        fetchSubcategories();
         closeEditModal();
       } else {
-        toast.error(data.message || "Failed to update brand");
+        toast.error(data.message || "Failed to update subcategory");
       }
     } catch (error) {
-      toast.error("Error updating brand");
+      toast.error("Error updating subcategory");
     }
   };
 
-  // ✅ Delete brand
+  // ✅ Delete subcategory
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this brand?")) return;
+    if (!window.confirm("Are you sure you want to delete this subcategory?")) return;
 
     try {
       const { data } = await axios.delete(
-        `${process.env.REACT_APP_API_URL}/api/brand/${id}`
+        `${process.env.REACT_APP_API_URL}/api/subcategory/${id}`
       );
       if (data.success) {
-        setBrands((prev) => prev.filter((b) => b._id !== id));
-        toast.success("Brand deleted successfully!");
+        setSubcategories((prev) => prev.filter((s) => s._id !== id));
+        toast.success("Subcategory deleted successfully!");
       } else {
-        toast.error(data.message || "Failed to delete brand");
+        toast.error(data.message || "Failed to delete subcategory");
       }
     } catch (error) {
-      toast.error("Error deleting brand");
+      toast.error("Error deleting subcategory");
     }
   };
 
   // ✅ Pagination
-  const totalPages = Math.ceil(brands.length / itemsPerPage);
+  const totalPages = Math.ceil(subcategories.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentBrands = brands.slice(indexOfFirstItem, indexOfLastItem);
+  const currentSubcategories = subcategories.slice(indexOfFirstItem, indexOfLastItem);
 
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
-    <AdminLayout page="brand-list">
+    <AdminLayout page="subcategory-list">
       <div className="container mt-4">
-        <h4 className="mb-4">Brand List</h4>
+        <h4 className="mb-4">Subcategory List</h4>
 
         {loading ? (
-          <p>Loading brands...</p>
-        ) : brands.length === 0 ? (
-          <p>No brands found.</p>
+          <p>Loading subcategories...</p>
+        ) : subcategories.length === 0 ? (
+          <p>No subcategories found.</p>
         ) : (
           <>
             <table className="classic-table">
@@ -139,18 +156,19 @@ const AdminSubCategoryList = () => {
                   <th>#</th>
                   <th>Image</th>
                   <th>Name</th>
+                  <th>Category</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {currentBrands.map((brand, index) => (
-                  <tr key={brand._id}>
+                {currentSubcategories.map((subcategory, index) => (
+                  <tr key={subcategory._id}>
                     <td>{indexOfFirstItem + index + 1}</td>
                     <td>
-                      {brand.image ? (
+                      {subcategory.image ? (
                         <img
-                          src={brand.image}
-                          alt={brand.name}
+                          src={subcategory.image}
+                          alt={subcategory.name}
                           style={{
                             width: "60px",
                             height: "60px",
@@ -162,10 +180,11 @@ const AdminSubCategoryList = () => {
                         "No Image"
                       )}
                     </td>
-                    <td>{brand.name}</td>
+                    <td>{subcategory.name}</td>
+                    <td>{subcategory.category?.name || "Unassigned"}</td>
                     <td>
                       <button
-                        onClick={() => openEditModal(brand)}
+                        onClick={() => openEditModal(subcategory)}
                         style={{
                           backgroundColor: "#3498db",
                           color: "white",
@@ -179,7 +198,7 @@ const AdminSubCategoryList = () => {
                         Edit
                       </button>
                       <button
-                        onClick={() => handleDelete(brand._id)}
+                        onClick={() => handleDelete(subcategory._id)}
                         style={{
                           backgroundColor: "#e74c3c",
                           color: "white",
@@ -216,23 +235,30 @@ const AdminSubCategoryList = () => {
       {showEditModal && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <h5>Edit Brand</h5>
+            <h5>Edit Subcategory</h5>
 
             <input
               type="text"
-              placeholder="Enter brand name"
+              placeholder="Enter subcategory name"
               value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className="form-control mb-3"
             />
 
-            <input
-              type="file"
-              onChange={handleImageChange}
+            <select
               className="form-control mb-3"
-            />
+              value={formData.category}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+            >
+              <option value="">-- Select Category --</option>
+              {categories.map((cat) => (
+                <option key={cat._id} value={cat._id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+
+            <input type="file" onChange={handleImageChange} className="form-control mb-3" />
 
             {formData.preview && (
               <img

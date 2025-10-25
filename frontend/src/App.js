@@ -40,6 +40,11 @@ import AddBrand from './pages/admin/AddBrand'
 import BrandList from "./pages/admin/BrandList";
 import AddAdminSubCategory from './pages/admin/AddAdminSubcategory'
 import AdminSubCategoryList from './pages/admin/AdminSubCategoryList'
+import BrandSectionPage from "./pages/BrandSectionPage";
+import ShopPageTwo from "./pages/ShopPageTwo";
+import Shoppagefour from "./pages/Shoppagefour";
+
+
 
 function App() {
   return (
@@ -80,6 +85,11 @@ function App() {
           path='/vendor-two-details'
           element={<VendorTwoDetailsPage />}
         />
+        <Route exact path='/Brand' element={<BrandSectionPage />} />
+        <Route exact path='subcategory/:id' element={<ShopPageTwo />} />
+        <Route exact path='/brandlist/:id' element={<Shoppagefour />} />
+
+
         {/* seller login register */}
        <Route exact path='/seller' element={<SellerAuthForm />} />
        <Route exact path='/selleraddproduct' element={<SellerProtectedRoute><SellerAddProduct /></SellerProtectedRoute>} />

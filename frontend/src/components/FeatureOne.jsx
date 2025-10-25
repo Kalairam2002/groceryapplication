@@ -107,6 +107,47 @@ const FeatureOne = () => {
     return (
         <div className="feature" id="featureSection">
             <div className="container container-lg">
+                <div
+  style={{
+    textAlign: "center",
+    marginBottom: "40px",
+  }}
+>
+  <h2
+    style={{
+      fontSize: "32px",
+      fontWeight: "700",
+      color: "#222",
+      display: "inline-block",
+      position: "relative",
+      paddingBottom: "8px",
+      marginBottom: "10px",
+    }}
+  >
+    Shop by Category
+    <span
+      style={{
+        display: "block",
+        width: "60px",
+        height: "3px",
+        background: "linear-gradient(90deg, #3bb77e, #2eb872)",
+        margin: "10px auto 0",
+        borderRadius: "3px",
+      }}
+    ></span>
+  </h2>
+  <p
+    style={{
+      color: "#777",
+      fontSize: "15px",
+      marginTop: "10px",
+      lineHeight: "22px",
+    }}
+  >
+    Discover fresh fruits, vegetables, and more from your favorite stores.
+  </p>
+</div>
+
                 <div className="position-relative arrow-center">
                     <div className="flex-align">
                         <button

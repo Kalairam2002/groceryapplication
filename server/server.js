@@ -18,6 +18,8 @@ import brandRouter from './routes/admin/Brandroute.js'
 import admin from './models/Admin.js';
 import adminRouterData from './routes/admin/CategoryRoute.js'
 import paymentRoutes from './routes/paymentRoute.js'
+import subCategoryRoutes from "./routes/admin/subCategoryRoutes.js";
+
 
 const app = express();
 const __dirname = path.resolve();
@@ -72,6 +74,8 @@ app.use('/api/contact', contactRouter);
 // Routes
 app.use("/api/payment", paymentRoutes);
 app.use("/api/brand", brandRouter);
+
+app.use("/api/subcategory", subCategoryRoutes);
 
 if(process.env.NODE_ENV === "Production"){
     console.log("Production mode")

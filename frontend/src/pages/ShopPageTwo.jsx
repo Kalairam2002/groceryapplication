@@ -9,8 +9,9 @@ import ColorInit from "../helper/ColorInit";
 import ScrollToTop from "react-scroll-to-top";
 import HeaderOne from "../components/HeaderOne";
 import { useParams } from "react-router-dom";
+import Subcategorysection from "../components/Subcategorysection";
 
-const ShopPage = () => {  
+const ShopPageTwo = () => {  
   const { id } = useParams();
 
   return (
@@ -31,7 +32,8 @@ const ShopPage = () => {
       <Breadcrumb title={"Products"} />
 
       {/* ShopSection */}
-      <ShopSection  id={id} />
+      
+      <Subcategorysection id={id} />
 
       
 
@@ -46,4 +48,4 @@ const ShopPage = () => {
   );
 };
 
-export default ShopPage;
+export default ShopPageTwo;

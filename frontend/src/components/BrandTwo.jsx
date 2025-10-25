@@ -122,7 +122,7 @@ const BrandTwo = () => {
                                 </div>
                             </div>
                             <div>
-                                <div className="top-brand__item flex-center rounded-8 border border-gray-100 hover-border-gray-200 transition-1 px-8">
+                                <div className="top-brand__item flex-center rounded-8 border border-gray-100 hover-border-gray-200 transition-1 px-10">
                                     <img src="assets/images/thumbs/top-brand-img6.png" alt="" />
                                 </div>
                             </div>
@@ -133,7 +133,7 @@ const BrandTwo = () => {
                             </div>
                             <div>
                                 <div className="top-brand__item flex-center rounded-8 border border-gray-100 hover-border-gray-200 transition-1 px-8">
-                                    <img src="assets/images/thumbs/top-brand-img8.png" alt="" />
+                                    <img src="assets/images/thumbs/33.jpg" alt="" />
                                 </div>
                             </div>
                             <div>

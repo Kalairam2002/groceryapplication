@@ -10,9 +10,15 @@ const productSchema = new mongoose.Schema(
     inStock: { type: Boolean, default: true },
     unit: { type: String, required: true },
     stock: { type: Number, required: true },
+
     brand: { type: String, required: true },
-    Category: { type: String, required: true },
+    category: { type: String, required: true },
+
+   
+    subcategory: { type: String, required: true },
+
     barcode: { type: String, unique: true },
+
     seller: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Seller",
@@ -22,7 +28,8 @@ const productSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Fix: prevent model overwrite in dev (hot reload)
-const Product = mongoose.models.Product || mongoose.model("Product", productSchema);
+// Prevent model overwrite (for dev hot reload)
+const Product =
+  mongoose.models.Product || mongoose.model("Product", productSchema);
 
 export default Product;

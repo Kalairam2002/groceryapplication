@@ -1,81 +1,66 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import SellerLayout from "./SellerLayout";
 import "./SellerDashboard.css";
 import { image } from "./image";
-import Barcode from "react-barcode"; // ✅ install with: npm install react-barcode
-import {useQuery} from '@tanstack/react-query';
+import Barcode from "react-barcode";
+import { useQuery } from "@tanstack/react-query";
 
 const SellerAddProduct = () => {
   const [files, setFiles] = useState([]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [Category, setCategory] = useState("");
+  const [Subcategory, setSubcategory] = useState("");
+  const [Brand, setBrand] = useState("");
   const [price, setPrice] = useState("");
   const [offerPrice, setOfferPrice] = useState("");
   const [unit, setUnit] = useState("");
   const [stock, setStock] = useState("");
-  const [Brand, setBrand] = useState("");
 
-  const{data:categorydata,isLoading} = useQuery({
-    queryKey:['categorydatakey'],
-    queryFn: async()=>{
-      const {data} = await axios.get(`${process.env.REACT_APP_API_URL}/api/admindata/getCategory`);
-      return data;
-    }
-  })
-
-  // ✅ barcode states
-  const [barcodeOption, setBarcodeOption] = useState("manual"); // manual | auto
+  // Barcode states
+  const [barcodeOption, setBarcodeOption] = useState("manual");
   const [barcode, setBarcode] = useState("");
-
   const [isPending, setIsPending] = useState(false);
 
-  // generate unique barcode
+  // Fetch categories
+  const { data: categoryData, isLoading: categoryLoading } = useQuery({
+    queryKey: ["categoryData"],
+    queryFn: async () => {
+      const { data } = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/admindata/getCategory`
+      );
+      return data; // array of categories
+    },
+  });
+
+  // Fetch brands
+  const { data: brandData, isLoading: brandLoading } = useQuery({
+    queryKey: ["brandData"],
+    queryFn: async () => {
+      const { data } = await axios.get(`${process.env.REACT_APP_API_URL}/api/brand`);
+      return data.brands;
+    },
+  });
+
+  // Subcategories based on selected category
+  const [subcategories, setSubcategories] = useState([]);
+  useEffect(() => {
+    if (!Category) return setSubcategories([]);
+    axios
+      .get(`${process.env.REACT_APP_API_URL}/api/subcategory/byCategory/${Category}`)
+      .then((res) => {
+        if (res.data.success) setSubcategories(res.data.subCategories);
+      })
+      .catch((err) => console.error(err));
+  }, [Category]);
+
+  // Generate unique barcode
   const generateBarcode = () =>
     "BC" + Date.now() + Math.floor(1000 + Math.random() * 9000);
 
-  // download barcode as SVG
-  const handleDownload = () => {
-    const svg = document.querySelector("#barcode svg");
-    if (!svg) return;
-
-    const serializer = new XMLSerializer();
-    const svgData = serializer.serializeToString(svg);
-    const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-    const url = URL.createObjectURL(svgBlob);
-
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${barcode}.svg`;
-    link.click();
-
-    URL.revokeObjectURL(url);
-  };
-
-  // print barcode
-  const handlePrint = () => {
-    const printWindow = window.open("", "_blank");
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Print Barcode</title>
-        </head>
-        <body style="text-align:center; margin-top:50px;">
-          <div>${document.querySelector("#barcode").innerHTML}</div>
-          <script>
-            window.onload = function() {
-              window.print();
-              window.onafterprint = function() { window.close(); }
-            }
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
-  };
-
-  const onSubmitHandler = async (e) => {
+  // Handle form submission
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsPending(true);
 
@@ -84,7 +69,7 @@ const SellerAddProduct = () => {
 
       if (barcodeOption === "auto" && !barcode) {
         finalBarcode = generateBarcode();
-        setBarcode(finalBarcode); // show it in preview
+        setBarcode(finalBarcode); // preview
       }
 
       const productData = {
@@ -94,8 +79,9 @@ const SellerAddProduct = () => {
         offerPrice,
         unit,
         stock,
-        brand: Brand,
-        Category,
+        brand: Brand, // ✅ store brand ID
+        category: Category, // ✅ store category ID
+        subcategory: Subcategory, // ✅ store subcategory ID
         barcode: finalBarcode,
       };
 
@@ -106,10 +92,7 @@ const SellerAddProduct = () => {
       const { data } = await axios.post(
         `${process.env.REACT_APP_API_URL}/api/product/add`,
         formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-          withCredentials: true,
-        }
+        { headers: { "Content-Type": "multipart/form-data" }, withCredentials: true }
       );
 
       alert(data.message);
@@ -121,13 +104,14 @@ const SellerAddProduct = () => {
         setUnit("");
         setStock("");
         setFiles([]);
-        setBrand("");
         setCategory("");
+        setSubcategory("");
+        setBrand("");
         setBarcode("");
         setBarcodeOption("manual");
       }
-    } catch (error) {
-      console.error(error.message);
+    } catch (err) {
+      console.error(err.message);
     } finally {
       setIsPending(false);
     }
@@ -137,7 +121,7 @@ const SellerAddProduct = () => {
     <SellerLayout page="add-product">
       <div className="card product-card">
         <h4>Add New Product</h4>
-        <form onSubmit={onSubmitHandler}>
+        <form onSubmit={handleSubmit}>
           {/* Upload Images */}
           <div className="form-group">
             <label>Product Images</label>
@@ -156,11 +140,7 @@ const SellerAddProduct = () => {
                       }}
                     />
                     <img
-                      src={
-                        files[index]
-                          ? URL.createObjectURL(files[index])
-                          : image.upload_area
-                      }
+                      src={files[index] ? URL.createObjectURL(files[index]) : image.upload_area}
                       alt="upload"
                       className="image-preview"
                     />
@@ -179,17 +159,26 @@ const SellerAddProduct = () => {
               onChange={(e) => setName(e.target.value)}
               required
             />
-            <input
-              type="text"
-              className="form-input"
-              placeholder="Brand Name"
+            <select
+              className="form-select"
               value={Brand}
               onChange={(e) => setBrand(e.target.value)}
               required
-            />
+            >
+              <option value="" disabled>
+                -- Select Brand --
+              </option>
+              {!brandLoading &&
+                brandData?.length > 0 &&
+                brandData.map((b) => (
+                  <option key={b._id} value={b._id}>
+                    {b.name}
+                  </option>
+                ))}
+            </select>
           </div>
 
-          {/* ✅ Barcode Options */}
+          {/* Barcode Options */}
           <div className="form-group mt-2">
             <label>Barcode Option</label>
             <div className="form-row">
@@ -209,8 +198,7 @@ const SellerAddProduct = () => {
                   checked={barcodeOption === "auto"}
                   onChange={(e) => {
                     setBarcodeOption(e.target.value);
-                    const autoCode = generateBarcode();
-                    setBarcode(autoCode);
+                    setBarcode(generateBarcode());
                   }}
                 />
                 Auto Generate
@@ -218,46 +206,63 @@ const SellerAddProduct = () => {
             </div>
           </div>
 
-          {/* Show input if manual */}
           {barcodeOption === "manual" && (
-            <div className="form-row">
-              <input
-                type="text"
-                className="form-input"
-                placeholder="Enter Barcode"
-                value={barcode}
-                onChange={(e) => setBarcode(e.target.value)}
-              />
+            <input
+              type="text"
+              className="form-input mt-1"
+              placeholder="Enter Barcode"
+              value={barcode}
+              onChange={(e) => setBarcode(e.target.value)}
+            />
+          )}
+
+          {barcode && (
+            <div className="mt-2 text-center" id="barcode">
+              <Barcode value={barcode} />
             </div>
           )}
 
-          {/* ✅ Barcode Preview & Download/Print */}
-          {barcode && (
-            <div className="mt-3 text-center" id="barcode">
-              <Barcode value={barcode} />
-              <div style={{ marginTop: "10px" }}>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={handleDownload}
-                >
-                  Download
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-outline-primary"
-                  style={{ marginLeft: "10px" }}
-                  onClick={handlePrint}
-                >
-                  Print
-                </button>
-              </div>
-            </div>
-          )}
+          {/* Category + Subcategory */}
+          <div className="form-row mt-2">
+            <select
+              className="form-select"
+              value={Category}
+              onChange={(e) => setCategory(e.target.value)}
+              required
+            >
+              <option value="" disabled>
+                -- Select Category --
+              </option>
+              {!categoryLoading &&
+                categoryData?.length > 0 &&
+                categoryData.map((c) => (
+                  <option key={c._id} value={c._id}>
+                    {c.name}
+                  </option>
+                ))}
+            </select>
+
+            <select
+              className="form-select"
+              value={Subcategory}
+              onChange={(e) => setSubcategory(e.target.value)}
+              required
+              disabled={!Category || subcategories.length === 0}
+            >
+              <option value="" disabled>
+                -- Select Subcategory --
+              </option>
+              {subcategories.map((s) => (
+                <option key={s._id} value={s._id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
           {/* Description */}
           <textarea
-            className="form-textarea"
+            className="form-textarea mt-2"
             rows={4}
             placeholder="Product Description"
             value={description}
@@ -266,7 +271,7 @@ const SellerAddProduct = () => {
           />
 
           {/* Price + Offer */}
-          <div className="form-row">
+          <div className="form-row mt-2">
             <input
               type="number"
               className="form-input"
@@ -285,7 +290,7 @@ const SellerAddProduct = () => {
           </div>
 
           {/* Unit + Stock */}
-          <div className="form-row">
+          <div className="form-row mt-2">
             <input
               type="text"
               className="form-input"
@@ -304,35 +309,7 @@ const SellerAddProduct = () => {
             />
           </div>
 
-          {/* Category */}
-          <select
-            className="form-select mt-2"
-            value={Category}
-            onChange={(e) => setCategory(e.target.value)}
-            required
-          >
-            <option value="" disabled>
-              -- Select Category --
-            </option>
-              {!isLoading && categorydata && categorydata.length > 0 ? (
-                categorydata.map((item) => (
-                  <option key={item._id} value={item._id}>
-                    {item.name}
-                  </option>
-                ))
-              ) : (
-                <option className="text-lg-center">No data Available </option>
-              )}
-            {isLoading && <option>Loading...</option>}
-            
-          </select>
-
-          {/* Submit */}
-          <button
-            className="btn btn-primary w-100"
-            style={{ marginTop: "40px" }}
-            disabled={isPending}
-          >
+          <button className="btn btn-primary w-100 mt-4" disabled={isPending}>
             {isPending ? "Adding..." : "Add Product"}
           </button>
         </form>

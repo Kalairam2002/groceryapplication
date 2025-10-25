@@ -2,15 +2,17 @@ import React from "react";
 import Preloader from "../helper/Preloader";
 import HeaderTwo from "../components/HeaderTwo";
 import Breadcrumb from "../components/Breadcrumb";
-import ShopSection from "../components/ShopSection";
+// import ShopSection from "../components/ShopSection";
 import ShippingTwo from "../components/ShippingTwo";
 import FooterOne from "../components/FooterOne";
 import ColorInit from "../helper/ColorInit";
 import ScrollToTop from "react-scroll-to-top";
 import HeaderOne from "../components/HeaderOne";
 import { useParams } from "react-router-dom";
+import  BrandSection  from "../components/BrandSection";
 
-const ShopPage = () => {  
+
+const BrandSectionPage = () => {  
   const { id } = useParams();
 
   return (
@@ -28,12 +30,11 @@ const ShopPage = () => {
       <HeaderOne category={true} />
 
       {/* Breadcrumb */}
-      <Breadcrumb title={"Products"} />
+      <Breadcrumb title={"Brand"} />
 
       {/* ShopSection */}
-      <ShopSection  id={id} />
-
-      
+      {/* <ShopSection  id={id} /> */}
+      <BrandSection />
 
       {/* ShippingTwo */}
       <ShippingTwo />
@@ -46,4 +47,4 @@ const ShopPage = () => {
   );
 };
 
-export default ShopPage;
+export default BrandSectionPage;

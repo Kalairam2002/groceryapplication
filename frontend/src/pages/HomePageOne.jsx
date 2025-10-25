@@ -16,6 +16,8 @@ import DeliveryOne from "../components/DeliveryOne";
 import OrganicOne from "../components/OrganicOne";
 import ShortProductOne from "../components/ShortProductOne";
 import BrandOne from "../components/BrandOne";
+import BrandTwo from "../components/BrandTwo";
+import BrandThree from "../components/BrandThree";
 import NewArrivalOne from "../components/NewArrivalOne";
 import ShippingOne from "../components/ShippingOne";
 import NewsletterOne from "../components/NewsletterOne";
@@ -23,6 +25,9 @@ import FooterOne from "../components/FooterOne";
 import BottomFooter from "../components/BottomFooter";
 import ScrollToTop from "react-scroll-to-top";
 import ColorInit from "../helper/ColorInit";
+import Subdata from "../components/Subdata";
+
+
 const HomePageOne = () => {
     const recommendedRef = useRef(null);
     const brandRef = useRef(null);
@@ -62,7 +67,17 @@ const HomePageOne = () => {
 
       {/* FeatureOne */}
       <FeatureOne />
+      {/* <Subcategorycursol /> */}
+     
+      <Subdata />
+      <BrandOne /> 
+
+      {/* <BrandTwo />
+      <BrandThree /> */}
+      
      <ProductListOne />
+    
+     
       {/* PromotionalOne */}
       <PromotionalOne />
 
