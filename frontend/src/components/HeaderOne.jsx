@@ -924,7 +924,7 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
           scroll && "fixed-header"
         }`}
       >
-        <div className='container container-lg'>
+        <div className=''>
           <nav className='header-inner d-flex justify-content-between gap-8' style={{backgroundColor: '#4CAF50'}}>
             <div className='flex-align menu-category-wrapper'>
               {/* Category Dropdown Start */}
@@ -1164,7 +1164,7 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
             </div>
             {/* Header Right start */}
             <div className='header-right flex-align'>
-              <Link
+              {/* <Link
                 to='/tel:01234567890'
                 className=' hover-bg-warning-800 text-white p-12 h-100  flex-align gap-8 text-lg d-lg-flex d-none' style={{backgroundColor:'#FFA726'}}
                 
@@ -1173,7 +1173,7 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                   <i className='ph ph-phone-call' />
                 </div>
                 +91 8682860385
-              </Link>
+              </Link> */}
               <div className='me-16 d-lg-none d-block'>
                 <div className='flex-align flex-wrap gap-12'>
                   <button

@@ -3,14 +3,14 @@ import { Link } from 'react-router-dom'
 
 const FooterOne = () => {
     return (
-        <footer className="footer py-120">
+        <footer className="footer py-50" style={{marginTop:"30px", boxShadow:"0 4px 10px rgba(0,0,0,0.1)" ,  backgroundColor:"#4CAF50",paddingTop:"40px"}}>
             <img
                 src="assets/images/bg/body-bottom-bg.png"
                 alt="BG"
                 className="body-bottom-bg"
             />
             <div className="container container-lg">
-                <div className="footer-item-wrapper d-flex align-items-start flex-wrap">
+                <div className="footer-item-wrapper d-flex  justify-content-around flex-wrap">
                     <div className="footer-item">
                         <div className="footer-item__logo">
                             <Link to="/">
@@ -18,15 +18,15 @@ const FooterOne = () => {
                                 <img src="../../assets/images/logo/logo.png" alt="" />
                             </Link>
                         </div>
-                        <p className="mb-24">
-                            We're Grocery Shop, an innovative team of food supliers.
+                        <p className="mb-24 text-md text-gray-900" >
+                           <b> We're Grocery Shop, an innovative team of food supliers.</b>
                         </p>
                         <div className="flex-align gap-16 mb-16">
                             <span className="w-32 h-32 flex-center rounded-circle bg-main-600 text-white text-md flex-shrink-0">
                                 <i className="ph-fill ph-map-pin" />
                             </span>
-                            <span className="text-md text-gray-900 ">
-                               Instaspace, Near Kotak Mahindar Bank, Hosur -6335126.
+                            <span className="text-white hover:text-gray-200 transition-colors duration-300 ">
+                               <b><i>Instaspace, Near Kotak Mahindar Bank, Hosur -6335126.</i></b>
                             </span>
                         </div>
                         <div className="flex-align gap-16 mb-16">
@@ -36,16 +36,16 @@ const FooterOne = () => {
                             <div className="flex-align gap-16 flex-wrap">
                                 <Link
                                     to="/tel:+91 8682860385"
-                                    className="text-md text-gray-900 hover-text-main-600"
+                                    className="text-white hover:text-gray-200 transition-colors duration-300"
                                 >
-                                     +91 8682860385
+                                     <b><i>+91 8682860385</i></b>
                                 </Link>
-                                <span className="text-md text-main-600 ">or</span>
+                                <span className="text-md text-gray-900  "><b>or</b></span>
                                 <Link
                                     to="/tel: +91 7845298544"
-                                    className="text-md text-gray-900 hover-text-main-600"
+                                    className="text-white hover:text-gray-200 transition-colors duration-300"
                                 >
-                                     +91 7845298544
+                                     <b><i>+91 7845298544</i></b>
                                 </Link>
                             </div>
                         </div>
@@ -55,28 +55,28 @@ const FooterOne = () => {
                             </span>
                             <Link
                                 to="/mailto:support24@marketpro.com"
-                                className="text-md text-gray-900 hover-text-main-600"
+                                className="text-white hover:text-gray-200 transition-colors duration-300"
                             >
-                                info@rdegi.com
+                                <b><i>info@rdegi.com</i></b>
                             </Link>
                         </div>
                     </div>
                     <div className="footer-item">
                         <h6 className="footer-item__title">Details</h6>
                         <ul className="footer-menu">
-                            <li className="mb-16">
-                                <Link to="/seller" className="text-gray-600 hover-text-main-600">
+                            <li className="mb-16" >
+                                <Link to="/seller" className="text-white hover:text-gray-200 transition-colors duration-300" >  
                                     Become a Vendor
                                 </Link>
                             </li>
                            
-                            <li className="mb-16">
-                                <Link to="/shop" className="text-gray-600 hover-text-main-600">
+                            <li className="mb-16" >
+                                <Link to="/shop" className="text-white hover:text-gray-200 transition-colors duration-300" >
                                     Privacy Policy
                                 </Link>
                             </li>
-                            <li className="mb-16">
-                                <Link to="/seller-details" className="text-gray-600 hover-text-main-600">
+                            <li className="mb-16" >
+                                <Link to="/seller-details" className="text-white hover:text-gray-200 transition-colors duration-300" >
                                     Our Suppliers
                                 </Link>
                             </li>
@@ -88,13 +88,13 @@ const FooterOne = () => {
                         <h6 className="footer-item__title">Customer Support</h6>
                         <ul className="footer-menu">
                             <li className="mb-16">
-                                <Link to="/contact" className="text-gray-600 hover-text-main-600">
+                                <Link to="/contact" className="text-white hover:text-gray-200 transition-colors duration-300">
                                     Help Center
                                 </Link>
                             </li>
                             
                             <li className="mb-16">
-                                <Link to="/shop" className="text-gray-600 hover-text-main-600">
+                                <Link to="/shop" className="text-white hover:text-gray-200 transition-colors duration-300">
                                     Policies &amp; Rules
                                 </Link>
                             </li>
@@ -104,27 +104,27 @@ const FooterOne = () => {
                         <h6 className="footer-item__title">My Account</h6>
                         <ul className="footer-menu">
                             <li className="mb-16">
-                                <Link to="/account" className="text-gray-600 hover-text-main-600">
+                                <Link to="/account" className="text-white hover:text-gray-200 transition-colors duration-300">
                                     My Account
                                 </Link>
                             </li>
                             <li className="mb-16">
-                                <Link to="/wishlist" className="text-gray-600 hover-text-main-600">
+                                <Link to="/wishlist" className="text-white hover:text-gray-200 transition-colors duration-300">
                                     Order History
                                 </Link>
                             </li>
                             <li className="mb-16">
-                                <Link to="/cart" className="text-gray-600 hover-text-main-600">
+                                <Link to="/cart" className="text-white hover:text-gray-200 transition-colors duration-300">
                                     Shopping Cart
                                 </Link>
                             </li>
                             <li className="mb-16">
-                                <Link to="/shop" className="text-gray-600 hover-text-main-600">
+                                <Link to="/shop" className="    text-white hover:text-gray-200 transition-colors duration-300">
                                     Compare
                                 </Link>
                             </li>
                             {/* <li className="">
-                                <Link to="/wishlist" className="text-gray-600 hover-text-main-600">
+                                <Link to="/wishlist" className="ttext-white hover:text-gray-200 transition-colors duration-300">
                                     Wishlist
                                 </Link>
                             </li> */}

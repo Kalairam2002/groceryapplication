@@ -72,6 +72,47 @@ const ProductListOne = () => {
   return (
     <div className="product mt-24">
       <div className="container container-lg">
+                        <div
+  style={{
+    textAlign: "center",
+    marginBottom: "40px",
+  }}
+>
+  <h2
+    style={{
+      fontSize: "32px",
+      fontWeight: "700",
+      color: "#222",
+      display: "inline-block",
+      position: "relative",
+      paddingBottom: "8px",
+      marginBottom: "10px",
+    }}
+  >
+    Shop by products
+    <span
+      style={{
+        display: "block",
+        width: "60px",
+        height: "3px",
+        background: "linear-gradient(90deg, #3bb77e, #2eb872)",
+        margin: "10px auto 0",
+        borderRadius: "3px",
+      }}
+    ></span>
+  </h2>
+    <p
+    style={{
+      color: "#777",
+      fontSize: "15px",
+      marginTop: "10px",
+      lineHeight: "22px",
+    }}
+  >
+    Shop your daily essentials — fresh, fast, and full of flavor!
+  </p>
+
+</div>
         <div className="row gy-4 g-12">
           {products.length > 0 ? (
             products.map((product) => (

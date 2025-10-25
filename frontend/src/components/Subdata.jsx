@@ -84,7 +84,7 @@ const Subdata = () => {
 
   return (
     <div style={{ padding: "70px 0", background: "#f8f9fa" }}>
-      <div style={{ width: "90%", margin: "0 auto" }}>
+      <div style={{ width: "100%", margin: "0 auto" }}>
         <div
           style={{
             background: "linear-gradient(to right, #56ab2f, #a8e063, #6bbf59, #9ce88f, #3a7d44)",
