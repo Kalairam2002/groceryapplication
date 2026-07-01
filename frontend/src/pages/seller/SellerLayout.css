@@ -1,0 +1,116 @@
+/* === Seller Layout === */
+.seller-dashboard {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f4f6fb;
+  font-family: "Inter", sans-serif;
+}
+
+/* === Sidebar === */
+.seller-sidebar {
+  width: 260px;
+  background: linear-gradient(180deg, #424a5f 0%, #49494b 100%);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.08);
+}
+
+.sidebar-header {
+  padding: 25px 20px;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.sidebar-header h2 {
+  font-size: 1.4rem;
+  margin: 0;
+  font-weight: 600;
+}
+
+.sidebar-header p {
+  font-size: 0.85rem;
+  color: #dbeafe;
+  margin-top: 5px;
+}
+
+/* Sidebar Links */
+.sidebar-links {
+  list-style: none;
+  padding: 0;
+  margin: 15px 0;
+  flex-grow: 1;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  color: #dbeafe;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border-left: 4px solid transparent;
+}
+
+.sidebar-link:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.active.sidebar-link {
+  background-color: rgba(255, 255, 255, 0.25);
+  color: #fff;
+  border-left: 4px solid #fff;
+}
+
+/* === Main Area === */
+.seller-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* === Header === */
+.seller-header {
+  background-color: #fff;
+  padding: 15px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.seller-header h3 {
+  margin: 0;
+  color: #1e293b;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #ef4444;
+  border: none;
+  color: #fff;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.logout-btn:hover {
+  background-color: #dc2626;
+}
+
+/* === Content Area === */
+.seller-content {
+  padding: 30px 40px;
+  background-color: #f9fafb;
+  flex-grow: 1;
+  overflow-y: auto;
+}

@@ -1,0 +1,353 @@
+import React from 'react'
+import { Link } from 'react-router-dom';
+import Slider from 'react-slick';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
+
+const FeatureOne = () => {
+
+    function SampleNextArrow(props) {
+        const { className, onClick } = props;
+        return (
+            <button
+                type="button" onClick={onClick}
+                className={` ${className} slick-next slick-arrow flex-center rounded-circle bg-white text-xl hover-bg-main-600 hover-text-white transition-1`}
+            >
+                <i className="ph ph-caret-right" />
+            </button>
+        );
+    }
+    function SamplePrevArrow(props) {
+        const { className, onClick } = props;
+
+        return (
+
+            <button
+                type="button"
+                onClick={onClick}
+                className={`${className} slick-prev slick-arrow flex-center rounded-circle bg-white text-xl hover-bg-main-600 hover-text-white transition-1`}
+            >
+                <i className="ph ph-caret-left" />
+            </button>
+        );
+    }
+    const settings = {
+        dots: false,
+        arrows: true,
+        infinite: true,
+        speed: 1000,
+        slidesToShow: 10,
+        slidesToScroll: 1,
+        initialSlide: 0,
+        nextArrow: <SampleNextArrow />,
+        prevArrow: <SamplePrevArrow />,
+        responsive: [
+            {
+                breakpoint: 1699,
+                settings: {
+                    slidesToShow: 9,
+                },
+            },
+            {
+                breakpoint: 1599,
+                settings: {
+                    slidesToShow: 8,
+                },
+            },
+            {
+                breakpoint: 1399,
+                settings: {
+                    slidesToShow: 6,
+                },
+            },
+            {
+                breakpoint: 992,
+                settings: {
+                    slidesToShow: 5,
+                },
+            },
+            {
+                breakpoint: 768,
+                settings: {
+                    slidesToShow: 4,
+                },
+            },
+            {
+                breakpoint: 575,
+                settings: {
+                    slidesToShow: 3,
+                },
+            },
+            {
+                breakpoint: 424,
+                settings: {
+                    slidesToShow: 2,
+                },
+            },
+            {
+                breakpoint: 359,
+                settings: {
+                    slidesToShow: 1,
+                },
+            },
+
+        ],
+    };
+
+    const {data:categorydata,isLoading}=useQuery({
+        queryKey:['categorydata'],
+        queryFn:async()=>{
+            const res=await axios.get(`${process.env.REACT_APP_API_URL}/api/admindata/getCategory`);
+            return res.data
+        }
+            
+    })
+       
+      
+    return (
+        <div className="feature" id="featureSection">
+            <div className="container container-lg">
+                <div
+  style={{
+    textAlign: "center",
+    marginBottom: "40px",
+  }}
+>
+  <h2
+    style={{
+      fontSize: "32px",
+      fontWeight: "700",
+      color: "#222",
+      display: "inline-block",
+      position: "relative",
+      paddingBottom: "8px",
+      marginBottom: "10px",
+    }}
+  >
+    Shop by Category
+    <span
+      style={{
+        display: "block",
+        width: "60px",
+        height: "3px",
+        background: "linear-gradient(90deg, #3bb77e, #2eb872)",
+        margin: "10px auto 0",
+        borderRadius: "3px",
+      }}
+    ></span>
+  </h2>
+  <p
+    style={{
+      color: "#777",
+      fontSize: "15px",
+      marginTop: "10px",
+      lineHeight: "22px",
+    }}
+  >
+    Discover fresh fruits, vegetables, and more from your favorite stores.
+  </p>
+</div>
+
+                <div className="position-relative arrow-center">
+                    <div className="flex-align">
+                        <button
+                            type="button"
+                            id="feature-item-wrapper-prev"
+                            className="slick-prev slick-arrow flex-center rounded-circle bg-white text-xl hover-bg-main-600 hover-text-white transition-1"
+                        >
+                            <i className="ph ph-caret-left" />
+                        </button>
+                        <button
+                            type="button"
+                            id="feature-item-wrapper-next"
+                            className="slick-next slick-arrow flex-center rounded-circle bg-white text-xl hover-bg-main-600 hover-text-white transition-1"
+                        >
+                            <i className="ph ph-caret-right" />
+                        </button>
+                    </div>
+                    <div className="feature-item-wrapper">
+                        <Slider {...settings}>
+                            {
+                                !isLoading && categorydata && categorydata.length > 0 ? (
+                                    categorydata.map((category) => (
+                                        <div className="feature-item text-center" key={category._id}>
+                                            <div className="feature-item__thumb rounded-circle">
+                                                <Link to={`/shop/${category._id}`} className="w-100 h-100 flex-center">
+                                                    <img src={category.image} alt={category.name} />
+                                                </Link>
+                                            </div>
+                                            <div className="feature-item__content mt-16">
+                                                <h6 className="text-lg mb-8">
+                                                    <Link to={`/shop/${category._id}`} className="text-inherit">
+                                                        {category.name}
+                                                    </Link>
+                                                </h6>
+                                                <span className="text-sm text-gray-400">{category.productCount}+ Products</span>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    !isLoading && <p>No categories available</p>
+                                )   
+                            }
+                            {/* <div className="feature-item text-center">
+                                <div className="feature-item__thumb rounded-circle">
+                                    <Link to="/shop" className="w-100 h-100 flex-center">
+                                        <img src="assets/images/thumbs/veg.png" alt="" />
+                                    </Link>
+                                </div>
+                                <div className="feature-item__content mt-16">
+                                    <h6 className="text-lg mb-8">
+                                        <Link to="/shop" className="text-inherit">
+                                            Vegetabless
+                                        </Link>
+                                    </h6>
+                                    <span className="text-sm text-gray-400">125+ Products</span>
+                                </div>
+                            </div> */}
+                            {/* <div className="feature-item text-center">
+                                <div className="feature-item__thumb rounded-circle">
+                                    <Link to="/shop" className="w-100 h-100 flex-center">
+                                        <img src="assets/images/thumbs/fish.png" alt="" />
+                                    </Link>
+                                </div>
+                                <div className="feature-item__content mt-16">
+                                    <h6 className="text-lg mb-8">
+                                        <Link to="/shop" className="text-inherit">
+                                            Fish &amp; Meats
+                                        </Link>
+                                    </h6>
+                                    <span className="text-sm text-gray-400">125+ Products</span>
+                                </div>
+                            </div> */}
+                            {/* <div className="feature-item text-center">
+                                <div className="feature-item__thumb rounded-circle">
+                                    <Link to="/shop" className="w-100 h-100 flex-center">
+                                        <img src="assets/images/thumbs/d1.png" alt="" />
+                                    </Link>
+                                </div>
+                                <div className="feature-item__content mt-16">
+                                    <h6 className="text-lg mb-8">
+                                        <Link to="/shop" className="text-inherit">
+                                            Desserts
+                                        </Link>
+                                    </h6>
+                                    <span className="text-sm text-gray-400">125+ Products</span>
+                                </div>
+                            </div>
+                            <div className="feature-item text-center">
+                                <div className="feature-item__thumb rounded-circle">
+                                    <Link to="/shop" className="w-100 h-100 flex-center">
+                                        <img src="assets/images/thumbs/coke.png" alt="" />
+                                    </Link>
+                                </div>
+                                <div className="feature-item__content mt-16">
+                                    <h6 className="text-lg mb-8">
+                                        <Link to="/shop" className="text-inherit">
+                                            Drinks &amp; Juice
+                                        </Link>
+                                    </h6>
+                                    <span className="text-sm text-gray-400">125+ Products</span>
+                                </div>
+                            </div>
+                            <div className="feature-item text-center">
+                                <div className="feature-item__thumb rounded-circle">
+                                    <Link to="/shop" className="w-100 h-100 flex-center">
+                                        <img src="assets/images/thumbs/cat.png" alt="" />
+                                    </Link>
+                                </div>
+                                <div className="feature-item__content mt-16">
+                                    <h6 className="text-lg mb-8">
+                                        <Link to="/shop" className="text-inherit">
+                                            Animals Food
+                                        </Link>
+                                    </h6>
+                                    <span className="text-sm text-gray-400">125+ Products</span>
+                                </div>
+                            </div>
+                            <div className="feature-item text-center">
+                                <div className="feature-item__thumb rounded-circle">
+                                    <Link to="/shop" className="w-100 h-100 flex-center">
+                                        <img src="assets/images/thumbs/f.png" alt="" />
+                                    </Link>
+                                </div>
+                                <div className="feature-item__content mt-16">
+                                    <h6 className="text-lg mb-8">
+                                        <Link to="/shop" className="text-inherit">
+                                            Fresh Fruits
+                                        </Link>
+                                    </h6>
+                                    <span className="text-sm text-gray-400">125+ Products</span>
+                                </div>
+                            </div>
+                            <div className="feature-item text-center">
+                                <div className="feature-item__thumb rounded-circle">
+                                    <Link to="/shop" className="w-100 h-100 flex-center">
+                                        <img src="assets/images/thumbs/candy1.png" alt="" />
+                                    </Link>
+                                </div>
+                                <div className="feature-item__content mt-16">
+                                    <h6 className="text-lg mb-8">
+                                        <Link to="/shop" className="text-inherit">
+                                            Yummy Candy
+                                        </Link>
+                                    </h6>
+                                    <span className="text-sm text-gray-400">125+ Products</span>
+                                </div>
+                            </div>
+                            <div className="feature-item text-center">
+                                <div className="feature-item__thumb rounded-circle">
+                                    <Link to="/shop" className="w-100 h-100 flex-center">
+                                        <img src="assets/images/thumbs/meat.png" alt="" />
+                                    </Link>
+                                </div>
+                                <div className="feature-item__content mt-16">
+                                    <h6 className="text-lg mb-8">
+                                        <Link to="/shop" className="text-inherit">
+                                            Fish &amp; Meats
+                                        </Link>
+                                    </h6>
+                                    <span className="text-sm text-gray-400">125+ Products</span>
+                                </div>
+                            </div>
+                            <div className="feature-item text-center">
+                                <div className="feature-item__thumb rounded-circle">
+                                    <Link to="/shop" className="w-100 h-100 flex-center">
+                                        <img src="assets/images/thumbs/egg.png" alt="" />
+                                    </Link>
+                                </div>
+                                <div className="feature-item__content mt-16">
+                                    <h6 className="text-lg mb-8">
+                                        <Link to="/shop" className="text-inherit">
+                                            Eggs
+                                        </Link>
+                                    </h6>
+                                    <span className="text-sm text-gray-400">125+ Products</span>
+                                </div>
+                            </div>
+                            <div className="feature-item text-center">
+                                <div className="feature-item__thumb rounded-circle">
+                                    <Link to="/shop" className="w-100 h-100 flex-center">
+                                        <img src="assets/images/thumbs/snakes.png" alt="" />
+                                    </Link>
+                                </div>
+                                <div className="feature-item__content mt-16">
+                                    <h6 className="text-lg mb-8">
+                                        <Link to="/shop" className="text-inherit">
+                                            Snacks
+                                        </Link>
+                                    </h6>
+                                    <span className="text-sm text-gray-400">125+ Products</span>
+                                </div>
+                            </div> */}
+                          
+                        </Slider>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    )
+}
+
+export default FeatureOne
