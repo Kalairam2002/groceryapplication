@@ -109,25 +109,25 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
     navigate("/account"); // redirect to login/register page
   };
 
-  //update cart count 
-  const [cartCount, setCartCount] = useState(0);
+ //update cart count 
+ const [cartCount, setCartCount] = useState(0);
 
-  // Update cart count whenever localStorage changes
-  useEffect(() => {
-    const updateCartCount = () => {
-      const cart = localStorage.getItem("cart")
-        ? JSON.parse(localStorage.getItem("cart"))
-        : [];
-      const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-      setCartCount(totalItems);
-    };
+ // Update cart count whenever localStorage changes
+ useEffect(() => {
+   const updateCartCount = () => {
+     const cart = localStorage.getItem("cart")
+       ? JSON.parse(localStorage.getItem("cart"))
+       : [];
+     const totalItems = cart.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+     setCartCount(totalItems);
+   };
 
-    updateCartCount();
+   updateCartCount();
 
-    // Optional: listen for storage events if cart can change in another tab
-    window.addEventListener("storage", updateCartCount);
-    return () => window.removeEventListener("storage", updateCartCount);
-  }, []);
+   // Optional: listen for storage events if cart can change in another tab
+   window.addEventListener("storage", updateCartCount);
+   return () => window.removeEventListener("storage", updateCartCount);
+ }, []);
 
 
   //category header 
@@ -195,7 +195,7 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
 
   useEffect(() => {
     const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
-    const count = storedCart.reduce((sum, item) => sum + item.quantity, 0);
+    const count = storedCart.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
     setCartCount1(count);
   }, []);
 
@@ -629,14 +629,12 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
         <div className='container container-lg '>
           <nav className='header-inner flex-between'>
             {/* Logo Start */}
-            <div className='logo'>
-              <Link to='/' className='link'>
-                <img src='../../assets/images/logo/logo.png' alt='Logo' width='80'/>
-              </Link>
-            </div>
-            <div classname='store'>
-              <h5 className="text-white fw-bold p-0">Online Multi Store</h5>
-            </div>
+            <div className='logo' style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
+                  <Link to='/' className='link'>
+                    <img src='../../assets/images/logo/logo.png' alt='Logo' width='80'/>
+                  </Link>
+                  <h5 className="text-white fw-bold p-0 m-0">Online Multi Vendor Store</h5>
+                </div>
             {/* Logo End  */}
             {/* form location Start */}
             <form
