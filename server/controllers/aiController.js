@@ -14,7 +14,7 @@ const askTinyLlama = async (prompt) => {
         prompt: prompt,
         stream: false,
         options: {
-          num_predict: 256,
+          num_predict: 512,
           temperature: 0.7,
           stop: ["<|user|>", "<|system|>"]
         }
