@@ -214,6 +214,65 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
     }
   };
 
+  // ==================== Search Suggestions Start ====================
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const searchWrapperRef = useRef(null);
+
+  // Escape regex special characters so user input can't break the query
+  const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  // Fetch suggestions whenever searchText changes (debounced)
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (!searchText.trim()) {
+        setSuggestions([]);
+        setShowSuggestions(false);
+        return;
+      }
+      try {
+        setSuggestionsLoading(true);
+        const escaped = escapeRegex(searchText.trim());
+        const res = await axios.get(
+          `${process.env.REACT_APP_API_URL}/api/product/search`,
+          { params: { name: `^${escaped}` } }
+        );
+        if (res.data.success) {
+          setSuggestions(res.data.products.slice(0, 8));
+        } else {
+          setSuggestions([]);
+        }
+        setShowSuggestions(true);
+      } catch (err) {
+        console.error("Error fetching suggestions:", err);
+        setSuggestions([]);
+      } finally {
+        setSuggestionsLoading(false);
+      }
+    };
+    const debounce = setTimeout(fetchSuggestions, 250);
+    return () => clearTimeout(debounce);
+  }, [searchText]);
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutsideSearch = (event) => {
+      if (searchWrapperRef.current && !searchWrapperRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutsideSearch);
+    return () => document.removeEventListener("mousedown", handleClickOutsideSearch);
+  }, []);
+
+  const handleSuggestionClick = (product) => {
+    setSearchText(product.name);
+    setShowSuggestions(false);
+    navigate(`/shop?product=${encodeURIComponent(product.name)}`);
+  };
+  // ==================== Search Suggestions End ====================
+
   return (
     <>
       <div className='overlay' />
@@ -331,7 +390,7 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                   Admin
                 </Link>
               </li>
-              {/* ✅ Delivery Boy - Mobile Menu */}
+              {/*  Delivery Boy - Mobile Menu */}
               <li className='nav-menu__item'>
                 <Link
                   to='/delivery/login'
@@ -410,14 +469,14 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                     <Link
                       to='#'
                       className='hover-bg-gray-100 text-gray-500 text-xs py-6 px-16 flex-align gap-8 rounded-0'
-                      onClick={() => handleLanguageChange("English")}
+                      onClick={() => handleLanguageChange("India")}
                     >
                       <img
                         src='assets/images/thumbs/flag1.png'
                         alt=''
                         className='w-16 h-12 rounded-4 border border-gray-100'
                       />
-                      <b>English</b>
+                      <b>India</b>
                     </Link>
                   </li>
                   <li>
@@ -641,11 +700,13 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
               action='#'
               className='flex-align flex-wrap form-location-wrapper'
             >
+              {/* ==================== Search + Category Start ==================== */}
               <div className="search-category bg-white d-flex h-48 search-form d-sm-flex d-none rounded-full shadow-sm" style={{borderRadius:'9999px'}}>
                   <select
                     defaultValue="all"
                     className="form-select fw-bold border-end-0"
                     onChange={handleChange}
+                    style={{ maxWidth: '160px', minWidth: '100px' }}
                   >
                   <option value="all">All Categories</option>
                     {!isLoading &&
@@ -656,14 +717,16 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                         </option>
                       ))}
                 </select>
-                <div className="search-form__wrapper position-relative">
+                <div className="search-form__wrapper position-relative" ref={searchWrapperRef}>
                 <input
                   type="text"
                   value={searchText}
                   onChange={(e) => setSearchText(e.target.value)}
                   onKeyDown={handleKeyDown}
+                  onFocus={() => searchText && setShowSuggestions(true)}
                   className="search-form__input common-input py-13 ps-16 pe-18 rounded-end-pill pe-44 bg-white border border-black"
                   placeholder="Search products..."
+                  autoComplete="off"
                 />
                 <button
                   type="button"
@@ -676,8 +739,59 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                 >
                   <i className="ph ph-magnifying-glass" />
                 </button>
+
+                {/* Suggestions dropdown */}
+                {showSuggestions && searchText.trim() && (
+                  <ul
+                    className="scroll-sm"
+                    style={{
+                      position: "absolute",
+                      top: "110%",
+                      left: 0,
+                      width: "100%",
+                      background: "#fff",
+                      border: "1px solid #eee",
+                      borderRadius: "8px",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                      listStyle: "none",
+                      padding: "8px 0",
+                      margin: 0,
+                      maxHeight: "320px",
+                      overflowY: "auto",
+                      zIndex: 1000,
+                    }}
+                  >
+                    {suggestionsLoading && (
+                      <li className="px-16 py-8 text-gray-500 text-sm">Searching...</li>
+                    )}
+                    {!suggestionsLoading && suggestions.length === 0 && (
+                      <li className="px-16 py-8 text-gray-500 text-sm">No products found</li>
+                    )}
+                    {!suggestionsLoading &&
+                      suggestions.map((product) => (
+                        <li
+                          key={product._id}
+                          onClick={() => handleSuggestionClick(product)}
+                          className="flex-align gap-8 px-16 py-8 hover-bg-gray-100"
+                          style={{ cursor: "pointer" }}
+                        >
+                          {product.image && (
+                            <img
+                              src={product.image}
+                              alt={product.name}
+                              width="32"
+                              height="32"
+                              style={{ objectFit: "cover", borderRadius: "4px" }}
+                            />
+                          )}
+                          <span className="text-sm text-gray-800">{product.name}</span>
+                        </li>
+                      ))}
+                  </ul>
+                )}
               </div>
               </div>
+              {/* ==================== Search + Category End ==================== */}
             </form>
             {/* Header Middle Right start */}
             <div className='header-right flex-align d-lg-block d-none'>

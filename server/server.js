@@ -35,6 +35,8 @@ import deliveryRoutes from "./routes/deliveryRoute.js";
 import aiRouter from './routes/aiRouter.js';
 import Invoice from './models/Invoice.js';
 import invoiceRouter from './routes/invoiceRoute.js';
+import mongoose from "mongoose";
+
 
 dotenv.config();
 
@@ -286,6 +288,56 @@ app.post("/api/auth/phone-login", async (req, res) => {
   res.json({ user, token });
 });
 
+app.get("/api/temp/products", async (req, res) => {
+  const products = await Product.find({}, "name category").lean();
+  res.json(products);
+});
+
+app.get("/api/temp/categories", async (req, res) => {
+  try {
+    const categories = await mongoose.connection.db
+      .collection("categories")
+      .find({})
+      .toArray();
+    res.json(categories);
+  } catch (error) {
+    res.json({ error: error.message });
+  }
+});
+
+app.get("/api/temp/collections", async (req, res) => {
+  try {
+    const collections = await mongoose.connection.db
+      .listCollections()
+      .toArray();
+    res.json(collections.map(c => c.name));
+  } catch (error) {
+    res.json({ error: error.message });
+  }
+});
+
+app.get("/api/debug/category", async (req, res) => {
+  try {
+    const Category = mongoose.connection.db.collection("categories");
+    const fruitsCategory = await Category.findOne({ 
+      name: { $regex: "fruit", $options: "i" } 
+    });
+    
+    const products = await Product.find({
+      category: fruitsCategory._id.toString()
+    }, "name category").lean();
+
+    res.json({ 
+      fruitsCategory,
+      categoryId: fruitsCategory._id.toString(),
+      products 
+    });
+  } catch (error) {
+    res.json({ error: error.message });
+  }
+});
+
+
 // ================= ROUTES =================
 app.use('/api/admin', adminRouter);
 app.use('/api/admindata', adminRouterData);
@@ -321,3 +373,4 @@ if (process.env.NODE_ENV === "Production") {
 app.listen(port, () => {
   console.log(`Server is running on https://localhost:${port}`)
 });
+

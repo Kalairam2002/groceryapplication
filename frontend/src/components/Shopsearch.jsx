@@ -19,43 +19,31 @@ const Shopsearch = ({ id }) => {
 
   const sidebarController = () => setActive(!active);
 
-  // Fetch all products
   useEffect(() => {
     const fetchProducts = async () => {
       try {
+        const params = new URLSearchParams(location.search);
+        const searchQuery = params.get("product") || "";
+        console.log("Search Query:", searchQuery);
+  
         const response = await axios.get(
-          `${process.env.REACT_APP_API_URL}/api/product/list`
+          `${process.env.REACT_APP_API_URL}/api/product/search?name=${searchQuery}`
         );
+
+        console.log("Response:", response.data);
+  
         if (response.data.success) {
-          setProducts(response.data.products || []);
-        } else {
-          console.error("Error fetching products:", response.data.message);
+          setSearchFiltered(response.data.products || []);
         }
       } catch (error) {
-        console.error("API Error:", error);
+        console.error("Search Error:", error);
       } finally {
         setLoading(false);
       }
     };
     fetchProducts();
-  }, []);
+  }, [location.search]);
 
-  // Search filter
-  useEffect(() => {
-    if (!products || products.length === 0) return;
-
-    const params = new URLSearchParams(location.search);
-    const searchQuery = params.get("product")?.toLowerCase() || "";
-
-    if (searchQuery) {
-      const filtered = products.filter((p) =>
-        p.name?.toLowerCase().includes(searchQuery)
-      );
-      setSearchFiltered(filtered);
-    } else {
-      setSearchFiltered(products);
-    }
-  }, [location.search, products]);
 
   // Fetch subcategories
   const { data: subcategories, isLoading: issubCategoryLoading } = useQuery({

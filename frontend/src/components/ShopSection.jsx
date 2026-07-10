@@ -8,7 +8,6 @@ const ShopSection = ({ id }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchFiltered, setSearchFiltered] = useState([]);
   const [grid, setGrid] = useState(false);
@@ -16,70 +15,43 @@ const ShopSection = ({ id }) => {
 
   const sidebarController = () => setActive(!active);
 
-  console.log("ShopSection ID:", id);
-  console.log("Location Search:", location.search);
-  console.log("Products State:", products);
-  console.log("Search Filtered State:", searchFiltered);
-  console.log("kalairam search box")
-
-  // Fetch all products
+  // ── Fetch Products Based on Search Query ──────────────
   useEffect(() => {
     const fetchProducts = async () => {
       try {
+        setLoading(true);
+        const params = new URLSearchParams(location.search);
+        const searchQuery = params.get("product") || "";
+
         const response = await axios.get(
-          `${process.env.REACT_APP_API_URL}/api/admindata/getsubCategory`
+          `${process.env.REACT_APP_API_URL}/api/product/search?name=${searchQuery}`
         );
+
         if (response.data.success) {
-          setProducts(response.data.products || []);
-        } else {
-          console.error("Error fetching products:", response.data.message);
+          setSearchFiltered(response.data.products || []);
         }
       } catch (error) {
-        console.error("API Error:", error);
+        console.error("Search Error:", error);
       } finally {
         setLoading(false);
       }
     };
     fetchProducts();
-  }, []);
+  }, [location.search]);
 
-  // Search filter
-  useEffect(() => {
-    if (!products || products.length === 0) return;
-
-    const params = new URLSearchParams(location.search);
-    const searchQuery = params.get("product")?.toLowerCase() || "";
-    console.log("Search Query:", searchQuery);
-
-    if (searchQuery) {
-      const filtered = products.filter((p) =>
-        p.name?.toLowerCase().includes(searchQuery)
-      );
-      setSearchFiltered(filtered);
-    } else {
-      setSearchFiltered(products);
-    }
-  }, [location.search, products]);
-
-  // Fetch categories for sidebar
+  // ── Fetch Subcategories ────────────────────────────────
   const { data: subcategories, isLoading: issubCategoryLoading } = useQuery({
-    
-    
-  queryKey: ["subcategorieskey",id],
-  queryFn: async () => {
-    const res = await axios.get(
-      `${process.env.REACT_APP_API_URL}/api/test/getsubcategorydata/${id}`
-        
-    );
-    
-    return res.data ; // <-- important change
-  },
-  enabled: !!id,
-});
-console.log(id + "hello");
-console.log("subcategories", subcategories);
+    queryKey: ["subcategorieskey", id],
+    queryFn: async () => {
+      const res = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/test/getsubcategorydata/${id}`
+      );
+      return res.data;
+    },
+    enabled: !!id,
+  });
 
-
+  // ── Add to Cart ────────────────────────────────────────
   const handleAddToCart = (product) => {
     const user = localStorage.getItem("user")
       ? JSON.parse(localStorage.getItem("user"))
@@ -115,69 +87,19 @@ console.log("subcategories", subcategories);
     );
   }
 
-  // Filtered products for display
-const displayedProducts = (() => {
-  const source = subcategories || [];
-  const params = new URLSearchParams(location.search);
-  const searchQuery = params.get("product")?.toLowerCase() || "";
-
-  if (searchQuery) {
-    return source.filter((p) => p.name?.toLowerCase().includes(searchQuery));
-  }
-  return source;
-})();
+  const displayedProducts = searchFiltered;
 
   return (
     <section className="shop py-80">
       <div className={`side-overlay ${active && "show"}`}></div>
       <div className="container container-lg">
         <div className="row">
-          {/* Sidebar Start */}
-          {/* <div className="col-lg-3">
-            <div className={`shop-sidebar ${active && "active"}`}>
-              <button
-                onClick={sidebarController}
-                type="button"
-                className="shop-sidebar__close d-lg-none d-flex w-32 h-32 flex-center border border-gray-100 rounded-circle hover-bg-main-600 position-absolute inset-inline-end-0 me-10 mt-8 hover-text-white hover-border-main-600"
-              >
-                <i className="ph ph-x" />
-              </button>
-              <div className="shop-sidebar__box border border-gray-100 rounded-8 p-32 mb-32">
-                <h6 className="text-xl border-bottom border-gray-100 pb-24 mb-24">
-                  Sub Category
-                </h6>
-                <ul className="max-h-540 overflow-y-auto scroll-sm">
-                  {isCategoryLoading && <li>Loading categories...</li>}
-                  {!isCategoryLoading && categories.length === 0 && <li>No categories found</li>}
-                  {!isCategoryLoading &&
-                    categories.length > 0 &&
-                    categories.map((category) => (
-                      <li className="mb-24" key={category._id}>
-                        <Link
-                          to={`/shop/${category._id}`}
-                          className="text-gray-900 hover-text-main-600"
-                        >
-                          {category.name} (
-                          {
-                            products.filter(
-                              (product) => String(product.category) === String(category._id)
-                            ).length
-                          }
-                          )
-                        </Link>
-                      </li>
-                    ))}
-                </ul>
-              </div>
-
-            </div>
-          </div> */}
-          {/* Sidebar End */}
-
           {/* Content Start */}
           <div className="col-lg-12">
             <div className="flex-between gap-16 flex-wrap mb-40">
-              <span className="text-gray-900"><b>Sub Category Product's</b></span>
+              <span className="text-gray-900">
+                <b>Sub Category Product's</b>
+              </span>
               <div className="position-relative flex-align gap-16 flex-wrap">
                 <div className="list-grid-btns flex-align gap-16">
                   <button
@@ -204,68 +126,205 @@ const displayedProducts = (() => {
 
             <div className={`list-grid-wrapper ${grid && "list-view"}`}>
               <div className="row gy-4 g-12">
-                {!issubCategoryLoading && displayedProducts.length > 0 ? (
+                {displayedProducts && displayedProducts.length > 0 ? (
                   displayedProducts.map((product) => (
                     <div
                       key={product._id}
                       className="col-xxl-2 col-lg-3 col-sm-4 col-6"
                     >
-                      <div className="product-card px-8 py-16 border border-gray-100 hover-border-main-600 rounded-16 position-relative transition-2">
-                        {/* <button
+                      <div
+                        style={{
+                          borderRadius: "16px",
+                          border: "1px solid #eee",
+                          padding: "14px",
+                          background: "#fff",
+                          transition: "0.3s",
+                          height: "100%",
+                          position: "relative",
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.boxShadow =
+                            "0 10px 25px rgba(0,0,0,0.15)")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.boxShadow =
+                            "0 2px 8px rgba(0,0,0,0.05)")
+                        }
+                      >
+                        {/* ADD BUTTON */}
+                        <button
                           onClick={() => handleAddToCart(product)}
-                          className="product-card__cart btn bg-main-50 text-main-600 hover-bg-main-600 hover-text-white py-11 px-24 rounded-pill flex-align gap-8 position-absolute inset-block-start-0 inset-inline-end-0 me-16 mt-16"
+                          style={{
+                            position: "absolute",
+                            top: "14px",
+                            right: "14px",
+                            background: "#eef7ff",
+                            color: "#007bff",
+                            border: "none",
+                            padding: "6px 14px",
+                            borderRadius: "20px",
+                            fontWeight: "600",
+                            fontSize: "13px",
+                            cursor: "pointer",
+                            transition: "0.3s",
+                          }}
                         >
-                          Add <i className="ph ph-shopping-cart" />
-                        </button> */}
+                          + Add
+                        </button>
 
-                        <Link to ={`/varientlist/${product._id}`} className="product-card__thumb flex-center">
-                          <img
-                            src={product.image || "/assets/images/thumbs/placeholder.jpg"}
-                            alt={product.name}
-                            style={{ maxHeight: "180px", objectFit: "cover" }}
-                          />
+                        {/* IMAGE */}
+                        <Link to={`/varientlist/${product._id}`}>
+                          <div
+                            style={{
+                              height: "170px",
+                              display: "flex",
+                              justifyContent: "center",
+                              alignItems: "center",
+                              marginBottom: "12px",
+                            }}
+                          >
+                            <img
+                              src={
+                                product.image?.[0] ||
+                                "/assets/images/thumbs/placeholder.jpg"
+                              }
+                              alt={product.name}
+                              style={{
+                                maxHeight: "160px",
+                                objectFit: "contain",
+                              }}
+                            />
+                          </div>
                         </Link>
 
-                        <div className="product-card__content mt-12">
-                       
-
-                          <h6 className="title text-lg fw-semibold mt-12 mb-8">
+                        {/* PRODUCT INFO */}
+                        <div>
+                          {/* NAME */}
+                          <h6
+                            style={{
+                              fontWeight: "600",
+                              fontSize: "15px",
+                              marginBottom: "4px",
+                              minHeight: "38px",
+                            }}
+                          >
                             <Link
                               to={`/varientlist/${product._id}`}
                               className="link text-line-2"
+                              style={{
+                                color: "inherit",
+                                textDecoration: "none",
+                              }}
                             >
                               {product.name}
                             </Link>
                           </h6>
 
-                          {/* <div className="mt-12">
-                            <div
-                              className="progress w-100 bg-color-three rounded-pill h-4"
-                              role="progressbar"
-                              aria-valuenow={product.stock}
-                              aria-valuemin={0}
-                              aria-valuemax={100}
-                            >
-                              <div
-                                className="progress-bar bg-main-600 rounded-pill"
-                                style={{
-                                  width: `${Math.min((product.stock / 1000) * 100, 100)}%`,
-                                }}
-                              />
-                            </div>
-                            <span className="text-gray-900 text-xs fw-medium mt-8">
-                              {product.inStock
-                                ? `In Stock: ${product.stock}`
-                                : "Out of Stock"}
-                            </span>
+                          {/* SELLER */}
+                          <p
+                            style={{
+                              fontSize: "12px",
+                              color: "#888",
+                              marginBottom: "8px",
+                            }}
+                          >
+                            Sold by: {product.seller?.name || "Vendor"}
+                          </p>
 
-                            <p className="text-sm text-gray-500">
-                              Sold by:{" "}
-                              <span className="fw-medium">
-                                {product.seller?.name || "Unknown Vendor"}
-                              </span>
+                          {/* VARIANTS */}
+                          {product.variants && product.variants.length > 0 ? (
+                            <div
+                              style={{
+                                fontSize: "13px",
+                                color: "#555",
+                                marginBottom: "8px",
+                              }}
+                            >
+                              {product.variants.map((v) => (
+                                <span
+                                  key={v._id}
+                                  style={{
+                                    display: "inline-block",
+                                    marginRight: "6px",
+                                    marginBottom: "4px",
+                                    padding: "3px 8px",
+                                    borderRadius: "12px",
+                                    background: "#f0f0f0",
+                                    fontSize: "12px",
+                                  }}
+                                >
+                                  {v.quantity} {v.unit} — ₹
+                                  {v.offerPrice ?? v.price}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <p
+                              style={{
+                                fontSize: "12px",
+                                color: "#aaa",
+                                marginBottom: "10px",
+                              }}
+                            >
+                              No variants available
                             </p>
-                          </div> */}
+                          )}
+
+                          {/* PRICE */}
+                          {product.variants?.[0] && (
+                            <div style={{ marginBottom: "6px" }}>
+                              {product.variants[0].offerPrice <
+                              product.variants[0].price && (
+                                <span
+                                  style={{
+                                    textDecoration: "line-through",
+                                    color: "#999",
+                                    marginRight: "8px",
+                                    fontSize: "13px",
+                                  }}
+                                >
+                                  ₹{product.variants[0].price}
+                                </span>
+                              )}
+                              <span
+                                style={{
+                                  fontWeight: "700",
+                                  fontSize: "18px",
+                                  color: "#28a745",
+                                }}
+                              >
+                                ₹
+                                {product.variants[0].offerPrice ??
+                                  product.variants[0].price}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* STOCK */}
+                          {product.variants?.[0] && (
+                            <div
+                              style={{
+                                display: "inline-block",
+                                padding: "4px 10px",
+                                borderRadius: "12px",
+                                fontSize: "12px",
+                                fontWeight: "600",
+                                background:
+                                  product.variants[0].stock > 0
+                                    ? "#e8f8f0"
+                                    : "#ffecec",
+                                color:
+                                  product.variants[0].stock > 0
+                                    ? "#28a745"
+                                    : "#dc3545",
+                              }}
+                            >
+                              {product.variants[0].stock > 0
+                                ? `In Stock (${product.variants[0].stock})`
+                                : "Out of Stock"}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
