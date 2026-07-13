@@ -52,7 +52,8 @@ const allowedOrigins = [
   "http://localhost:4000",
   "http://31.97.237.98:5000",
   "https://online-store.staging-rdegi.com",
-  "https://maligaijaman.com"
+  "https://maligaijaman.com",
+  "https://maligaijaman-demo.rdegi.com"
 ];
 
 const corsOptions = {
