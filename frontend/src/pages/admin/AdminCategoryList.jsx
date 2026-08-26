@@ -4,7 +4,7 @@ import AdminLayout from "./AdminLayout";
 import "./AdminCategoryList.css";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, ImageOff } from "lucide-react";
 
 const AdminCategoryList = () => {
   const [categories, setCategories] = useState([]);
@@ -111,9 +111,19 @@ const AdminCategoryList = () => {
   return (
     <AdminLayout page="category-list">
       <div className="admin-container">
+
         <div className="header-bar">
-          <h2>📦 Category Management</h2>
-          <p className="subtitle">Manage and update your product categories easily</p>
+          <div>
+            <span className="eyebrow">Catalogue / Categories</span>
+            <h2>Category management</h2>
+            <p className="subtitle">Manage and update your product categories</p>
+          </div>
+          <a href="/addcategory" className="btn-add-new">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            New category
+          </a>
         </div>
 
         {loading ? (
@@ -122,11 +132,14 @@ const AdminCategoryList = () => {
           <div className="no-data">No categories found.</div>
         ) : (
           <div className="table-card">
+            <div className="table-card-top">
+              <span className="count-pill"><b>{categories.length}</b> categories total</span>
+            </div>
             <table className="modern-table">
               <thead>
                 <tr>
                   <th>#</th>
-                  <th>Product ID</th>
+                  <th>Category ID</th>
                   <th>Image</th>
                   <th>Name</th>
                   <th className="text-center">Actions</th>
@@ -136,7 +149,7 @@ const AdminCategoryList = () => {
                 {currentCategories.map((category, index) => (
                   <tr key={category._id}>
                     <td>{indexOfFirstItem + index + 1}</td>
-                    <td>{category._id}</td>
+                    <td className="cat-id">{category._id}</td>
                     <td>
                       {category.image ? (
                         <img
@@ -145,41 +158,36 @@ const AdminCategoryList = () => {
                           className="table-img"
                         />
                       ) : (
-                        <span className="no-img">No Image</span>
+                        <span className="img-placeholder"><ImageOff size={16} /></span>
                       )}
                     </td>
-                    <td>{category.name}</td>
+                    <td className="cat-name">{category.name}</td>
                     <td className="text-center">
-                      {/* <button className="btn-edit" onClick={() => openEditModal(category)}>
-                        Edit
-                      </button> */}
-                      <button className="icon-btn edit btn-edit"  onClick={() => openEditModal(category)}>
-                          <Pencil size={18} />
-                        </button>
-                      {/* <button className="btn-delete" onClick={() => handleDelete(category._id)}>
-                        Delete
-                      </button> */}
-
+                      <button className="icon-btn edit btn-edit" onClick={() => openEditModal(category)}>
+                        <Pencil size={16} />
+                      </button>
                       <button className="icon-btn delete btn-delete" onClick={() => handleDelete(category._id)}>
-                          <Trash2 size={18} />
-                        </button>
+                        <Trash2 size={16} />
+                      </button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
 
-            <div className="pagination">
-              {Array.from({ length: totalPages }, (_, page) => (
-                <button
-                  key={page + 1}
-                  className={`page-btn ${currentPage === page + 1 ? "active" : ""}`}
-                  onClick={() => handlePageChange(page + 1)}
-                >
-                  {page + 1}
-                </button>
-              ))}
-            </div>
+            {totalPages > 1 && (
+              <div className="pagination">
+                {Array.from({ length: totalPages }, (_, page) => (
+                  <button
+                    key={page + 1}
+                    className={`page-btn ${currentPage === page + 1 ? "active" : ""}`}
+                    onClick={() => handlePageChange(page + 1)}
+                  >
+                    {page + 1}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -188,21 +196,33 @@ const AdminCategoryList = () => {
       {showEditModal && (
         <div className="modal-overlay">
           <div className="modal-box">
-            <h3>Edit Category</h3>
-            <input
-              type="text"
-              placeholder="Category name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            />
-            <input type="file" onChange={handleImageChange} />
-            {formData.preview && <img src={formData.preview} alt="preview" className="preview-img" />}
+            <h3>Edit category</h3>
+
+            <div className="modal-field">
+              <label>Category name</label>
+              <input
+                type="text"
+                placeholder="Category name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              />
+            </div>
+
+            <div className="modal-field">
+              <label>Category image</label>
+              <div className="modal-file-row">
+                {formData.preview && <img src={formData.preview} alt="preview" className="preview-img" />}
+                <label className="file-btn" htmlFor="editImageInput">Choose image</label>
+                <input id="editImageInput" type="file" onChange={handleImageChange} />
+              </div>
+            </div>
+
             <div className="modal-actions">
-              <button className="btn-save" onClick={handleSave}>
-                Update
-              </button>
               <button className="btn-cancel" onClick={closeEditModal}>
                 Cancel
+              </button>
+              <button className="btn-save" onClick={handleSave}>
+                Update category
               </button>
             </div>
           </div>

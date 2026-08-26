@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import SellerLayout from "./SellerLayout";
+import "./SellerDashboard.css";
 
 const BillingScanner = () => {
   const inputRef = useRef(null);
@@ -77,8 +78,11 @@ const BillingScanner = () => {
       <div style={styles.container}>
         {/* ================= HEADER ================= */}
         <div style={styles.header}>
-          <h2>Retail Billing</h2>
-          <span> {new Date().toLocaleDateString("en-GB")}</span>
+          <div>
+            <span style={styles.eyebrow}>Records / Billing</span>
+            <h2 style={styles.title}>Retail billing</h2>
+          </div>
+          <span style={styles.dateTag}>{new Date().toLocaleDateString("en-GB")}</span>
         </div>
 
         {/* ================= INPUT BOX ================= */}
@@ -93,11 +97,11 @@ const BillingScanner = () => {
         />
 
         {error && <p style={styles.error}>{error}</p>}
-        {loading && <p>Fetching product...</p>}
+        {loading && <p style={{ color: "#6B7280", fontSize: "13px" }}>Fetching product...</p>}
 
         {/* ================= TABLE ================= */}
-        <div style={styles.tableWrapper}>
-          <table style={styles.table}>
+        <div style={{ marginTop: "16px" }}>
+          <table className="classic-table">
             <thead>
               <tr>
                 <th>#</th>
@@ -106,7 +110,7 @@ const BillingScanner = () => {
                 <th>Qty</th>
                 <th>Price</th>
                 <th>Amount</th>
-                <th>X</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -120,45 +124,47 @@ const BillingScanner = () => {
 
               {cart.map((item, i) => (
                 <tr key={item._id}>
-                  <td>{i + 1}</td>
-                  <td>{item.barcode}</td>
-                  <td>{item.name}</td>
+                  <td className="mono-cell">{i + 1}</td>
+                  <td className="mono-cell">{item.barcode}</td>
+                  <td style={{ fontWeight: 500 }}>{item.name}</td>
                   <td>
-                    <button
-                      style={styles.qtyBtn}
-                      onClick={() =>
-                        setCart(
-                          cart.map((p) =>
-                            p._id === item._id
-                              ? {
-                                  ...p,
-                                  qty: Math.max(1, p.qty - 1),
-                                }
-                              : p
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <button
+                        style={styles.qtyBtn}
+                        onClick={() =>
+                          setCart(
+                            cart.map((p) =>
+                              p._id === item._id
+                                ? {
+                                    ...p,
+                                    qty: Math.max(1, p.qty - 1),
+                                  }
+                                : p
+                            )
                           )
-                        )
-                      }
-                    >
-                      -
-                    </button>
-                    {item.qty}
-                    <button
-                      style={styles.qtyBtn}
-                      onClick={() =>
-                        setCart(
-                          cart.map((p) =>
-                            p._id === item._id
-                              ? { ...p, qty: p.qty + 1 }
-                              : p
+                        }
+                      >
+                        −
+                      </button>
+                      <span className="mono-cell" style={{ color: "#1E2233" }}>{item.qty}</span>
+                      <button
+                        style={styles.qtyBtn}
+                        onClick={() =>
+                          setCart(
+                            cart.map((p) =>
+                              p._id === item._id
+                                ? { ...p, qty: p.qty + 1 }
+                                : p
+                            )
                           )
-                        )
-                      }
-                    >
-                      +
-                    </button>
+                        }
+                      >
+                        +
+                      </button>
+                    </div>
                   </td>
-                  <td>₹{item.sellingPrice}</td>
-                  <td>
+                  <td className="mono-cell">₹{item.sellingPrice}</td>
+                  <td style={{ fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600 }}>
                     ₹{(item.qty * item.sellingPrice).toFixed(2)}
                   </td>
                   <td>
@@ -183,9 +189,8 @@ const BillingScanner = () => {
 
         {/* ================= SUMMARY ================= */}
         <div style={styles.summary}>
-          <strong>Total Items:</strong> {totalQty}
-          <strong>Net Amount:</strong> ₹
-          {subTotal.toFixed(2)}
+          <span>Total items: <b style={styles.summaryValue}>{totalQty}</b></span>
+          <span>Net amount: <b style={styles.summaryValue}>₹{subTotal.toFixed(2)}</b></span>
         </div>
 
         {/* ================= ACTION ================= */}
@@ -193,7 +198,7 @@ const BillingScanner = () => {
           <button style={styles.clearBtn} onClick={() => setCart([])}>
             Clear
           </button>
-          <button style={styles.saveBtn}>Save Bill</button>
+          <button style={styles.saveBtn}>Save bill</button>
         </div>
       </div>
     </SellerLayout>
@@ -203,66 +208,119 @@ const BillingScanner = () => {
 // ================= STYLES =================
 const styles = {
   container: {
-    padding: "20px",
-    background: "#f4f6f8",
+    padding: "24px",
+    background: "#F6F7FB",
     minHeight: "100vh",
+    fontFamily: "'Inter', sans-serif",
+  },
+  eyebrow: {
+    display: "block",
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: "11px",
+    fontWeight: "600",
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    color: "#3B4C8A",
+    marginBottom: "6px",
+  },
+  title: {
+    margin: 0,
+    fontFamily: "'Space Grotesk', sans-serif",
+    fontWeight: 600,
+    fontSize: "20px",
+    color: "#1E2233",
   },
   header: {
     display: "flex",
     justifyContent: "space-between",
-    marginBottom: "10px",
+    alignItems: "flex-end",
+    marginBottom: "16px",
+  },
+  dateTag: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: "12px",
+    color: "#6B7280",
   },
   input: {
     width: "100%",
-    padding: "12px",
-    fontSize: "16px",
-    marginBottom: "10px",
+    padding: "13px 16px",
+    fontSize: "14.5px",
+    borderRadius: "10px",
+    border: "1px solid #E4E7F0",
+    background: "#fff",
+    outline: "none",
+    boxSizing: "border-box",
+    marginBottom: "6px",
   },
   error: {
-    color: "red",
-    marginBottom: "5px",
-  },
-  tableWrapper: {
-    background: "#fff",
-    borderRadius: "6px",
-  },
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
+    color: "#B02A37",
+    fontSize: "13px",
+    margin: "6px 0",
   },
   empty: {
     textAlign: "center",
-    padding: "20px",
-    color: "#777",
+    padding: "24px",
+    color: "#9AA0B4",
   },
   qtyBtn: {
-    margin: "0 4px",
+    width: "22px",
+    height: "22px",
+    border: "1px solid #E4E7F0",
+    background: "#F6F7FB",
+    borderRadius: "6px",
+    cursor: "pointer",
+    fontSize: "13px",
+    lineHeight: 1,
   },
   removeBtn: {
-    background: "none",
+    background: "#FBE9E7",
     border: "none",
-    color: "red",
+    color: "#C0472E",
+    width: "26px",
+    height: "26px",
+    borderRadius: "8px",
     cursor: "pointer",
+    fontSize: "12px",
   },
   summary: {
-    marginTop: "15px",
+    marginTop: "18px",
     display: "flex",
     justifyContent: "space-between",
+    background: "#fff",
+    border: "1px solid #E4E7F0",
+    borderRadius: "12px",
+    padding: "16px 20px",
+    fontSize: "13.5px",
+    color: "#1E2233",
+  },
+  summaryValue: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: "15px",
+    marginLeft: "6px",
   },
   actions: {
-    marginTop: "15px",
+    marginTop: "16px",
     display: "flex",
     justifyContent: "flex-end",
     gap: "10px",
   },
   clearBtn: {
-    padding: "8px 16px",
+    padding: "10px 20px",
+    borderRadius: "8px",
+    border: "1px solid #E4E7F0",
+    background: "#fff",
+    color: "#6B7280",
+    fontWeight: 500,
+    cursor: "pointer",
   },
   saveBtn: {
-    padding: "8px 16px",
-    background: "#16a34a",
+    padding: "10px 22px",
+    borderRadius: "8px",
+    background: "#262F52",
     color: "#fff",
     border: "none",
+    fontWeight: 500,
+    cursor: "pointer",
   },
 };
 

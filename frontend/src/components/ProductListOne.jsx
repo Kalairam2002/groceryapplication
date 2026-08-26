@@ -168,6 +168,22 @@ const ProductListOne = () => {
     return `/ ${variant.quantity} ${variant.unit}`;
   };
 
+  // ✅ Unit to show next to the stock count — stockUnit is the newer field
+  // (added on the seller/admin Add Product forms); older products may not
+  // have it saved, so fall back to the variant's own quantity unit.
+  const getStockUnitLabel = (variant) => variant.stockUnit || variant.unit || "";
+
+  // ✅ Low-stock badge shown on the product image, based on whichever
+  // variant is currently selected in the dropdown for this card.
+  const LOW_STOCK_THRESHOLD = 5;
+  const getStockBadge = (variant) => {
+    if (!variant) return null;
+    if (variant.stock <= 0) return { text: "Out of stock", tone: "danger" };
+    if (variant.stock < LOW_STOCK_THRESHOLD)
+      return { text: `Only ${variant.stock} left`, tone: "warning" };
+    return null;
+  };
+
   const formatExpiryDate = (dateStr) => {
     if (!dateStr) return null;
     const date = new Date(dateStr);
@@ -222,6 +238,7 @@ const ProductListOne = () => {
 
                 const defaultVariant = validVariants[0];
                 const activeVariant = selectedVariant[product._id] || defaultVariant;
+                const stockBadge = getStockBadge(activeVariant);
 
                 return (
                   <div key={product._id} style={{ padding: "10px" }}>
@@ -233,8 +250,35 @@ const ProductListOne = () => {
                       </div>
 
                       {/* IMAGE */}
-                      <div style={{ height: "160px" }}>
-                        <img src={product.image?.[0]} alt={product.name} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                      <div style={{ height: "160px", position: "relative" }}>
+                        {stockBadge && (
+                          <span
+                            style={{
+                              position: "absolute",
+                              top: "0",
+                              left: "0",
+                              fontSize: "11px",
+                              fontWeight: 600,
+                              padding: "3px 8px",
+                              borderRadius: "6px",
+                              color: stockBadge.tone === "danger" ? "#791F1F" : "#633806",
+                              background: stockBadge.tone === "danger" ? "#FCEBEB" : "#FAEEDA",
+                              zIndex: 1,
+                            }}
+                          >
+                            {stockBadge.text}
+                          </span>
+                        )}
+                        <img
+                          src={product.image?.[0]}
+                          alt={product.name}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "contain",
+                            opacity: stockBadge?.tone === "danger" ? 0.55 : 1,
+                          }}
+                        />
                       </div>
 
                       {/* NAME */}
@@ -265,7 +309,7 @@ const ProductListOne = () => {
 
                       {/* INFO BOX */}
                       <div style={{ background: "#f9fafb", borderRadius: "10px", padding: "10px", fontSize: "13px", textAlign: "left", marginBottom: "10px" }}>
-                        <p style={{ margin: "3px 0" }}>📦 Stock: <b style={{ marginLeft: "5px" }}>{activeVariant.stock}</b></p>
+                        <p style={{ margin: "3px 0" }}>📦 Stock: <b style={{ marginLeft: "5px" }}>{activeVariant.stock} {getStockUnitLabel(activeVariant)}</b></p>
                         <p style={{ margin: "3px 0" }}>💰 Tax: <b style={{ marginLeft: "5px" }}>{activeVariant.tax}%</b></p>
                         <p style={{ margin: "3px 0" }}>🏬 Seller: <b style={{ marginLeft: "5px" }}>{product.seller?.name || "N/A"}</b></p>
                         {/* ✅ Show expiry from variant level */}
@@ -277,9 +321,18 @@ const ProductListOne = () => {
                       {/* ADD TO CART */}
                       <button
                         onClick={() => handleAddToCart({ ...product, selectedVariant: activeVariant })}
-                        style={{ background: "linear-gradient(90deg,#3bb77e,#2eb872)", color: "#fff", border: "none", padding: "10px", borderRadius: "25px", cursor: "pointer", fontWeight: "600" }}
+                        disabled={activeVariant.stock <= 0}
+                        style={{
+                          background: activeVariant.stock <= 0 ? "#ccc" : "linear-gradient(90deg,#3bb77e,#2eb872)",
+                          color: "#fff",
+                          border: "none",
+                          padding: "10px",
+                          borderRadius: "25px",
+                          cursor: activeVariant.stock <= 0 ? "not-allowed" : "pointer",
+                          fontWeight: "600",
+                        }}
                       >
-                        Add to Cart
+                        {activeVariant.stock <= 0 ? "Out of stock" : "Add to Cart"}
                       </button>
                     </div>
                   </div>

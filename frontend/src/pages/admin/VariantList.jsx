@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { FaEdit, FaTrash } from "react-icons/fa";
+import { Pencil, Trash2, ImageOff } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import AdminLayout from "./AdminLayout";
+import "./AdminCategoryList.css";
 
 const VariantList = () => {
   const [variants, setVariants] = useState([]);
@@ -22,7 +23,6 @@ const VariantList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // ✅ Fetch variants
   const fetchVariants = async () => {
     try {
       const { data } = await axios.get(
@@ -36,7 +36,6 @@ const VariantList = () => {
     }
   };
 
-  // ✅ Fetch subcategories
   const fetchSubcategories = async () => {
     try {
       const { data } = await axios.get(
@@ -57,7 +56,6 @@ const VariantList = () => {
     fetchSubcategories();
   }, []);
 
-  // ✅ Edit modal handlers
   const openEditModal = (variant) => {
     setEditingVariant(variant);
     setFormData({
@@ -86,7 +84,6 @@ const VariantList = () => {
     }
   };
 
-  // ✅ Save variant
   const handleSave = async () => {
     if (!formData.name.trim() || !formData.subcategory) {
       toast.error("Please fill all required fields");
@@ -115,7 +112,6 @@ const VariantList = () => {
     }
   };
 
-  // ✅ Delete variant
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this variant?")) return;
 
@@ -132,120 +128,136 @@ const VariantList = () => {
     }
   };
 
-  // ✅ Pagination
   const totalPages = Math.ceil(variants.length / itemsPerPage);
-  const currentVariants = variants.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const indexOfFirstItem = (currentPage - 1) * itemsPerPage;
+  const currentVariants = variants.slice(indexOfFirstItem, indexOfFirstItem + itemsPerPage);
 
   return (
     <AdminLayout page="variant-list">
-      <div className="variant-container">
-        <h3 className="title">Variant List</h3>
+      <div className="admin-container">
+
+        <div className="header-bar">
+          <div>
+            <span className="eyebrow">Catalogue / Variants</span>
+            <h2>Variant management</h2>
+            <p className="subtitle">Manage product variants nested under subcategories</p>
+          </div>
+          <a href="/addVariant" className="btn-add-new">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            New variant
+          </a>
+        </div>
 
         {loading ? (
-          <p className="loading">Loading variants...</p>
+          <div className="loader">Loading variants...</div>
         ) : variants.length === 0 ? (
-          <p className="empty">No variants found.</p>
+          <div className="no-data">No variants found.</div>
         ) : (
-          <>
-            <table className="styled-table">
+          <div className="table-card">
+            <div className="table-card-top">
+              <span className="count-pill"><b>{variants.length}</b> variants total</span>
+            </div>
+            <table className="modern-table">
               <thead>
                 <tr>
                   <th>#</th>
                   <th>Image</th>
                   <th>Name</th>
                   <th>Subcategory</th>
-                  <th>Actions</th>
+                  <th className="text-center">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {currentVariants.map((variant, index) => (
                   <tr key={variant._id}>
-                    <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                    <td>{indexOfFirstItem + index + 1}</td>
                     <td>
                       {variant.image ? (
-                        <img
-                          src={variant.image}
-                          alt={variant.name}
-                          className="variant-img"
-                        />
+                        <img src={variant.image} alt={variant.name} className="table-img" />
                       ) : (
-                        "No Image"
+                        <span className="img-placeholder"><ImageOff size={16} /></span>
                       )}
                     </td>
-                    <td>{variant.name}</td>
+                    <td className="cat-name">{variant.name}</td>
                     <td>{variant.subcategory?.name || "Unassigned"}</td>
-                    <td>
-                      <FaEdit
-                        className="action-icon edit"
-                        onClick={() => openEditModal(variant)}
-                      />
-                      <FaTrash
-                        className="action-icon delete"
-                        onClick={() => handleDelete(variant._id)}
-                      />
+                    <td className="text-center">
+                      <button className="icon-btn edit btn-edit" onClick={() => openEditModal(variant)}>
+                        <Pencil size={16} />
+                      </button>
+                      <button className="icon-btn delete btn-delete" onClick={() => handleDelete(variant._id)}>
+                        <Trash2 size={16} />
+                      </button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
 
-            {/* Pagination */}
-            <div className="pagination">
-              {Array.from({ length: totalPages }, (_, i) => (
-                <button
-                  key={i}
-                  className={currentPage === i + 1 ? "active" : ""}
-                  onClick={() => setCurrentPage(i + 1)}
-                >
-                  {i + 1}
-                </button>
-              ))}
-            </div>
-          </>
+            {totalPages > 1 && (
+              <div className="pagination">
+                {Array.from({ length: totalPages }, (_, i) => (
+                  <button
+                    key={i}
+                    className={`page-btn ${currentPage === i + 1 ? "active" : ""}`}
+                    onClick={() => setCurrentPage(i + 1)}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
 
-      {/* ✅ Edit Modal */}
       {showEditModal && (
         <div className="modal-overlay">
-          <div className="modal">
-            <h4>Edit Variant</h4>
-            <input
-              type="text"
-              placeholder="Variant name"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-            />
-            <select
-              value={formData.subcategory}
-              onChange={(e) =>
-                setFormData({ ...formData, subcategory: e.target.value })
-              }
-            >
-              <option value="">-- Select Subcategory --</option>
-              {subcategories.map((sub) => (
-                <option key={sub._id} value={sub._id}>
-                  {sub.name}
-                </option>
-              ))}
-            </select>
+          <div className="modal-box">
+            <h3>Edit variant</h3>
 
-            <input type="file" onChange={handleImageChange} />
-            {formData.preview && (
-              <img src={formData.preview} alt="preview" className="preview" />
-            )}
+            <div className="modal-field">
+              <label>Variant name</label>
+              <input
+                type="text"
+                placeholder="Variant name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              />
+            </div>
+
+            <div className="modal-field">
+              <label>Subcategory</label>
+              <select
+                value={formData.subcategory}
+                onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
+                style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid #E3E8DD", background: "#F5F7F1", fontSize: "13.5px", color: "#1C2620" }}
+              >
+                <option value="">-- Select Subcategory --</option>
+                {subcategories.map((sub) => (
+                  <option key={sub._id} value={sub._id}>
+                    {sub.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="modal-field">
+              <label>Variant image</label>
+              <div className="modal-file-row">
+                {formData.preview && <img src={formData.preview} alt="preview" className="preview-img" />}
+                <label className="file-btn" htmlFor="editImageInput">Choose image</label>
+                <input id="editImageInput" type="file" onChange={handleImageChange} />
+              </div>
+            </div>
 
             <div className="modal-actions">
-              <button className="save-btn" onClick={handleSave}>
-                Update
-              </button>
-              <button className="cancel-btn" onClick={closeEditModal}>
+              <button className="btn-cancel" onClick={closeEditModal}>
                 Cancel
+              </button>
+              <button className="btn-save" onClick={handleSave}>
+                Update variant
               </button>
             </div>
           </div>
@@ -253,126 +265,6 @@ const VariantList = () => {
       )}
 
       <ToastContainer position="top-right" autoClose={2000} />
-
-      {/* ✅ Modern CSS */}
-      <style>
-        {`
-        .variant-container {
-          background: #f8f9fb;
-          padding: 20px;
-          border-radius: 12px;
-          box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-        }
-        .title {
-          text-align: center;
-          font-weight: 600;
-          margin-bottom: 20px;
-          color: #2c3e50;
-        }
-        .styled-table {
-          width: 100%;
-          border-collapse: collapse;
-          background: white;
-          border-radius: 10px;
-          overflow: hidden;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-        .styled-table th, .styled-table td {
-          padding: 12px 16px;
-          text-align: left;
-          border-bottom: 1px solid #eee;
-        }
-        .styled-table th {
-          background: #f3f6f9;
-          color: #34495e;
-        }
-        .variant-img {
-          width: 60px;
-          height: 60px;
-          border-radius: 8px;
-          object-fit: cover;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-        }
-        .action-icon {
-          font-size: 18px;
-          margin-right: 12px;
-          cursor: pointer;
-          transition: 0.2s ease;
-        }
-        .action-icon.edit { color: #3498db; }
-        .action-icon.delete { color: #e74c3c; }
-        .action-icon:hover { transform: scale(1.1); }
-        .pagination {
-          margin-top: 20px;
-          display: flex;
-          justify-content: center;
-          gap: 6px;
-        }
-        .pagination button {
-          border: none;
-          padding: 6px 12px;
-          border-radius: 6px;
-          background: #ecf0f1;
-          cursor: pointer;
-        }
-        .pagination button.active {
-          background: #3498db;
-          color: white;
-        }
-        /* Modal */
-        .modal-overlay {
-          position: fixed;
-          top: 0; left: 0; width: 100%; height: 100%;
-          background: rgba(0,0,0,0.5);
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          z-index: 9999;
-        }
-        .modal {
-          background: white;
-          padding: 25px;
-          border-radius: 10px;
-          width: 400px;
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-        .modal input, .modal select {
-          padding: 8px;
-          border-radius: 6px;
-          border: 1px solid #ccc;
-        }
-        .preview {
-          width: 100px;
-          height: 100px;
-          object-fit: cover;
-          border-radius: 8px;
-          align-self: center;
-        }
-        .modal-actions {
-          display: flex;
-          justify-content: flex-end;
-          gap: 10px;
-        }
-        .save-btn {
-          background: #27ae60;
-          color: white;
-          border: none;
-          padding: 6px 12px;
-          border-radius: 6px;
-          cursor: pointer;
-        }
-        .cancel-btn {
-          background: #95a5a6;
-          color: white;
-          border: none;
-          padding: 6px 12px;
-          border-radius: 6px;
-          cursor: pointer;
-        }
-        `}
-      </style>
     </AdminLayout>
   );
 };

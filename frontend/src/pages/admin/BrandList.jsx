@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { FaEdit, FaTrash } from "react-icons/fa";
+import { Pencil, Trash2, ImageOff } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import AdminLayout from "./AdminLayout";
+import "./AdminCategoryList.css";
 
 const BrandList = () => {
   const [brands, setBrands] = useState([]);
@@ -12,12 +13,10 @@ const BrandList = () => {
   const [formData, setFormData] = useState({ name: "", image: null, preview: "" });
   const [showModal, setShowModal] = useState(false);
 
-  // ✅ Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const brandsPerPage = 5;
   const totalPages = Math.ceil(brands.length / brandsPerPage);
 
-  // ✅ Fetch Brands
   const fetchBrands = async () => {
     try {
       const { data } = await axios.get(`${process.env.REACT_APP_API_URL}/api/brand`);
@@ -33,7 +32,6 @@ const BrandList = () => {
     fetchBrands();
   }, []);
 
-  // ✅ Delete Brand
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this brand?")) return;
     try {
@@ -47,14 +45,12 @@ const BrandList = () => {
     }
   };
 
-  // ✅ Open Edit Modal
   const openModal = (brand) => {
     setEditingBrand(brand);
     setFormData({ name: brand.name, image: null, preview: brand.image });
     setShowModal(true);
   };
 
-  // ✅ Handle Save
   const handleSave = async () => {
     if (!formData.name.trim()) return toast.error("Brand name is required");
     const fd = new FormData();
@@ -85,127 +81,136 @@ const BrandList = () => {
     });
   };
 
-  // ✅ Pagination logic
-  const indexOfLast = currentPage * brandsPerPage;
-  const indexOfFirst = indexOfLast - brandsPerPage;
-  const currentBrands = brands.slice(indexOfFirst, indexOfLast);
+  const indexOfFirst = (currentPage - 1) * brandsPerPage;
+  const currentBrands = brands.slice(indexOfFirst, indexOfFirst + brandsPerPage);
 
   return (
-    <AdminLayout>
-      <div style={styles.container}>
-        <h2 style={styles.heading}>🛍️ Brand Management</h2>
+    <AdminLayout page="brand-list">
+      <div className="admin-container">
+
+        <div className="header-bar">
+          <div>
+            <span className="eyebrow">Catalogue / Brands</span>
+            <h2>Brand management</h2>
+            <p className="subtitle">Manage the brands your vendors sell under</p>
+          </div>
+          <a href="/addBrand" className="btn-add-new">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            New brand
+          </a>
+        </div>
 
         {loading ? (
-          <p style={styles.textMuted}>Loading brands...</p>
+          <div className="loader">Loading brands...</div>
         ) : brands.length === 0 ? (
-          <p style={styles.textMuted}>No brands found</p>
+          <div className="no-data">No brands found.</div>
         ) : (
-          <>
-            <div style={styles.tableWrapper}>
-              <table style={styles.table}>
-                <thead>
-                  <tr style={styles.tableHeaderRow}>
-                    <th style={styles.th}>#</th>
-                    <th style={styles.th}>Image</th>
-                    <th style={styles.th}>Brand Name</th>
-                    <th style={styles.th}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentBrands.map((brand, index) => (
-                    <tr key={brand._id} style={styles.tr}>
-                      <td style={styles.td}>{indexOfFirst + index + 1}</td>
-                      <td style={styles.td}>
+          <div className="table-card">
+            <div className="table-card-top">
+              <span className="count-pill"><b>{brands.length}</b> brands total</span>
+            </div>
+            <table className="modern-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Image</th>
+                  <th>Brand name</th>
+                  <th className="text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentBrands.map((brand, index) => (
+                  <tr key={brand._id}>
+                    <td>{indexOfFirst + index + 1}</td>
+                    <td>
+                      {brand.image ? (
                         <img
                           src={brand.image}
                           alt={brand.name}
-                          style={styles.brandImg}
+                          className="table-img"
                           onError={(e) => (e.target.style.display = "none")}
                         />
-                      </td>
-                      <td style={styles.td}>{brand.name}</td>
-                      <td style={styles.td}>
-                        <FaEdit
-                          onClick={() => openModal(brand)}
-                          style={{ ...styles.icon, color: "#007bff" }}
-                          title="Edit"
-                        />
-                        <FaTrash
-                          onClick={() => handleDelete(brand._id)}
-                          style={{ ...styles.icon, color: "#e74c3c" }}
-                          title="Delete"
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                      ) : (
+                        <span className="img-placeholder"><ImageOff size={16} /></span>
+                      )}
+                    </td>
+                    <td className="cat-name">{brand.name}</td>
+                    <td className="text-center">
+                      <button className="icon-btn edit btn-edit" onClick={() => openModal(brand)}>
+                        <Pencil size={16} />
+                      </button>
+                      <button className="icon-btn delete btn-delete" onClick={() => handleDelete(brand._id)}>
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
 
-            {/* ✅ Pagination Controls */}
-            <div style={styles.paginationContainer}>
-              <button
-                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                disabled={currentPage === 1}
-                style={{
-                  ...styles.pageButton,
-                  backgroundColor: currentPage === 1 ? "#ccc" : "#007bff",
-                }}
-              >
-                Prev
-              </button>
-
-              {Array.from({ length: totalPages }, (_, i) => (
+            {totalPages > 1 && (
+              <div className="pagination">
                 <button
-                  key={i}
-                  onClick={() => setCurrentPage(i + 1)}
-                  style={{
-                    ...styles.pageButton,
-                    backgroundColor: currentPage === i + 1 ? "#007bff" : "#eee",
-                    color: currentPage === i + 1 ? "#fff" : "#000",
-                  }}
+                  className="page-btn"
+                  onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                  disabled={currentPage === 1}
                 >
-                  {i + 1}
+                  Prev
                 </button>
-              ))}
-
-              <button
-                onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                style={{
-                  ...styles.pageButton,
-                  backgroundColor: currentPage === totalPages ? "#ccc" : "#007bff",
-                }}
-              >
-                Next
-              </button>
-            </div>
-          </>
+                {Array.from({ length: totalPages }, (_, i) => (
+                  <button
+                    key={i}
+                    className={`page-btn ${currentPage === i + 1 ? "active" : ""}`}
+                    onClick={() => setCurrentPage(i + 1)}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+                <button
+                  className="page-btn"
+                  onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
-      {/* ✅ Edit Modal */}
       {showModal && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.modal}>
-            <h3 style={styles.modalTitle}>Edit Brand</h3>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="Brand Name"
-              style={styles.input}
-            />
-            <input type="file" onChange={handleImageChange} style={styles.fileInput} />
-            {formData.preview && (
-              <img src={formData.preview} alt="Preview" style={styles.previewImg} />
-            )}
-            <div style={styles.modalActions}>
-              <button style={styles.btnSave} onClick={handleSave}>
-                Save
-              </button>
-              <button style={styles.btnCancel} onClick={() => setShowModal(false)}>
+        <div className="modal-overlay">
+          <div className="modal-box">
+            <h3>Edit brand</h3>
+
+            <div className="modal-field">
+              <label>Brand name</label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Brand name"
+              />
+            </div>
+
+            <div className="modal-field">
+              <label>Brand image</label>
+              <div className="modal-file-row">
+                {formData.preview && <img src={formData.preview} alt="preview" className="preview-img" />}
+                <label className="file-btn" htmlFor="editImageInput">Choose image</label>
+                <input id="editImageInput" type="file" onChange={handleImageChange} />
+              </div>
+            </div>
+
+            <div className="modal-actions">
+              <button className="btn-cancel" onClick={() => setShowModal(false)}>
                 Cancel
+              </button>
+              <button className="btn-save" onClick={handleSave}>
+                Update brand
               </button>
             </div>
           </div>
@@ -215,151 +220,6 @@ const BrandList = () => {
       <ToastContainer position="top-right" autoClose={2000} />
     </AdminLayout>
   );
-};
-
-// ✅ Styles
-const styles = {
-  container: {
-    padding: "40px",
-    background: "#f9fafc",
-    minHeight: "100vh",
-  },
-  heading: {
-    textAlign: "center",
-    color: "#2c3e50",
-    marginBottom: "30px",
-    fontWeight: "700",
-    fontSize: "28px",
-  },
-  textMuted: {
-    textAlign: "center",
-    color: "#888",
-    fontSize: "16px",
-  },
-  tableWrapper: {
-    background: "#fff",
-    borderRadius: "12px",
-    padding: "20px",
-    boxShadow: "0 6px 20px rgba(0,0,0,0.08)",
-    overflowX: "auto",
-  },
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
-  },
-  tableHeaderRow: {
-    background: "linear-gradient(to right, #007bff, #00c6ff)",
-    color: "#fff",
-  },
-  th: {
-    padding: "12px",
-    textAlign: "center",
-    fontWeight: "600",
-  },
-  tr: {
-    borderBottom: "1px solid #eee",
-    transition: "background 0.2s",
-  },
-  td: {
-    textAlign: "center",
-    padding: "12px",
-    color: "#34495e",
-    fontSize: "15px",
-  },
-  brandImg: {
-    width: "60px",
-    height: "60px",
-    objectFit: "cover",
-    borderRadius: "10px",
-    border: "2px solid #f1f1f1",
-  },
-  icon: {
-    fontSize: "18px",
-    margin: "0 8px",
-    cursor: "pointer",
-    transition: "transform 0.2s",
-  },
-  paginationContainer: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: "20px",
-    gap: "8px",
-  },
-  pageButton: {
-    padding: "6px 14px",
-    borderRadius: "6px",
-    border: "none",
-    cursor: "pointer",
-    fontWeight: "500",
-    color: "#fff",
-    transition: "background 0.2s",
-  },
-  modalOverlay: {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    width: "100%",
-    height: "100%",
-    background: "rgba(0,0,0,0.4)",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 1000,
-  },
-  modal: {
-    background: "#fff",
-    padding: "25px",
-    borderRadius: "12px",
-    width: "400px",
-    maxWidth: "90%",
-    boxShadow: "0 6px 15px rgba(0,0,0,0.3)",
-    textAlign: "center",
-  },
-  modalTitle: {
-    marginBottom: "15px",
-    fontWeight: "600",
-    color: "#2c3e50",
-  },
-  input: {
-    width: "100%",
-    padding: "10px",
-    marginBottom: "10px",
-    border: "1px solid #ccc",
-    borderRadius: "8px",
-  },
-  fileInput: {
-    width: "100%",
-    marginBottom: "10px",
-  },
-  previewImg: {
-    width: "100px",
-    height: "100px",
-    borderRadius: "10px",
-    objectFit: "cover",
-    marginBottom: "10px",
-  },
-  modalActions: {
-    display: "flex",
-    justifyContent: "center",
-    gap: "10px",
-  },
-  btnSave: {
-    background: "#27ae60",
-    color: "#fff",
-    border: "none",
-    padding: "8px 16px",
-    borderRadius: "6px",
-    cursor: "pointer",
-  },
-  btnCancel: {
-    background: "#bdc3c7",
-    color: "#fff",
-    border: "none",
-    padding: "8px 16px",
-    borderRadius: "6px",
-    cursor: "pointer",
-  },
 };
 
 export default BrandList;

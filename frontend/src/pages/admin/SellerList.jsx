@@ -9,7 +9,6 @@ const SellerList = () => {
   const [sellers, setSellers] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
@@ -50,7 +49,6 @@ const SellerList = () => {
     }
   };
 
-  // ✅ Delete seller function
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this seller?")) return;
 
@@ -67,7 +65,6 @@ const SellerList = () => {
     }
   };
 
-  // pagination logic
   const totalPages = Math.ceil(sellers.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -77,15 +74,21 @@ const SellerList = () => {
 
   return (
     <AdminLayout page="seller-list">
-      <div className="container mt-4">
-        <h4 className="mb-4">Seller List</h4>
+      <div className="container">
+        <div className="page-header">
+          <div>
+            <span className="eyebrow">Network / Sellers</span>
+            <h4>Seller list</h4>
+            <p className="subtitle">Vendors selling on the marketplace</p>
+          </div>
+        </div>
 
         {loading ? (
           <p>Loading sellers...</p>
         ) : sellers.length === 0 ? (
           <p>No sellers found.</p>
         ) : (
-          <>
+          <div className="table-card">
             <table className="classic-table">
               <thead>
                 <tr>
@@ -93,43 +96,29 @@ const SellerList = () => {
                   <th>Name</th>
                   <th>Email</th>
                   <th>Status</th>
-                  <th>Actions</th> {/* ✅ New column */}
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {currentSellers.map((seller, index) => (
                   <tr key={seller._id}>
-                    <td>{indexOfFirstItem + index + 1}</td>
-                    <td>{seller.name}</td>
+                    <td className="mono-cell">{indexOfFirstItem + index + 1}</td>
+                    <td style={{ fontWeight: 500 }}>{seller.name}</td>
                     <td>{seller.email}</td>
                     <td>
                       <button
                         onClick={() => handleToggle(seller._id, seller.status)}
-                        style={{
-                          backgroundColor: seller.status ? "red" : "green",
-                          color: "white",
-                          border: "none",
-                          padding: "4px 10px",
-                          borderRadius: "5px",
-                          cursor: "pointer",
-                        }}
+                        className={`badge ${seller.status ? "badge-red" : "badge-green"}`}
+                        style={{ border: "none", cursor: "pointer" }}
                       >
-                        {seller.status ? "Inactive" : "Active"}
+                        {seller.status ? "Inactive — click to activate" : "Active"}
                       </button>
                     </td>
                     <td>
-                      <button
-                        onClick={() => handleDelete(seller._id)}
-                        style={{
-                          backgroundColor: "#e74c3c",
-                          color: "white",
-                          border: "none",
-                          padding: "4px 10px",
-                          borderRadius: "5px",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Delete
+                      <button className="icon-btn btn-delete" onClick={() => handleDelete(seller._id)} title="Delete seller">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        </svg>
                       </button>
                     </td>
                   </tr>
@@ -137,19 +126,20 @@ const SellerList = () => {
               </tbody>
             </table>
 
-            {/* Pagination */}
-            <div className="pagination">
-              {Array.from({ length: totalPages }, (_, page) => (
-                <button
-                  key={page + 1}
-                  className={currentPage === page + 1 ? "active" : ""}
-                  onClick={() => handlePageChange(page + 1)}
-                >
-                  {page + 1}
-                </button>
-              ))}
-            </div>
-          </>
+            {totalPages > 1 && (
+              <div className="pagination">
+                {Array.from({ length: totalPages }, (_, page) => (
+                  <button
+                    key={page + 1}
+                    className={currentPage === page + 1 ? "active" : ""}
+                    onClick={() => handlePageChange(page + 1)}
+                  >
+                    {page + 1}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
       <ToastContainer position="top-right" autoClose={2000} />

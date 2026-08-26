@@ -74,6 +74,7 @@ const SellerAddProduct = () => {
       unit: "Kg",
       tax: "",
       stock: "",
+      stockUnit: "Kg",
       expiryDate: "",
       sizeLabel: "",
     },
@@ -147,6 +148,7 @@ const SellerAddProduct = () => {
         unit: units[0],
         tax: "",
         stock: "",
+        stockUnit: units[0],
         expiryDate: "",
         sizeLabel: "",
       },
@@ -195,6 +197,7 @@ const SellerAddProduct = () => {
       unit: "Size",
       tax: "",
       stock: "",
+      stockUnit: "Size",
       expiryDate: "",
       sizeLabel: size,
     }));
@@ -328,6 +331,20 @@ const SellerAddProduct = () => {
 
   const handleSubmit = async (e) => {
   e.preventDefault();
+
+  // ✅ Required-field checks — this is the disclaimer above, enforced
+  const missing = [];
+  if (files.filter(Boolean).length === 0) missing.push("at least one product image");
+  if (!Category) missing.push("a category");
+  if (!Subcategory) missing.push("a subcategory");
+  const missingPricing = variants.some((v) => !v.price || !v.quantity || v.stock === "");
+  if (missingPricing) missing.push("price, quantity, and stock for every variant");
+
+  if (missing.length > 0) {
+    alert("Please provide: " + missing.join(", "));
+    return;
+  }
+
   setIsPending(true);
 
   try {
@@ -396,6 +413,7 @@ const SellerAddProduct = () => {
           unit: "Kg",
           tax: "",
           stock: "",
+          stockUnit: "Kg",
           expiryDate: "",
           sizeLabel: "",
         },
@@ -411,13 +429,34 @@ const SellerAddProduct = () => {
 
   return (
     <SellerLayout page="add-product">
-      <div className="card product-card">
-        <h4>Add New Product</h4>
+      <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+
+        <div style={{ marginBottom: "1.5rem" }}>
+          <span style={{ display: "block", fontFamily: "'IBM Plex Mono', monospace", fontSize: "11px", fontWeight: "600", letterSpacing: "0.08em", textTransform: "uppercase", color: "#3B4C8A", marginBottom: "6px" }}>
+            Catalogue / Products
+          </span>
+          <h3 style={{ margin: 0, fontFamily: "'Space Grotesk', sans-serif", fontSize: "22px", fontWeight: "600", color: "#1E2233" }}>
+            Add new product
+          </h3>
+        </div>
+
+        <div className="requirements-banner">
+          <span className="req-icon">!</span>
+          <div>
+            <p className="req-title">All of the following are required before this can be submitted</p>
+            <ul>
+              <li>At least one product image</li>
+              <li>Category and subcategory</li>
+              <li>Price, quantity, and stock for every pricing variant</li>
+            </ul>
+          </div>
+        </div>
+
         <form onSubmit={handleSubmit}>
-          <div style={{ display: "flex", gap: "20px", alignItems: "flex-start" }}>
+          <div style={{ display: "flex", gap: "20px", alignItems: "flex-start", flexWrap: "wrap" }}>
 
             {/* LEFT SIDE: Product Details */}
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, minWidth: "320px", background: "#fff", border: "1px solid #E4E7F0", borderRadius: "14px", padding: "1.5rem" }}>
               {/* Upload Images */}
               <div className="form-group">
                 <label>Product Images</label>
@@ -559,7 +598,7 @@ const SellerAddProduct = () => {
             </div>
 
             {/* RIGHT SIDE: Pricing Options */}
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, minWidth: "320px", background: "#fff", border: "1px solid #E4E7F0", borderRadius: "14px", padding: "1.5rem" }}>
               <div className="variant-title" style={{ marginBottom: "10px" }}>
                 Multiple Pricing Options
               </div>
@@ -695,6 +734,8 @@ const SellerAddProduct = () => {
                         handleVariantChange(index, "tax", e.target.value)
                       }
                     />
+                  </div>
+                  <div className="variant-row">
                     <input
                       className="variant-input"
                       placeholder="Stock"
@@ -704,6 +745,19 @@ const SellerAddProduct = () => {
                         handleVariantChange(index, "stock", e.target.value)
                       }
                     />
+                    <select
+                      className="variant-input"
+                      value={v.stockUnit}
+                      onChange={(e) =>
+                        handleVariantChange(index, "stockUnit", e.target.value)
+                      }
+                    >
+                      {getUnitOptions(Category).map((u) => (
+                        <option key={u} value={u}>
+                          {u}
+                        </option>
+                      ))}
+                    </select>
                   </div>
              <div className="variant-row">
   {isGroceryOrFreshCategory && (
@@ -847,13 +901,16 @@ const SellerAddProduct = () => {
 
 
               {/* Add Product Button */}
-              <button
-                type="submit"
-                className="btn btn-primary w-100 mt-4"
-                disabled={isPending}
-              >
-                {isPending ? "Adding..." : "Add Product"}
-              </button>
+              <div style={{ marginTop: "20px" }}>
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={isPending}
+                  style={{ width: "100%" }}
+                >
+                  {isPending ? "Adding..." : "Add Product"}
+                </button>
+              </div>
             </div>
           </div>
         </form>

@@ -9,6 +9,7 @@ import {
   deleteSeller,
   sendOtp,
   verifyOtp,
+  verifyLoginOtp,
   forgotSellerPassword,
   resetSellerPassword,
   updateSellerProfile
@@ -24,6 +25,7 @@ sellerRouter.post('/verify-otp', verifyOtp);
 // Registration & login
 sellerRouter.post('/register', registerSeller);
 sellerRouter.post('/login', sellerLogin);
+sellerRouter.post('/verify-login-otp', verifyLoginOtp);
 
 // Auth check & logout
 sellerRouter.get('/is-auth', authSeller, isSellerAuth);

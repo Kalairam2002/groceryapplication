@@ -105,7 +105,8 @@ export const verifyOtp = async (req, res) => {
   }
 };
 
-// Seller Login
+// Seller Login — Step 1: validate credentials, email a login OTP
+// (no token is issued here anymore; that now happens in verifyLoginOtp below)
 export const sellerLogin = async (req, res) => {
   try {
     const { identifier, password } = req.body;
@@ -115,21 +116,71 @@ export const sellerLogin = async (req, res) => {
     });
 
     if (!seller) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      return res.status(400).json({ success: false, message: "Invalid credentials" });
     }
 
     if (!seller.isVerified) {
-      return res.status(403).json({ message: "Please verify your account with OTP before logging in." });
+      return res.status(403).json({ success: false, message: "Please verify your account with OTP before logging in." });
     }
 
     if (!seller.status) {
-      return res.status(403).json({ message: "Your account is pending admin approval." });
+      return res.status(403).json({ success: false, message: "Your account is pending admin approval." });
     }
 
     const isMatch = await bcrypt.compare(password, seller.password);
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      return res.status(400).json({ success: false, message: "Invalid credentials" });
     }
+
+    // Credentials check out — generate and email a numeric login OTP
+    // instead of issuing the session token directly.
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    seller.otp = otp;
+    seller.otpExpires = Date.now() + 5 * 60 * 1000; // 5 minutes
+    await seller.save();
+
+    const html = `<p>Hello ${seller.name},</p><p>Your OTP to log in is: <strong>${otp}</strong></p><p>This code expires in 5 minutes.</p>`;
+    await sendEmail(seller.email, "Your Login OTP", html);
+
+    res.json({
+      success: true,
+      message: "OTP sent to your registered email. Please verify to complete login.",
+    });
+  } catch (error) {
+    console.error("Login error:", error.message);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// Seller Login — Step 2: verify the OTP and actually issue the session token.
+// Mirrors verifyOtp above, but completes a login instead of a registration.
+export const verifyLoginOtp = async (req, res) => {
+  try {
+    const { identifier, otp } = req.body;
+
+    if (!identifier || !otp) {
+      return res.status(400).json({ success: false, message: "Identifier and OTP are required" });
+    }
+
+    const seller = await Seller.findOne({
+      $or: [{ email: identifier }, { name: identifier }]
+    });
+
+    if (!seller) {
+      return res.status(400).json({ success: false, message: "Seller not found" });
+    }
+
+    const enteredOtp = otp?.toString().trim();
+    const storedOtp = seller.otp?.toString().trim();
+
+    if (!storedOtp || storedOtp !== enteredOtp || seller.otpExpires < Date.now()) {
+      return res.status(400).json({ success: false, message: "Invalid or expired OTP" });
+    }
+
+    // OTP is correct — clear it so it can't be reused, then log the seller in
+    seller.otp = undefined;
+    seller.otpExpires = undefined;
+    await seller.save();
 
     const token = jwt.sign({ id: seller._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
@@ -147,8 +198,8 @@ export const sellerLogin = async (req, res) => {
       seller: { email: seller.email, name: seller.name, sellerId: seller._id },
     });
   } catch (error) {
-    console.error("Login error:", error.message);
-    res.status(500).json({ message: "Server error" });
+    console.error("Login OTP verification error:", error.message);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 

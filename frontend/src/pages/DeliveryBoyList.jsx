@@ -28,7 +28,7 @@ const DeliveryBoyList = () => {
     setActionLoading(id + "approve");
     try {
       await axios.put(`${API}/api/delivery/approve/${id}`);
-      fetchDeliveryBoys(); // refresh list
+      fetchDeliveryBoys();
     } catch (error) {
       console.error("Approve failed:", error);
     } finally {
@@ -40,7 +40,7 @@ const DeliveryBoyList = () => {
     setActionLoading(id + "reject");
     try {
       await axios.put(`${API}/api/delivery/reject/${id}`);
-      fetchDeliveryBoys(); // refresh list
+      fetchDeliveryBoys();
     } catch (error) {
       console.error("Reject failed:", error);
     } finally {
@@ -51,7 +51,9 @@ const DeliveryBoyList = () => {
   return (
     <AdminLayout>
       <div style={styles.container}>
-        <h2 style={styles.title}>Delivery Boy List</h2>
+        <span style={styles.eyebrow}>Network / Delivery</span>
+        <h2 style={styles.title}>Delivery boy list</h2>
+        <p style={styles.subtitle}>Approve or manage riders registered on the platform</p>
 
         {loading ? (
           <p style={styles.loading}>Loading...</p>
@@ -75,29 +77,29 @@ const DeliveryBoyList = () => {
               <tbody>
                 {deliveryBoys.map((boy, index) => (
                   <tr key={boy._id} style={styles.tr}>
-                    <td style={styles.td}>{index + 1}</td>
-                    <td style={styles.td}>{boy.name}</td>
+                    <td style={{ ...styles.td, fontFamily: "'IBM Plex Mono', monospace", color: "#6E7A6C" }}>{index + 1}</td>
+                    <td style={{ ...styles.td, fontWeight: 500 }}>{boy.name}</td>
                     <td style={styles.td}>{boy.email}</td>
                     <td style={styles.td}>{boy.phone}</td>
                     <td style={styles.td}>
                       <span style={{
                         ...styles.badge,
-                        background: boy.isApproved ? "#d4edda" : "#fff3cd",
-                        color: boy.isApproved ? "#155724" : "#856404",
+                        background: boy.isApproved ? "#E4F1E8" : "#FBF0DE",
+                        color: boy.isApproved ? "#1F4B37" : "#9A6B1F",
                       }}>
-                        {boy.isApproved ? "✅ Approved" : "⏳ Pending"}
+                        {boy.isApproved ? "Approved" : "Pending"}
                       </span>
                     </td>
                     <td style={styles.td}>
                       <span style={{
                         ...styles.badge,
-                        background: boy.isActive ? "#d4edda" : "#f8d7da",
-                        color: boy.isActive ? "#155724" : "#721c24",
+                        background: boy.isActive ? "#E4F1E8" : "#FBE7E4",
+                        color: boy.isActive ? "#1F4B37" : "#C1441E",
                       }}>
                         {boy.isActive ? "Active" : "Inactive"}
                       </span>
                     </td>
-                    <td style={styles.td}>
+                    <td style={{ ...styles.td, fontFamily: "'IBM Plex Mono', monospace", fontSize: "12px", color: "#6E7A6C" }}>
                       {new Date(boy.createdAt).toLocaleDateString()}
                     </td>
                     <td style={styles.td}>
@@ -136,25 +138,49 @@ const DeliveryBoyList = () => {
 const styles = {
   container: {
     padding: "24px",
+    maxWidth: "1180px",
+    margin: "0 auto",
+  },
+  eyebrow: {
+    display: "block",
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: "11px",
+    fontWeight: "600",
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    color: "#2F6D4F",
+    marginBottom: "6px",
   },
   title: {
+    fontFamily: "'Space Grotesk', sans-serif",
     fontSize: "22px",
-    fontWeight: "700",
-    marginBottom: "20px",
-    color: "#1B5E20",
+    fontWeight: "600",
+    margin: "0",
+    color: "#1C2620",
+  },
+  subtitle: {
+    color: "#6E7A6C",
+    fontSize: "13.5px",
+    margin: "4px 0 20px",
   },
   loading: {
-    color: "#555",
-    fontSize: "16px",
+    color: "#6E7A6C",
+    fontSize: "14px",
   },
   empty: {
-    color: "#888",
-    fontSize: "15px",
+    color: "#6E7A6C",
+    fontSize: "14px",
+    background: "#fff",
+    border: "1px solid #E3E8DD",
+    borderRadius: "16px",
+    padding: "40px",
+    textAlign: "center",
   },
   tableWrapper: {
     overflowX: "auto",
-    borderRadius: "10px",
-    boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+    borderRadius: "14px",
+    border: "1px solid #E3E8DD",
+    boxShadow: "0 10px 30px rgba(31, 75, 55, 0.06)",
   },
   table: {
     width: "100%",
@@ -162,27 +188,28 @@ const styles = {
     background: "#fff",
   },
   thead: {
-    background: "#1B5E20",
+    background: "#1F4B37",
   },
   th: {
     padding: "12px 16px",
     color: "#fff",
     textAlign: "left",
+    fontFamily: "'Space Grotesk', sans-serif",
     fontWeight: "600",
-    fontSize: "14px",
+    fontSize: "12.5px",
   },
   tr: {
-    borderBottom: "1px solid #f0f0f0",
+    borderBottom: "1px solid #F0F2EC",
   },
   td: {
     padding: "12px 16px",
-    fontSize: "14px",
-    color: "#333",
+    fontSize: "13.5px",
+    color: "#1C2620",
   },
   badge: {
     padding: "4px 10px",
     borderRadius: "20px",
-    fontSize: "12px",
+    fontSize: "11px",
     fontWeight: "600",
   },
   actionRow: {
@@ -191,23 +218,23 @@ const styles = {
   },
   approveBtn: {
     padding: "6px 14px",
-    background: "#1B5E20",
+    background: "#1F4B37",
     color: "#fff",
     border: "none",
-    borderRadius: "6px",
+    borderRadius: "8px",
     cursor: "pointer",
-    fontWeight: "600",
-    fontSize: "13px",
+    fontWeight: "500",
+    fontSize: "12.5px",
   },
   rejectBtn: {
     padding: "6px 14px",
-    background: "#c62828",
+    background: "#E8622C",
     color: "#fff",
     border: "none",
-    borderRadius: "6px",
+    borderRadius: "8px",
     cursor: "pointer",
-    fontWeight: "600",
-    fontSize: "13px",
+    fontWeight: "500",
+    fontSize: "12.5px",
   },
 };
 

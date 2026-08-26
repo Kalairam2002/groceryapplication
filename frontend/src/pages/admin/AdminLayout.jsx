@@ -12,7 +12,7 @@ import {
   LogOut,
   Tag,
   Grid,
-  Bell, 
+  Bell,
 } from "lucide-react";
 
 const AdminLayout = ({ children }) => {
@@ -35,6 +35,7 @@ const AdminLayout = ({ children }) => {
     { name: "Variant List",     href: "/listVariant",     icon: <Tag size={18} /> },
     { name: "Add Brand",        href: "/addBrand",        icon: <Package size={18} /> },
     { name: "Brand List",       href: "/listBrand",       icon: <Package size={18} /> },
+    { name: "Add Product",      href: "/adminAddProduct", icon: <ShoppingCart size={18} /> },
     { name: "Product List",     href: "/adminProductList",icon: <ShoppingCart size={18} /> },
     { name: "Order List",       href: "/adminOrderList",  icon: <ShoppingCart size={18} /> },
     { name: "Seller List",      href: "/sellerList",      icon: <User size={18} /> },
@@ -99,10 +100,11 @@ const AdminLayout = ({ children }) => {
     }
   };
 
+  // Status → color, tied to the market-green / crate-orange palette
   const statusColors = {
-    "Picked Up":        "#f0ad4e",
-    "Out for Delivery": "#0d6efd",
-    "Delivered":        "#28a745",
+    "Picked Up":        "#D98B3F", // crate wood tone — in progress
+    "Out for Delivery": "#2F6D4F", // primary green — moving
+    "Delivered":        "#1F4B37", // primary dark — complete
   };
 
   return (
@@ -110,7 +112,7 @@ const AdminLayout = ({ children }) => {
       {/* Sidebar */}
       <aside className="admin-sidebar">
         <div className="sidebar-header">
-          <h2 style={{ color: "white" }}>🛍️ Multi-Vendor</h2>
+          <h2 style={{ color: "white" }}>🥬 Multi-Vendor</h2>
           <p>Admin Panel</p>
         </div>
         <ul className="sidebar-links">
@@ -140,32 +142,35 @@ const AdminLayout = ({ children }) => {
               <button
                 onClick={() => setShowDropdown(!showDropdown)}
                 style={{
-                  background: "none",
+                  background: "#f5f7f1",
                   border: "none",
                   cursor: "pointer",
                   position: "relative",
-                  padding: "6px",
+                  padding: "8px",
+                  borderRadius: "50%",
                   display: "flex",
                   alignItems: "center",
-                  color: "#374151",
+                  color: "#1f4b37",
                 }}
               >
-                <Bell size={22} />
+                <Bell size={20} />
                 {unreadCount > 0 && (
                   <span style={{
                     position: "absolute",
                     top: "0px",
                     right: "0px",
-                    background: "#ef4444",
+                    background: "#e8622c",
                     color: "#fff",
                     fontSize: "10px",
-                    fontWeight: "700",
-                    width: "18px",
-                    height: "18px",
+                    fontFamily: "'IBM Plex Mono', monospace",
+                    fontWeight: "600",
+                    width: "17px",
+                    height: "17px",
                     borderRadius: "50%",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
+                    border: "2px solid #fff",
                   }}>
                     {unreadCount > 9 ? "9+" : unreadCount}
                   </span>
@@ -176,13 +181,13 @@ const AdminLayout = ({ children }) => {
               {showDropdown && (
                 <div style={{
                   position: "absolute",
-                  top: "40px",
+                  top: "44px",
                   right: "0",
                   width: "320px",
                   background: "#fff",
-                  borderRadius: "10px",
-                  boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-                  border: "1px solid #e5e7eb",
+                  borderRadius: "12px",
+                  boxShadow: "0 12px 32px rgba(31, 75, 55, 0.18)",
+                  border: "1px solid #e3e8dd",
                   zIndex: 9999,
                   overflow: "hidden",
                 }}>
@@ -193,9 +198,14 @@ const AdminLayout = ({ children }) => {
                     justifyContent: "space-between",
                     alignItems: "center",
                     padding: "14px 16px",
-                    borderBottom: "1px solid #f0f0f0",
+                    borderBottom: "1px solid #f0f2ec",
                   }}>
-                    <span style={{ fontWeight: "700", fontSize: "14px", color: "#111" }}>
+                    <span style={{
+                      fontFamily: "'Space Grotesk', sans-serif",
+                      fontWeight: "600",
+                      fontSize: "14px",
+                      color: "#1c2620",
+                    }}>
                       Notifications {unreadCount > 0 && `(${unreadCount})`}
                     </span>
                     {unreadCount > 0 && (
@@ -204,7 +214,7 @@ const AdminLayout = ({ children }) => {
                         style={{
                           background: "none",
                           border: "none",
-                          color: "#0d6efd",
+                          color: "#2f6d4f",
                           fontSize: "12px",
                           cursor: "pointer",
                           fontWeight: "600",
@@ -221,7 +231,7 @@ const AdminLayout = ({ children }) => {
                       <div style={{
                         padding: "24px",
                         textAlign: "center",
-                        color: "#888",
+                        color: "#6e7a6c",
                         fontSize: "13px",
                       }}>
                         No notifications yet
@@ -230,8 +240,8 @@ const AdminLayout = ({ children }) => {
                       notifications.map((n) => (
                         <div key={n._id} style={{
                           padding: "12px 16px",
-                          borderBottom: "1px solid #f5f5f5",
-                          background: n.isRead ? "#fff" : "#f0f7ff",
+                          borderBottom: "1px solid #f0f2ec",
+                          background: n.isRead ? "#fff" : "#f5f7f1",
                           display: "flex",
                           gap: "10px",
                           alignItems: "flex-start",
@@ -241,7 +251,7 @@ const AdminLayout = ({ children }) => {
                             width: "10px",
                             height: "10px",
                             borderRadius: "50%",
-                            background: statusColors[n.status] || "#888",
+                            background: statusColors[n.status] || "#6e7a6c",
                             marginTop: "4px",
                             flexShrink: 0,
                           }} />
@@ -249,12 +259,16 @@ const AdminLayout = ({ children }) => {
                             <p style={{
                               margin: "0 0 4px",
                               fontSize: "13px",
-                              color: "#333",
+                              color: "#1c2620",
                               fontWeight: n.isRead ? "400" : "600",
                             }}>
                               {n.message}
                             </p>
-                            <span style={{ fontSize: "11px", color: "#aaa" }}>
+                            <span style={{
+                              fontFamily: "'IBM Plex Mono', monospace",
+                              fontSize: "11px",
+                              color: "#9aa69a",
+                            }}>
                               {new Date(n.createdAt).toLocaleString()}
                             </span>
                           </div>
@@ -267,7 +281,7 @@ const AdminLayout = ({ children }) => {
               )}
             </div>
 
-            {/* Logout button — untouched */}
+            {/* Logout button — untouched logic, restyled via .logout-btn */}
             <button className="logout-btn" onClick={logout}>
               <LogOut size={18} /> Logout
             </button>

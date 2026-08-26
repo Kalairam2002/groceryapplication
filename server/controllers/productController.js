@@ -48,66 +48,6 @@ export const addProduct = async (req, res) => {
   }
 };
 
-
-// cron.schedule("0 0 * * *", async () => {
-//   try {
-//     const today = new Date();
-//     today.setHours(0, 0, 0, 0);
-
-   
-//     await Product.updateMany(
-//       { "variants.expiryDate": { $lt: today } }, 
-//       {
-//         $pull: {
-//           variants: {
-//             expiryDate: { $lt: today, $ne: null }, 
-//           },
-//         },
-//       }
-//     );
-
-   
-//     await Product.deleteMany({ variants: { $size: 0 } });
-
-//     console.log("✅ Expired variants cleaned up successfully");
-//   } catch (error) {
-//     console.log("❌ Cron error:", error.message);
-//   }
-// });
-
-// export const existingProductAdd = async (req, res) => {
-//   try {
-//     const { existingProductId, variantdata,  } = req.body;
-
-    
-//     if (!existingProductId || !variantdata ) {
-//       return res.json({
-//         success: false,
-//         message: "All fields are required",
-//       });
-//     }
-
-   
-//     const newData = new ExistingProduct({
-//       existingProductId,
-//       variantdata,
-//     });
-
-    
-//     await newData.save();
-
-//     res.json({
-//       success: true,
-//       message: "Data added successfully",
-//       data: newData,
-//     });
-
-//   } catch (error) {
-//     console.log("existingProductAdd error:", error.message);
-//     res.json({ success: false, message: error.message });
-//   }
-// };
-
 export const createExpiredVariant = async (req, res) => {
   try {
     const {
@@ -121,7 +61,6 @@ export const createExpiredVariant = async (req, res) => {
       expiryDate,
     } = req.body;
 
-    // Basic validation
     if (!productId || !productName || !sellerId || !variantId) {
       return res.status(400).json({
         success: false,
@@ -162,7 +101,6 @@ cron.schedule("0 0 * * *", async () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    //  Step 1: Find all products that have at least one expired variant
     const productsWithExpired = await Product.find({
       variants: {
         $elemMatch: {
@@ -171,7 +109,6 @@ cron.schedule("0 0 * * *", async () => {
       },
     }).populate("seller", "_id");
 
-    //  Step 2: Extract expired variants and prepare for saving
     const expiredDocs = [];
 
     for (const product of productsWithExpired) {
@@ -197,13 +134,11 @@ cron.schedule("0 0 * * *", async () => {
       }
     }
 
-    //  Step 3: Save all expired variants to ExpiredVariants collection
     if (expiredDocs.length > 0) {
       await ExpiredVariant.insertMany(expiredDocs);
       console.log(`✅ ${expiredDocs.length} expired variants archived`);
     }
 
-    //  Step 4: Now delete expired variants from Product
     await Product.updateMany(
       { "variants.expiryDate": { $lt: today } },
       {
@@ -215,7 +150,6 @@ cron.schedule("0 0 * * *", async () => {
       }
     );
 
-    //  Step 5: Delete products where variants array is now empty
     await Product.deleteMany({ variants: { $size: 0 } });
 
     console.log("✅ Expired variants cleaned up successfully");
@@ -224,24 +158,20 @@ cron.schedule("0 0 * * *", async () => {
   }
 });
 
-
 export const existingProductAdd = async (req, res) => {
   try {
     const { existingProductId, variantdata } = req.body;
 
-    //  Step 1: Find the original product
     const product = await Product.findById(existingProductId);
     if (!product) {
       return res.json({ success: false, message: "Product not found" });
     }
 
-    //  Step 2: Save in ExistingProduct DB
     const existingProduct = await ExistingProduct.create({
       existingProductId,
       variantdata,
     });
 
-    //  Step 3: Push new variants into Product's variants array
     product.variants.push(...variantdata);
     await product.save();
 
@@ -256,13 +186,12 @@ export const existingProductAdd = async (req, res) => {
   }
 };
 
-
-
 // Get all products (for admin or customers): /api/product/list
 export const productList = async (req, res) => {
   try {
     const products = await Product.find({})
       .populate("seller", "name email")
+      .populate("brand", "name")
       .sort({ createdAt: -1 });
 
     res.json({ success: true, products });
@@ -282,16 +211,16 @@ export const expiredProducts = async (req, res) => {
   }
 };
 
-
-
 // Get product list for logged-in seller : /api/product/list/seller
 export const productListSeller = async (req, res) => {
   try {
     const sellerId = req.sellerId;
 
-    const products = await Product.find({ seller: sellerId }).sort({
-      createdAt: -1,
-    });
+    const products = await Product.find({ seller: sellerId })
+      .populate("brand", "name")
+      .sort({
+        createdAt: -1,
+      });
 
     res.json({ success: true, products });
   } catch (error) {
@@ -304,7 +233,7 @@ export const productListSeller = async (req, res) => {
 export const productById = async (req, res) => {
   try {
     const { id } = req.body;
-    const product = await Product.findById(id);
+    const product = await Product.findById(id).populate("brand", "name");
     res.json({ success: true, product });
   } catch (error) {
     console.log(error.message);
@@ -321,7 +250,7 @@ export const productByBarcode = async (req, res) => {
       return res.status(400).json({ success: false, message: "Barcode is required" });
     }
 
-    const product = await Product.findOne({ barcode });
+    const product = await Product.findOne({ barcode }).populate("brand", "name");
     if (!product) {
       return res.status(404).json({ success: false, message: "Product not found" });
     }
@@ -332,7 +261,6 @@ export const productByBarcode = async (req, res) => {
     res.status(500).json({ success: false, message: "Server Error" });
   }
 };
-
 
 // Change product inStock : /api/product/stock
 export const changeStock = async (req, res) => {
@@ -378,14 +306,14 @@ export const updateProduct = async (req, res) => {
 
     product.name = data.name;
     product.description = data.description;
-    product.price = data.price;
-    product.offerPrice = data.offerPrice;
-    product.unit = data.unit;
-    product.stock = data.stock;
     product.brand = data.brand;
     product.category = data.category;
     product.subcategory = data.subcategory;
     product.barcode = data.barcode;
+
+    if (data.variants && Array.isArray(data.variants)) {
+      product.variants = data.variants;
+    }
 
     if (req.files && req.files.length > 0) {
       product.image = await Promise.all(
@@ -407,10 +335,9 @@ export const updateProduct = async (req, res) => {
   }
 };
 
-
 export const getSingleProduct = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const product = await Product.findById(req.params.id).populate("brand", "name");
 
     if (!product) {
       return res.json({ success: false, message: "Product not found" });
@@ -421,7 +348,6 @@ export const getSingleProduct = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
-
 
 // Get all products for a specific seller
 export const getProductsBySeller = async (req, res) => {
@@ -437,6 +363,7 @@ export const getProductsBySeller = async (req, res) => {
 
     const products = await Product.find({ seller: sellerId })
       .populate("seller", "name email")
+      .populate("brand", "name")
       .sort({ createdAt: -1 });
 
     if (!products.length) {

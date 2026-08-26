@@ -13,7 +13,6 @@ const AddAdminVariant = () => {
   const [subCategories, setSubCategories] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // ✅ Fetch all subcategories for dropdown
   const fetchSubCategories = async () => {
     try {
       const res = await axios.get(
@@ -34,7 +33,6 @@ const AddAdminVariant = () => {
     fetchSubCategories();
   }, []);
 
-  // ✅ Handle image preview
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     setVariantImage(file);
@@ -48,7 +46,11 @@ const AddAdminVariant = () => {
     }
   };
 
-  // ✅ Handle form submit
+  const clearImage = () => {
+    setVariantImage(null);
+    setPreview(null);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -67,9 +69,7 @@ const AddAdminVariant = () => {
       const res = await axios.post(
         `${process.env.REACT_APP_API_URL}/api/variant`,
         formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
+        { headers: { "Content-Type": "multipart/form-data" } }
       );
 
       if (res.data.success) {
@@ -89,181 +89,140 @@ const AddAdminVariant = () => {
     }
   };
 
-return (
-  <AdminLayout page="add-variant">
-    <section style={{ padding: "2.5rem 0" }}>
-      <div style={{ maxWidth: "560px", margin: "0 auto", padding: "0 1rem" }}>
+  const selectedSubCategoryName = subCategories.find((s) => s._id === selectedSubCategory)?.name;
 
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "1.75rem" }}>
-          <div style={{ width: "40px", height: "40px", borderRadius: "8px", background: "#EFF6FF", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-          </div>
-          <div>
-            <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "600", color: "#111827" }}>
-              Add new variant
-            </h3>
-            <p style={{ margin: 0, fontSize: "13px", color: "#6B7280" }}>
-              Create product variants under subcategories
-            </p>
-          </div>
+  return (
+    <AdminLayout page="add-variant">
+      <section style={{ padding: "0" }}>
+
+        <div className="page-header-bar">
+          <span className="eyebrow">Catalogue / Variants</span>
+          <h3 style={{ margin: "6px 0 0", fontFamily: "'Space Grotesk', sans-serif", fontSize: "24px", fontWeight: 600, color: "#1C2620" }}>
+            Add new variant
+          </h3>
+          <p style={{ margin: "4px 0 0", fontSize: "13.5px", color: "#6E7A6C" }}>
+            Create product variants under subcategories.
+          </p>
         </div>
 
-        {/* Card */}
-        <div style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: "12px", padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+        <div className="add-page-grid">
 
-          {/* Variant Name */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <label style={{ fontSize: "13px", fontWeight: "500", color: "#374151" }}>
-              Variant name
-            </label>
-            <input
-              type="text"
-              placeholder="e.g. 128GB, Red Color..."
-              value={variantName}
-              onChange={(e) => setVariantName(e.target.value)}
-              required
-              style={{
-                padding: "10px 14px",
-                fontSize: "14px",
-                border: "1px solid #D1D5DB",
-                borderRadius: "8px",
-                background: "#F9FAFB",
-                outline: "none"
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = "#3B82F6";
-                e.target.style.background = "#fff";
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = "#D1D5DB";
-                e.target.style.background = "#F9FAFB";
-              }}
-            />
-          </div>
+          <div className="form-card">
+            <div className="form-field">
+              <label>Variant name</label>
+              <input
+                type="text"
+                placeholder="e.g. 1kg, 500g, Large..."
+                value={variantName}
+                onChange={(e) => setVariantName(e.target.value)}
+                required
+              />
+              <span className="form-hint">Shown as the selectable option on the product page.</span>
+            </div>
 
-          {/* Subcategory Dropdown */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <label style={{ fontSize: "13px", fontWeight: "500", color: "#374151" }}>
-              Select subcategory
-            </label>
-            <select
-              value={selectedSubCategory}
-              onChange={(e) => setSelectedSubCategory(e.target.value)}
-              required
-              style={{
-                padding: "10px 14px",
-                fontSize: "14px",
-                border: "1px solid #D1D5DB",
-                borderRadius: "8px",
-                background: "#F9FAFB",
-                outline: "none"
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = "#3B82F6";
-                e.target.style.background = "#fff";
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = "#D1D5DB";
-                e.target.style.background = "#F9FAFB";
-              }}
-            >
-              <option value="">-- Select Subcategory --</option>
-              {subCategories.map((sub) => (
-                <option key={sub._id} value={sub._id}>
-                  {sub.name}
-                </option>
-              ))}
-            </select>
-          </div>
+            <div className="form-field">
+              <label>Select subcategory</label>
+              <select
+                value={selectedSubCategory}
+                onChange={(e) => setSelectedSubCategory(e.target.value)}
+                required
+              >
+                <option value="">-- Select Subcategory --</option>
+                {subCategories.map((sub) => (
+                  <option key={sub._id} value={sub._id}>
+                    {sub.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          {/* Image Upload */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <label style={{ fontSize: "13px", fontWeight: "500", color: "#374151" }}>
-              Variant image
-            </label>
+            <div className="form-field">
+              <label>Variant image</label>
 
-            {!preview ? (
-              <div
-                onClick={() => document.getElementById("fileInput").click()}
-                style={{
-                  border: "2px dashed #D1D5DB",
-                  borderRadius: "8px",
-                  padding: "2rem",
-                  textAlign: "center",
-                  cursor: "pointer",
-                  background: "#F9FAFB"
+              {!preview ? (
+                <div className="dropzone" onClick={() => document.getElementById("fileInput").click()}>
+                  <div className="dropzone-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F6D4F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="M21 15l-5-5L5 21" />
+                    </svg>
+                  </div>
+                  <p style={{ margin: 0, fontSize: "14px", fontWeight: "500", color: "#1C2620" }}>Click to upload or drag &amp; drop</p>
+                  <p style={{ margin: 0, fontSize: "12px", color: "#9AA69A" }}>PNG, JPG, WEBP up to 10MB</p>
+                  <input id="fileInput" type="file" accept="image/*" onChange={handleImageChange} required style={{ display: "none" }} />
+                </div>
+              ) : (
+                <div className="preview-row">
+                  <img src={preview} alt="Preview" />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ margin: "0 0 4px", fontSize: "13px", fontWeight: "500", color: "#1C2620", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {variantImage?.name}
+                    </p>
+                    <span className="ready-pill">Ready</span>
+                  </div>
+                  <button className="remove-link" onClick={clearImage}>Remove</button>
+                </div>
+              )}
+            </div>
+
+            <div className="form-actions">
+              <button
+                type="button"
+                className="btn-reset"
+                onClick={() => {
+                  setVariantName("");
+                  setPreview(null);
+                  setVariantImage(null);
+                  setSelectedSubCategory("");
                 }}
               >
-                <p style={{ margin: 0 }}>Click to upload image</p>
-                <input
-                  id="fileInput"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  required
-                  style={{ display: "none" }}
-                />
-              </div>
-            ) : (
-              <div style={{ borderRadius: "8px", overflow: "hidden", border: "1px solid #E5E7EB" }}>
-                <img
-                  src={preview}
-                  alt="Preview"
-                  style={{ width: "100%", height: "180px", objectFit: "cover" }}
-                />
-              </div>
-            )}
+                Reset
+              </button>
+              <button type="button" className="btn-submit" onClick={handleSubmit} disabled={loading}>
+                {loading ? "Adding..." : (
+                  <>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                    Add variant
+                  </>
+                )}
+              </button>
+            </div>
           </div>
 
-          {/* Buttons */}
-          <div style={{ display: "flex", gap: "10px" }}>
-            <button
-              type="button"
-              onClick={() => {
-                setVariantName("");
-                setPreview(null);
-                setVariantImage(null);
-                setSelectedSubCategory("");
-              }}
-              style={{
-                flex: 1,
-                padding: "10px",
-                borderRadius: "8px",
-                border: "1px solid #E5E7EB",
-                background: "#F9FAFB",
-                cursor: "pointer"
-              }}
-            >
-              Reset
-            </button>
+          <div className="side-panel">
+            <div className="preview-card">
+              <p className="panel-label">Storefront preview</p>
+              <div className="preview-tile">
+                <div className="preview-avatar">
+                  {preview ? (
+                    <img src={preview} alt="" />
+                  ) : (
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2F6D4F" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="M21 15l-5-5L5 21" /></svg>
+                  )}
+                </div>
+                <span className="preview-name">{variantName || "Variant name"}</span>
+                {selectedSubCategoryName && (
+                  <span className="badge badge-green">under {selectedSubCategoryName}</span>
+                )}
+              </div>
+            </div>
 
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={loading}
-              style={{
-                flex: 2,
-                padding: "10px",
-                borderRadius: "8px",
-                border: "none",
-                background: loading ? "#9CA3AF" : "#111827",
-                color: "#fff",
-                cursor: loading ? "not-allowed" : "pointer"
-              }}
-            >
-              {loading ? "Adding..." : "Add Variant"}
-            </button>
+            <div className="tips-card">
+              <p className="tips-title">Tips for a clean listing</p>
+              <ul>
+                <li>Use consistent units across a subcategory (kg, g, ml)</li>
+                <li>Keep the label short — it sits on a small selector</li>
+                <li>Only add an image if it visually differs from the base product</li>
+              </ul>
+            </div>
           </div>
         </div>
-      </div>
 
-      <ToastContainer position="top-right" autoClose={2000} />
-    </section>
-  </AdminLayout>
-);
+        <ToastContainer position="top-right" autoClose={2000} />
+      </section>
+    </AdminLayout>
+  );
 };
 
 export default AddAdminVariant;

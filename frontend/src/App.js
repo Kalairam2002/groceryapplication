@@ -70,6 +70,7 @@ import DeliveryDashboard from "./pages/DeliveryDashboard";
 import DeliveryResetPassword from "./pages/DeliveryResetPassword";
 import MyOrdersPage from "./pages/MyOrdersPage";
 import AIChatbot from "./components/AIChatbot";
+import AdminAddProduct from "./pages/admin/AdminAddProduct";
 
 
 function App() {
@@ -148,7 +149,7 @@ function App() {
         <Route exact path='/addVariant' element={<AdminProtectedRoute><AddVariant /></AdminProtectedRoute>} />
         <Route exact path='/listVariant' element={<AdminProtectedRoute><VariantList /></AdminProtectedRoute>} />
         <Route exact path='/Dashbord' element={<AdminProtectedRoute><Dashbord /></AdminProtectedRoute>} />
-
+        <Route exact path='/adminAddProduct' element={<AdminProtectedRoute><AdminAddProduct /></AdminProtectedRoute>} />
 
         {/* Delivery*/}
        <Route path="/delivery/login" element={<DeliveryAuth />} />

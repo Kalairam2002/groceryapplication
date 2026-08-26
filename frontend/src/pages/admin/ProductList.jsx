@@ -9,7 +9,6 @@ const ProductList = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
@@ -30,7 +29,6 @@ const ProductList = () => {
     fetchProducts();
   }, []);
 
-  // pagination calculations
   const totalPages = Math.ceil(products.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -40,15 +38,21 @@ const ProductList = () => {
 
   return (
     <AdminLayout page="product-list">
-      <div className="container mt-4">
-        <h4 className="mb-4">Product List</h4>
+      <div className="container">
+        <div className="page-header">
+          <div>
+            <span className="eyebrow">Catalogue / Products</span>
+            <h4>Product list</h4>
+            <p className="subtitle">Everything listed across all vendors</p>
+          </div>
+        </div>
 
         {loading ? (
           <p>Loading products...</p>
         ) : products.length === 0 ? (
           <p>No products found.</p>
         ) : (
-          <>
+          <div className="table-card">
             <table className="classic-table">
               <thead>
                 <tr>
@@ -56,58 +60,90 @@ const ProductList = () => {
                   <th>Image</th>
                   <th>Name</th>
                   <th>Brand</th>
-                  <th>Seller</th> {/* Added seller column */}
+                  <th>Seller</th>
                   <th>Price</th>
-                  <th>Offer Price</th>
+                  <th>Offer price</th>
                   <th>Stock</th>
                 </tr>
               </thead>
               <tbody>
-                {currentProducts.map((product, index) => (
-                  <tr key={product._id}>
-                    <td>{indexOfFirstItem + index + 1}</td>
-                    <td>
-                      <img
-                        src={product.image[0]}
-                        alt={product.name}
-                        style={{
-                          width: "50px",
-                          height: "50px",
-                          objectFit: "cover",
-                          borderRadius: "4px",
-                        }}
-                      />
-                    </td>
-                    <td>{product.name}</td>
-                    <td>{product.brand}</td>
-                    <td>{product.seller?.name || "N/A"}</td> {/* Display seller name */}
-                    <td>₹{product.price}</td>
-                    <td>
-                      {product.offerPrice ? (
-                        <span style={{ color: "green" }}>₹{product.offerPrice}</span>
-                      ) : (
-                        "-"
-                      )}
-                    </td>
-                    <td>{product.stock}</td>
-                  </tr>
-                ))}
+                {currentProducts.map((product, index) => {
+                  // Price/offer price come from the first pricing variant —
+                  // there's no top-level price on the product itself.
+                  const firstVariant = product.variants?.[0] || {};
+                  const variantCount = product.variants?.length || 0;
+
+                  // Stock is tracked per-variant with its own unit
+                  // (Kg/Ltr/Pcs/Gm) — group and sum within each unit rather
+                  // than adding raw numbers across different units.
+                  const stockByUnit = {};
+                  (product.variants || []).forEach((v) => {
+                    const unit = v.stockUnit || v.unit || "";
+                    stockByUnit[unit] = (stockByUnit[unit] || 0) + (Number(v.stock) || 0);
+                  });
+                  const stockEntries = Object.entries(stockByUnit);
+                  const totalStockCount = stockEntries.reduce((sum, [, qty]) => sum + qty, 0);
+
+                  return (
+                    <tr key={product._id}>
+                      <td className="mono-cell">{indexOfFirstItem + index + 1}</td>
+                      <td>
+                        {product.image?.[0] ? (
+                          <img src={product.image[0]} alt={product.name} className="thumb-img" />
+                        ) : (
+                          <span className="img-placeholder">N/A</span>
+                        )}
+                      </td>
+                      <td style={{ fontWeight: 500 }}>{product.name}</td>
+                      <td>{product.brand?.name || product.brand || "N/A"}</td>
+                      <td>{product.seller?.name || "N/A"}</td>
+                      <td className="price-cell">₹{firstVariant.price ?? "—"}</td>
+                      <td className="price-cell">
+                        {firstVariant.offerPrice ? (
+                          <span className="price-offer">₹{firstVariant.offerPrice}</span>
+                        ) : (
+                          <span className="muted-small">—</span>
+                        )}
+                        {variantCount > 1 && (
+                          <span className="muted-small" style={{ marginLeft: "6px" }}>
+                            ({variantCount} variants)
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        {stockEntries.length > 0 ? (
+                          <span className={`badge ${totalStockCount > 10 ? "badge-green" : totalStockCount > 0 ? "badge-amber" : "badge-red"}`}>
+                            {stockEntries.map(([unit, qty], i) => (
+                              <span key={unit}>
+                                {qty} {unit || "units"}
+                                {i < stockEntries.length - 1 ? ", " : ""}
+                              </span>
+                            ))}
+                          </span>
+                        ) : (
+                          <span className="badge badge-red">Out of stock</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
 
-            {/* Pagination */}
-            <div className="pagination">
-              {Array.from({ length: totalPages }, (_, page) => (
-                <button
-                  key={page + 1}
-                  className={currentPage === page + 1 ? "active" : ""}
-                  onClick={() => handlePageChange(page + 1)}
-                >
-                  {page + 1}
-                </button>
-              ))}
-            </div>
-          </>
+            {totalPages > 1 && (
+              <div className="pagination">
+                {Array.from({ length: totalPages }, (_, page) => (
+                  <button
+                    key={page + 1}
+                    className={currentPage === page + 1 ? "active" : ""}
+                    onClick={() => handlePageChange(page + 1)}
+                  >
+                    {page + 1}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
       <ToastContainer position="top-right" autoClose={2000} />

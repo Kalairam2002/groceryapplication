@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import SellerLayout from "./SellerLayout";
 
 const BASE_URL = process.env.REACT_APP_API_URL; // e.g. http://localhost:5000
 
@@ -38,10 +39,18 @@ const SellerInvoices = () => {
 
   const closeModal = () => setSelected(null);
 
-  if (loading) return <p className="p-6 text-gray-500">Loading invoices...</p>;
+  if (loading) return (
+    <SellerLayout page="invoices">
+      <p className="p-6 text-gray-500">Loading invoices...</p>
+    </SellerLayout>
+  );
 
   return (
+    <SellerLayout page="invoices">
     <div className="p-6">
+      <span className="block font-mono text-xs font-semibold tracking-widest uppercase text-indigo-700 mb-1">
+        Records / Invoices
+      </span>
       <h2 className="text-2xl font-bold mb-6 text-gray-800">My Invoices</h2>
 
       {invoices.length === 0 ? (
@@ -63,7 +72,7 @@ const SellerInvoices = () => {
             <tbody className="text-sm text-gray-700 divide-y divide-gray-200">
               {invoices.map((inv) => (
                 <tr key={inv._id} className="hover:bg-gray-50 transition">
-                  <td className="px-4 py-3 font-mono text-xs text-blue-600">{inv.invoiceNumber}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-indigo-700">{inv.invoiceNumber}</td>
                   <td className="px-4 py-3">{new Date(inv.createdAt).toLocaleDateString()}</td>
                   <td className="px-4 py-3">{inv.items.length} item(s)</td>
                   <td className="px-4 py-3 font-semibold">₹{inv.totalAmount.toFixed(2)}</td>
@@ -77,14 +86,14 @@ const SellerInvoices = () => {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
                       {inv.status}
                     </span>
                   </td>
                   <td className="px-4 py-3">
                     <button
                       onClick={() => openDetail(inv._id)}
-                      className="text-blue-500 hover:underline text-xs font-medium"
+                      className="text-indigo-600 hover:underline text-xs font-medium"
                     >
                       View Details
                     </button>
@@ -148,6 +157,7 @@ const SellerInvoices = () => {
         </div>
       )}
     </div>
+    </SellerLayout>
   );
 };
 

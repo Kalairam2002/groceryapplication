@@ -146,21 +146,22 @@ const SellerLayout = ({ children }) => {
               <button
                 onClick={() => setShowDropdown(!showDropdown)}
                 style={{
-                  background: "none", border: "none",
+                  background: "#F6F7FB", border: "none",
                   cursor: "pointer", position: "relative",
-                  padding: "6px", display: "flex",
-                  alignItems: "center", color: "#374151",
+                  padding: "8px", borderRadius: "50%", display: "flex",
+                  alignItems: "center", color: "#262F52",
                 }}
               >
-                <Bell size={22} />
+                <Bell size={20} />
                 {unreadCount > 0 && (
                   <span style={{
                     position: "absolute", top: "0px", right: "0px",
-                    background: "#ef4444", color: "#fff",
+                    background: "#D9A227", color: "#1E2233",
                     fontSize: "10px", fontWeight: "700",
-                    width: "18px", height: "18px",
+                    width: "17px", height: "17px",
                     borderRadius: "50%", display: "flex",
                     alignItems: "center", justifyContent: "center",
+                    border: "2px solid #fff",
                   }}>
                     {unreadCount > 9 ? "9+" : unreadCount}
                   </span>
@@ -170,19 +171,19 @@ const SellerLayout = ({ children }) => {
               {/*  Dropdown */}
               {showDropdown && (
                 <div style={{
-                  position: "absolute", top: "40px", right: "0",
+                  position: "absolute", top: "44px", right: "0",
                   width: "320px", background: "#fff",
-                  borderRadius: "10px",
-                  boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-                  border: "1px solid #e5e7eb", zIndex: 9999,
+                  borderRadius: "12px",
+                  boxShadow: "0 12px 32px rgba(38,47,82,0.18)",
+                  border: "1px solid #E4E7F0", zIndex: 9999,
                   overflow: "hidden",
                 }}>
                   <div style={{
                     display: "flex", justifyContent: "space-between",
                     alignItems: "center", padding: "14px 16px",
-                    borderBottom: "1px solid #f0f0f0",
+                    borderBottom: "1px solid #F0F1F7",
                   }}>
-                    <span style={{ fontWeight: "700", fontSize: "14px", color: "#111" }}>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: "600", fontSize: "14px", color: "#1E2233" }}>
                       Notifications {unreadCount > 0 && `(${unreadCount})`}
                     </span>
                     {unreadCount > 0 && (
@@ -190,7 +191,7 @@ const SellerLayout = ({ children }) => {
                         onClick={handleMarkAllRead}
                         style={{
                           background: "none", border: "none",
-                          color: "#0d6efd", fontSize: "12px",
+                          color: "#3B4C8A", fontSize: "12px",
                           cursor: "pointer", fontWeight: "600",
                         }}
                       >
@@ -203,7 +204,7 @@ const SellerLayout = ({ children }) => {
                     {notifications.length === 0 ? (
                       <div style={{
                         padding: "24px", textAlign: "center",
-                        color: "#888", fontSize: "13px",
+                        color: "#6B7280", fontSize: "13px",
                       }}>
                         No notifications yet
                       </div>
@@ -211,26 +212,26 @@ const SellerLayout = ({ children }) => {
                       notifications.map((n) => (
                         <div key={n._id} style={{
                           padding: "12px 16px",
-                          borderBottom: "1px solid #f5f5f5",
-                          background: n.isRead ? "#fff" : "#f0f7ff",
+                          borderBottom: "1px solid #F0F1F7",
+                          background: n.isRead ? "#fff" : "#F6F7FB",
                           display: "flex", gap: "10px",
                           alignItems: "flex-start",
                         }}>
                           <div style={{
                             width: "10px", height: "10px",
                             borderRadius: "50%",
-                            background: statusColors[n.status] || "#888",
+                            background: statusColors[n.status] || "#6B7280",
                             marginTop: "4px", flexShrink: 0,
                           }} />
                           <div style={{ flex: 1 }}>
                             <p style={{
                               margin: "0 0 4px", fontSize: "13px",
-                              color: "#333",
+                              color: "#1E2233",
                               fontWeight: n.isRead ? "400" : "600",
                             }}>
                               {n.message}
                             </p>
-                            <span style={{ fontSize: "11px", color: "#aaa" }}>
+                            <span style={{ fontSize: "11px", fontFamily: "'IBM Plex Mono', monospace", color: "#9CA3AF" }}>
                               {new Date(n.createdAt).toLocaleString()}
                             </span>
                           </div>

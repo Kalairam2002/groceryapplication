@@ -21,7 +21,11 @@ const productSchema = new mongoose.Schema(
     //  Multiple variants stored here
     variants: [variantSchema],
 
-    brand: { type: String, required: true },
+    brand: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Brand",
+      required: true,
+    },
     category: { type: String, required: true },
     subcategory: { type: String },
     barcode: { type: String, unique: true },

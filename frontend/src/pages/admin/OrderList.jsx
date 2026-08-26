@@ -11,11 +11,9 @@ const OrderList = () => {
   const [deliveryBoys, setDeliveryBoys] = useState([]);
   const [assigning, setAssigning] = useState(null);
 
-  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // ✅ Fetch orders
   const fetchOrders = async () => {
     try {
       const res = await fetch(`${API}/api/admin/getOrderList`);
@@ -28,7 +26,6 @@ const OrderList = () => {
     }
   };
 
-  // ✅ Fetch approved delivery boys
   const fetchDeliveryBoys = async () => {
     try {
       const { data } = await axios.get(`${API}/api/delivery/all`);
@@ -45,7 +42,6 @@ const OrderList = () => {
     fetchDeliveryBoys();
   }, []);
 
-  // ✅ Assign delivery boy
   const handleAssign = async (orderId, deliveryBoyId) => {
     if (!deliveryBoyId) return;
     setAssigning(orderId);
@@ -59,7 +55,6 @@ const OrderList = () => {
     }
   };
 
-  // Pagination calculations
   const totalPages = Math.ceil(orders.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -69,18 +64,37 @@ const OrderList = () => {
 
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
+  const statusBadge = (status) => {
+    if (status === "Pending") return "badge-amber";
+    if (status === "Completed") return "badge-green";
+    return "badge-red";
+  };
+
+  const deliveryBadge = (status) => {
+    if (status === "Delivered") return "badge-green";
+    if (status === "Out for Delivery") return "badge-amber";
+    if (status === "Picked Up") return "badge-orange";
+    return "badge-gray";
+  };
+
   return (
     <AdminLayout page="Admin-Order">
-      <section className="orders py-5">
+      <section style={{ padding: "0" }}>
         <div className="container">
-          <h3 className="mb-4">All Orders</h3>
+          <div className="page-header">
+            <div>
+              <span className="eyebrow">Fulfilment / Orders</span>
+              <h3>All orders</h3>
+              <p className="subtitle">Track, assign, and follow every order through delivery</p>
+            </div>
+          </div>
 
           {loading ? (
             <p>Loading orders...</p>
           ) : currentOrders.length === 0 ? (
             <p>No orders found.</p>
           ) : (
-            <>
+            <div className="table-card">
               <table className="classic-table">
                 <thead>
                   <tr>
@@ -91,71 +105,57 @@ const OrderList = () => {
                     <th>Amount</th>
                     <th>Status</th>
                     <th>Payment ID</th>
-                    <th>Delivery Address</th>
-                    <th>Assign Delivery Boy</th> {/* ✅ new */}
-                    <th>Delivery Status</th>     {/* ✅ new */}
+                    <th>Delivery address</th>
+                    <th>Assign delivery boy</th>
+                    <th>Delivery status</th>
                     <th>Date</th>
                   </tr>
                 </thead>
                 <tbody>
                   {currentOrders.map((order, idx) => (
                     <tr key={order._id}>
-                      <td>{indexOfFirstItem + idx + 1}</td>
-                      <td>{order.userId}</td>
-                      <td>
-                        <ul style={{ margin: 0, paddingLeft: "18px" }}>
+                      <td className="mono-cell">{indexOfFirstItem + idx + 1}</td>
+                      <td className="mono-cell truncate-cell" title={order.userId}>{order.userId}</td>
+                      <td style={{ minWidth: "160px" }}>
+                        <ul style={{ margin: 0, paddingLeft: "16px", fontSize: "12.5px" }}>
                           {order.products.map((p, i) => (
                             <li key={i}>
-                              {p.name} × {p.quantity} (₹{p.price})
+                              {p.name} × {p.quantity} <span className="muted-small">(₹{p.price})</span>
                             </li>
                           ))}
                         </ul>
                       </td>
                       <td>
-                        {order.products
-                          .map((p) => p.seller?.name || "N/A")
-                          .join(", ")}
+                        {order.products.map((p) => p.seller?.name || "N/A").join(", ")}
                       </td>
-                      <td>₹{order.amount}</td>
+                      <td className="price-cell">₹{order.amount}</td>
                       <td>
-                        <span style={{
-                          padding: "4px 8px",
-                          borderRadius: "4px",
-                          fontSize: "12px",
-                          color: "white",
-                          backgroundColor:
-                            order.status === "Pending" ? "#f0ad4e" :
-                            order.status === "Completed" ? "#28a745" : "#dc3545",
-                        }}>
-                          {order.status}
-                        </span>
+                        <span className={`badge ${statusBadge(order.status)}`}>{order.status}</span>
                       </td>
-                      <td>{order.paymentId || "N/A"}</td>
+                      <td className="mono-cell truncate-cell" title={order.paymentId || ""}>{order.paymentId || "N/A"}</td>
 
-                      {/* Delivery Address */}
-                      <td>
+                      <td style={{ minWidth: "150px", maxWidth: "180px" }}>
                         {order.deliveryAddress?.fullName ? (
-                          <div style={{ fontSize: "12px", lineHeight: "1.6" }}>
+                          <div className="detail-block">
                             <b>{order.deliveryAddress.fullName}</b><br />
-                            📞 {order.deliveryAddress.phone}<br />
-                            🏠 {order.deliveryAddress.address}<br />
+                            {order.deliveryAddress.phone}<br />
+                            {order.deliveryAddress.address}<br />
                             {order.deliveryAddress.landmark && (
                               <><i>Near: {order.deliveryAddress.landmark}</i><br /></>
                             )}
-                            🏙️ {order.deliveryAddress.city}, {order.deliveryAddress.state}<br />
-                            📮 {order.deliveryAddress.pincode}
+                            {order.deliveryAddress.city}, {order.deliveryAddress.state}<br />
+                            {order.deliveryAddress.pincode}
                           </div>
                         ) : (
-                          <span style={{ color: "#aaa", fontSize: "12px" }}>No address</span>
+                          <span className="muted-small">No address</span>
                         )}
                       </td>
 
-                      {/* ✅ Assign Delivery Boy */}
                       <td>
                         {order.assignedDeliveryBoy ? (
-                          <div style={{ fontSize: "12px" }}>
-                            <b>✅ {order.assignedDeliveryBoy.name}</b><br />
-                            📞 {order.assignedDeliveryBoy.phone}
+                          <div className="detail-block">
+                            <b>{order.assignedDeliveryBoy.name}</b><br />
+                            {order.assignedDeliveryBoy.phone}
                           </div>
                         ) : (
                           <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
@@ -164,11 +164,14 @@ const OrderList = () => {
                               onChange={(e) => handleAssign(order._id, e.target.value)}
                               disabled={assigning === order._id}
                               style={{
-                                padding: "5px 8px",
+                                padding: "6px 8px",
                                 borderRadius: "6px",
-                                border: "1px solid #ddd",
+                                border: "1px solid #E3E8DD",
+                                background: "#F5F7F1",
                                 fontSize: "12px",
+                                color: "#1C2620",
                                 cursor: "pointer",
+                                maxWidth: "130px",
                               }}
                             >
                               <option value="" disabled>Select</option>
@@ -179,39 +182,24 @@ const OrderList = () => {
                               ))}
                             </select>
                             {assigning === order._id && (
-                              <span style={{ fontSize: "11px", color: "#888" }}>Assigning...</span>
+                              <span className="muted-small">Assigning...</span>
                             )}
                           </div>
                         )}
                       </td>
 
-                      {/* ✅ Delivery Status */}
                       <td>
-                        <span style={{
-                          padding: "4px 10px",
-                          borderRadius: "20px",
-                          fontSize: "11px",
-                          fontWeight: "600",
-                          backgroundColor:
-                            order.deliveryStatus === "Delivered" ? "#d4edda" :
-                            order.deliveryStatus === "Out for Delivery" ? "#cce5ff" :
-                            order.deliveryStatus === "Picked Up" ? "#fff3cd" : "#f8f9fa",
-                          color:
-                            order.deliveryStatus === "Delivered" ? "#155724" :
-                            order.deliveryStatus === "Out for Delivery" ? "#004085" :
-                            order.deliveryStatus === "Picked Up" ? "#856404" : "#6c757d",
-                        }}>
+                        <span className={`badge ${deliveryBadge(order.deliveryStatus)}`}>
                           {order.deliveryStatus || "Pending"}
                         </span>
                       </td>
 
-                      <td>{new Date(order.createdAt).toLocaleString()}</td>
+                      <td className="mono-cell">{new Date(order.createdAt).toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
 
-              {/* Pagination */}
               {totalPages > 1 && (
                 <div className="pagination">
                   {Array.from({ length: totalPages }, (_, i) => (
@@ -225,7 +213,7 @@ const OrderList = () => {
                   ))}
                 </div>
               )}
-            </>
+            </div>
           )}
         </div>
       </section>

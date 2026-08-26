@@ -60,12 +60,15 @@ const BarcodeScanner = () => {
       <div
         style={{
           minHeight: "100vh",
-          backgroundColor: "#f4f6f8",
-          padding: "40px",
+          backgroundColor: "#F6F7FB",
+          padding: "8px",
         }}
       >
-        <h2 style={{ marginBottom: "20px", color: "#333" }}>
-          Product Barcode List
+        <span style={{ display: "block", fontFamily: "'IBM Plex Mono', monospace", fontSize: "11px", fontWeight: "600", letterSpacing: "0.08em", textTransform: "uppercase", color: "#3B4C8A", marginBottom: "6px" }}>
+          Catalogue / Barcodes
+        </span>
+        <h2 style={{ marginBottom: "20px", fontFamily: "'Space Grotesk', sans-serif", fontWeight: "600", color: "#1E2233" }}>
+          Product barcode list
         </h2>
 
         {loading && (
@@ -78,8 +81,9 @@ const BarcodeScanner = () => {
           <div
             style={{
               backgroundColor: "#fff",
-              borderRadius: "10px",
-              boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
+              border: "1px solid #E4E7F0",
+              borderRadius: "14px",
+              boxShadow: "0 10px 30px rgba(38,47,82,0.06)",
               overflowX: "auto",
             }}
           >
@@ -87,8 +91,7 @@ const BarcodeScanner = () => {
               <thead>
                 <tr
                   style={{
-                    backgroundColor: "#1f2937",
-                    color: "#fff",
+                    backgroundColor: "#F6F7FB",
                     textAlign: "left",
                   }}
                 >
@@ -138,8 +141,8 @@ const BarcodeScanner = () => {
                       <td
                         style={{
                           ...tdStyle,
-                          fontFamily: "monospace",
-                          color: "#2563eb",
+                          fontFamily: "'IBM Plex Mono', monospace",
+                          color: "#3B4C8A",
                         }}
                       >
                         {item.barcode || "N/A"}
@@ -167,13 +170,14 @@ const BarcodeScanner = () => {
                               downloadBarcode(item._id, item.barcode)
                             }
                             style={{
-                              padding: "6px 12px",
-                              backgroundColor: "#2563eb",
+                              padding: "6px 14px",
+                              backgroundColor: "#262F52",
                               color: "#fff",
                               border: "none",
-                              borderRadius: "6px",
+                              borderRadius: "8px",
                               cursor: "pointer",
                               fontSize: "13px",
+                              fontWeight: "500",
                             }}
                           >
                             Download
@@ -200,9 +204,14 @@ const BarcodeScanner = () => {
 
 // ================= INLINE STYLES =================
 const thStyle = {
-  padding: "14px",
-  fontSize: "14px",
+  padding: "12px 14px",
+  fontSize: "11.5px",
   fontWeight: "600",
+  color: "#6B7280",
+  fontFamily: "'Space Grotesk', sans-serif",
+  textTransform: "uppercase",
+  letterSpacing: "0.04em",
+  borderBottom: "1px solid #E4E7F0",
 };
 
 const tdStyle = {

@@ -60,8 +60,11 @@ const SellerReturns = () => {
   return (
     <SellerLayout page="Returns">
       <div style={{ padding: "32px" }}>
-        <h2 style={{ fontSize: "22px", fontWeight: "600", marginBottom: "24px", color: "#111" }}>
-          Return Requests
+        <span style={{ display: "block", fontFamily: "'IBM Plex Mono', monospace", fontSize: "11px", fontWeight: "600", letterSpacing: "0.08em", textTransform: "uppercase", color: "#3B4C8A", marginBottom: "6px" }}>
+          Records / Returns
+        </span>
+        <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "22px", fontWeight: "600", marginBottom: "24px", color: "#1E2233" }}>
+          Return requests
         </h2>
 
         {loading ? (
@@ -80,13 +83,14 @@ const SellerReturns = () => {
           }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
               <thead>
-                <tr style={{ background: "#f9fafb" }}>
+                <tr style={{ background: "#F6F7FB" }}>
                   {["Product", "Customer", "Reason", "Description", "Bank Details", "Date", "Status", "Action"].map((h) => (
                     <th key={h} style={{
                       padding: "12px 16px", textAlign: "left",
-                      color: "#6b7280", fontWeight: "500", fontSize: "12px",
-                      borderBottom: "1px solid #e5e7eb", textTransform: "uppercase",
-                      letterSpacing: "0.05em", whiteSpace: "nowrap",
+                      color: "#6B7280", fontWeight: "600", fontSize: "11.5px",
+                      fontFamily: "'Space Grotesk', sans-serif",
+                      borderBottom: "1px solid #E4E7F0", textTransform: "uppercase",
+                      letterSpacing: "0.04em", whiteSpace: "nowrap",
                     }}>{h}</th>
                   ))}
                 </tr>
@@ -112,8 +116,8 @@ const SellerReturns = () => {
                     <td style={{ padding: "14px 16px" }}>
                       {r.bankDetails ? (
                         <div style={{
-                          background: "#f0f9ff",
-                          border: "1px solid #bae6fd",
+                          background: "#EEF1FA",
+                          border: "1px solid #C7D0EA",
                           borderRadius: "8px",
                           padding: "10px 12px",
                           minWidth: "200px",
@@ -122,7 +126,7 @@ const SellerReturns = () => {
                         }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
                             <span style={{ fontSize: "13px" }}>🏦</span>
-                            <span style={{ fontWeight: "600", color: "#0369a1", fontSize: "12px" }}>
+                            <span style={{ fontWeight: "600", color: "#3B4C8A", fontSize: "12px" }}>
                               {r.bankDetails.bankName}
                             </span>
                           </div>
@@ -138,7 +142,7 @@ const SellerReturns = () => {
                           </div>
                           <div style={{ color: "#374151" }}>
                             <span style={{ color: "#6b7280" }}>IFSC: </span>
-                            <b style={{ letterSpacing: "1px", color: "#0369a1" }}>
+                            <b style={{ letterSpacing: "1px", color: "#3B4C8A" }}>
                               {r.bankDetails.ifscCode}
                             </b>
                           </div>

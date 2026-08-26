@@ -6,8 +6,12 @@ import path from "path";
 // Get product list : /api/product/list 
 export const productList = async (req, res) => {
     try {
-        // Populate seller name
-        const products = await Product.find({}).populate("seller", "name");
+        // Populate seller name and brand name, newest first
+        const products = await Product.find({})
+            .populate("seller", "name")
+            .populate("brand", "name")
+            .sort({ createdAt: -1 });
+
         res.json({ success: true, products });
     }
     catch (error) {
@@ -15,4 +19,3 @@ export const productList = async (req, res) => {
         res.json({ success: false, message: error.message });
     }
 };
-

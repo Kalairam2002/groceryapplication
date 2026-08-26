@@ -8,9 +8,11 @@
     "build": "npm install"
   },
   "dependencies": {
+    "@chroma-core/default-embed": "^0.1.9",
     "axios": "^1.13.4",
     "bcryptjs": "^3.0.2",
     "bwip-js": "^4.7.0",
+    "chromadb": "^3.5.0",
     "cloudinary": "^2.7.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",

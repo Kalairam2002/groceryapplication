@@ -43,6 +43,35 @@ const Sellerdashboard = () => {
     .filter((o) => o.status === "Completed")
     .reduce((acc, order) => acc + (order.amount || 0), 0);
 
+  // Low stock: flatten each product's variants into individual rows so a
+  // product with one low variant and one healthy variant still surfaces
+  // the low one specifically (stock/stockUnit live on the variant, not
+  // the product — see AdminAddProduct/SellerAddProduct forms).
+  const LOW_STOCK_THRESHOLD = 5;
+
+  const lowStockRows = products.flatMap((product) =>
+    (product.variants || [])
+      .filter((v) => v.stock < LOW_STOCK_THRESHOLD)
+      .map((v) => ({
+        productId: product._id,
+        variantId: v._id,
+        name: product.name,
+        image: product.image?.[0],
+        stock: v.stock,
+        unitLabel: v.stockUnit || v.unit || "",
+        variantLabel:
+          v.sizeLabel ||
+          (v.quantity ? `${v.quantity} ${v.unit}` : v.unit || ""),
+      }))
+  );
+
+  const outOfStockRows = lowStockRows
+    .filter((r) => r.stock <= 0)
+    .sort((a, b) => a.stock - b.stock);
+  const runningLowRows = lowStockRows
+    .filter((r) => r.stock > 0)
+    .sort((a, b) => a.stock - b.stock);
+
   return (
     <SellerLayout page="Seller-Dashboard">
       <section className="orders py-5">
@@ -73,6 +102,90 @@ const Sellerdashboard = () => {
               </div>
             </div> */}
           </div>
+
+          {/* Low Stock Alerts */}
+          {lowStockRows.length > 0 && (
+            <div className="seller-stock-alerts mb-5">
+              <h4 className="mb-3">
+                <i className="ph ph-warning-circle" aria-hidden="true"></i>{" "}
+                Stock alerts
+              </h4>
+
+              {outOfStockRows.length > 0 && (
+                <>
+                  <p className="seller-stock-alert-label seller-stock-alert-label--danger">
+                    Out of stock · {outOfStockRows.length}
+                  </p>
+                  <div className="seller-stock-alert-list mb-3">
+                    {outOfStockRows.map((row) => (
+                      <div
+                        key={`${row.productId}-${row.variantId}`}
+                        className="seller-stock-alert-row seller-stock-alert-row--danger"
+                      >
+                        <div className="seller-stock-alert-info">
+                          {row.image && (
+                            <img
+                              src={row.image}
+                              alt={row.name}
+                              className="seller-stock-alert-thumb"
+                            />
+                          )}
+                          <div>
+                            <div className="seller-stock-alert-name">
+                              {row.name}
+                            </div>
+                            <div className="seller-stock-alert-variant">
+                              {row.variantLabel}
+                            </div>
+                          </div>
+                        </div>
+                        <span className="seller-stock-alert-qty">
+                          {row.stock} {row.unitLabel}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {runningLowRows.length > 0 && (
+                <>
+                  <p className="seller-stock-alert-label seller-stock-alert-label--warning">
+                    Running low · {runningLowRows.length}
+                  </p>
+                  <div className="seller-stock-alert-list">
+                    {runningLowRows.map((row) => (
+                      <div
+                        key={`${row.productId}-${row.variantId}`}
+                        className="seller-stock-alert-row seller-stock-alert-row--warning"
+                      >
+                        <div className="seller-stock-alert-info">
+                          {row.image && (
+                            <img
+                              src={row.image}
+                              alt={row.name}
+                              className="seller-stock-alert-thumb"
+                            />
+                          )}
+                          <div>
+                            <div className="seller-stock-alert-name">
+                              {row.name}
+                            </div>
+                            <div className="seller-stock-alert-variant">
+                              {row.variantLabel}
+                            </div>
+                          </div>
+                        </div>
+                        <span className="seller-stock-alert-qty">
+                          {row.stock} {row.unitLabel}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
 
           {/* Recent Orders Table */}
           <div className="classic-table-container mt-5">

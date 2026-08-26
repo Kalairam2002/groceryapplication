@@ -18,6 +18,9 @@ const SellerProductList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 6;
 
+  // Search
+  const [searchTerm, setSearchTerm] = useState("");
+
   // ================= FETCH PRODUCTS =================
   const fetchProducts = async () => {
     try {
@@ -71,24 +74,58 @@ const SellerProductList = () => {
     }
   };
 
-  // ================= PAGINATION =================
+  // ================= SEARCH + PAGINATION =================
+  const filteredProducts = products.filter((p) =>
+    p.name?.toLowerCase().includes(searchTerm.trim().toLowerCase())
+  );
+
   const indexOfLastProduct = currentPage * productsPerPage;
   const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
-  const currentProducts = products.slice(
+  const currentProducts = filteredProducts.slice(
     indexOfFirstProduct,
     indexOfLastProduct
   );
-  const totalPages = Math.ceil(products.length / productsPerPage);
+  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   if (loading) return <p>Loading products...</p>;
 
   return (
     <SellerLayout page="product-list">
       <div className="product-list-container">
-        <h4 className="mb-4">My Products</h4>
+        <div style={{ marginBottom: "1.25rem" }}>
+          <span style={{ display: "block", fontFamily: "'IBM Plex Mono', monospace", fontSize: "11px", fontWeight: "600", letterSpacing: "0.08em", textTransform: "uppercase", color: "#3B4C8A", marginBottom: "6px" }}>
+            Catalogue / Products
+          </span>
+          <h4 style={{ margin: 0, fontFamily: "'Space Grotesk', sans-serif", fontWeight: "600", color: "#1E2233" }}>My Products</h4>
+        </div>
+
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search products by name..."
+          style={{
+            width: "100%",
+            maxWidth: "420px",
+            padding: "10px 16px",
+            borderRadius: "999px",
+            border: "1px solid #E4E7F0",
+            background: "#fff",
+            fontSize: "13.5px",
+            outline: "none",
+            marginBottom: "20px",
+            boxSizing: "border-box",
+          }}
+        />
 
         {products.length === 0 ? (
           <p>No products found.</p>
+        ) : filteredProducts.length === 0 ? (
+          <p style={{ color: "#6B7280" }}>No products match "{searchTerm}".</p>
         ) : (
           <>
             <div className="product-grid">
@@ -97,6 +134,22 @@ const SellerProductList = () => {
                   categoryData.find(
                     (c) => String(c._id) === String(product.category)
                   )?.name || "Unknown Category";
+
+                // Price/offer price come from the first pricing variant —
+                // there's no top-level price on the product itself.
+                const firstVariant = product.variants?.[0] || {};
+                const variantCount = product.variants?.length || 0;
+
+                // Stock is tracked per-variant, and each variant can have its
+                // own unit (Kg, Ltr, Pcs, Gm) — sum within each unit rather
+                // than adding raw numbers across different units together.
+                const stockByUnit = {};
+                (product.variants || []).forEach((v) => {
+                  const unit = v.stockUnit || v.unit || "";
+                  stockByUnit[unit] = (stockByUnit[unit] || 0) + (Number(v.stock) || 0);
+                });
+                const stockEntries = Object.entries(stockByUnit);
+                const totalStockCount = stockEntries.reduce((sum, [, qty]) => sum + qty, 0);
 
                 return (
                   <div key={product._id} className="product-card">
@@ -111,10 +164,15 @@ const SellerProductList = () => {
                     <p className="product-brand">{categoryName}</p>
 
                     <p className="product-price">
-                      Price: ₹{product.price}{" "}
-                      {product.offerPrice && (
+                      Price: ₹{firstVariant.price ?? "—"}{" "}
+                      {firstVariant.offerPrice && (
                         <span className="offer-price">
-                          Offer: ₹{product.offerPrice}
+                          Offer: ₹{firstVariant.offerPrice}
+                        </span>
+                      )}
+                      {variantCount > 1 && (
+                        <span style={{ fontSize: "11px", color: "#6B7280", marginLeft: "6px" }}>
+                          ({variantCount} variants)
                         </span>
                       )}
                     </p>
@@ -141,8 +199,16 @@ const SellerProductList = () => {
                     )}
 
                     <p className="product-stock">
-                      Stock: {product.stock}{" "}
-                      {product.stock < 10 && (
+                      Stock:{" "}
+                      {stockEntries.length > 0
+                        ? stockEntries.map(([unit, qty], i) => (
+                            <span key={unit}>
+                              {qty} {unit || "units"}
+                              {i < stockEntries.length - 1 ? ", " : ""}
+                            </span>
+                          ))
+                        : "0"}{" "}
+                      {totalStockCount < 10 && (
                         <span className="low-stock-alert">
                           ⚠️ Low Stock
                         </span>
@@ -151,7 +217,7 @@ const SellerProductList = () => {
 
                     <div className="product-actions">
                       <button
-                        className="btn btn-edit"
+                        className="seller-btn-edit"
                         onClick={() =>
                           navigate(
                             `/seller/edit-product/${product._id}`
@@ -162,7 +228,7 @@ const SellerProductList = () => {
                       </button>
 
                       <button
-                        className="btn btn-delete"
+                        className="seller-btn-delete"
                         disabled={deletingId === product._id}
                         onClick={() => handleDelete(product._id)}
                       >
