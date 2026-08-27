@@ -1,1 +1,3 @@
-import('./server.js');
+require("dotenv").config();
+
+import("./server.js");

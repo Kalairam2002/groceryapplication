@@ -175,12 +175,19 @@ const ProductListOne = () => {
 
   // ✅ Low-stock badge shown on the product image, based on whichever
   // variant is currently selected in the dropdown for this card.
-  const LOW_STOCK_THRESHOLD = 5;
+  //
+  // NOTE: `quantity` is a per-variant spec (screen size, capacity, waist
+  // size, etc.), not a stocked pack size, so it can't be used for a %
+  // remaining calculation. `stock` is a plain piece count across every
+  // product type in this app, so a flat threshold is used here.
+  const LOW_STOCK_THRESHOLD = 15;
+
   const getStockBadge = (variant) => {
     if (!variant) return null;
+    const unit = getStockUnitLabel(variant);
     if (variant.stock <= 0) return { text: "Out of stock", tone: "danger" };
     if (variant.stock < LOW_STOCK_THRESHOLD)
-      return { text: `Only ${variant.stock} left`, tone: "warning" };
+      return { text: `Only ${variant.stock} ${unit} left`, tone: "warning" };
     return null;
   };
 
@@ -309,7 +316,19 @@ const ProductListOne = () => {
 
                       {/* INFO BOX */}
                       <div style={{ background: "#f9fafb", borderRadius: "10px", padding: "10px", fontSize: "13px", textAlign: "left", marginBottom: "10px" }}>
-                        <p style={{ margin: "3px 0" }}>📦 Stock: <b style={{ marginLeft: "5px" }}>{activeVariant.stock} {getStockUnitLabel(activeVariant)}</b></p>
+                        <p style={{ margin: "3px 0" }}>
+                          {activeVariant.stock <= 0 ? (
+                            <span style={{ color: "#A32D2D", fontWeight: 600 }}>✕ Out of stock</span>
+                          ) : activeVariant.stock < LOW_STOCK_THRESHOLD ? (
+                            <span style={{ color: "#854F0B", fontWeight: 600 }}>
+                              ⚠ Only {activeVariant.stock} {getStockUnitLabel(activeVariant)} left
+                            </span>
+                          ) : (
+                            <span style={{ color: "#1F7A4D", fontWeight: 600 }}>
+                              ✓ In stock ({activeVariant.stock} {getStockUnitLabel(activeVariant)})
+                            </span>
+                          )}
+                        </p>
                         <p style={{ margin: "3px 0" }}>💰 Tax: <b style={{ marginLeft: "5px" }}>{activeVariant.tax}%</b></p>
                         <p style={{ margin: "3px 0" }}>🏬 Seller: <b style={{ marginLeft: "5px" }}>{product.seller?.name || "N/A"}</b></p>
                         {/* ✅ Show expiry from variant level */}

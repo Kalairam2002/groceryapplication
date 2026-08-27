@@ -47,11 +47,19 @@ const Sellerdashboard = () => {
   // product with one low variant and one healthy variant still surfaces
   // the low one specifically (stock/stockUnit live on the variant, not
   // the product — see AdminAddProduct/SellerAddProduct forms).
-  const LOW_STOCK_THRESHOLD = 5;
+  //
+  // NOTE: `quantity` is a per-variant spec (screen size in Inch, drum
+  // capacity in Kg, waist size, etc.), not a stocked pack size — so it
+  // can't be used to compute a % remaining. `stock` is consistently a
+  // plain piece count across every product type in this app, so a flat
+  // threshold is the correct rule here.
+  const LOW_STOCK_THRESHOLD = 15;
+
+  const isLowStock = (v) => v.stock < LOW_STOCK_THRESHOLD;
 
   const lowStockRows = products.flatMap((product) =>
     (product.variants || [])
-      .filter((v) => v.stock < LOW_STOCK_THRESHOLD)
+      .filter(isLowStock)
       .map((v) => ({
         productId: product._id,
         variantId: v._id,
@@ -105,84 +113,147 @@ const Sellerdashboard = () => {
 
           {/* Low Stock Alerts */}
           {lowStockRows.length > 0 && (
-            <div className="seller-stock-alerts mb-5">
-              <h4 className="mb-3">
-                <i className="ph ph-warning-circle" aria-hidden="true"></i>{" "}
-                Stock alerts
-              </h4>
+            <div
+              style={{
+                background: "#fff",
+                borderRadius: "14px",
+                boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+                padding: "24px",
+                marginBottom: "40px",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  marginBottom: "18px",
+                }}
+              >
+                <span style={{ fontSize: "20px" }}>⚠️</span>
+                <h4 style={{ margin: 0, fontSize: "18px", fontWeight: 700 }}>
+                  Stock alerts
+                </h4>
+              </div>
 
               {outOfStockRows.length > 0 && (
-                <>
-                  <p className="seller-stock-alert-label seller-stock-alert-label--danger">
+                <div style={{ marginBottom: runningLowRows.length ? "22px" : 0 }}>
+                  <p
+                    style={{
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.04em",
+                      color: "#A32D2D",
+                      marginBottom: "10px",
+                    }}
+                  >
                     Out of stock · {outOfStockRows.length}
                   </p>
-                  <div className="seller-stock-alert-list mb-3">
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                     {outOfStockRows.map((row) => (
                       <div
                         key={`${row.productId}-${row.variantId}`}
-                        className="seller-stock-alert-row seller-stock-alert-row--danger"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          background: "#FCEBEB",
+                          borderRadius: "10px",
+                          padding: "10px 14px",
+                        }}
                       >
-                        <div className="seller-stock-alert-info">
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                           {row.image && (
                             <img
                               src={row.image}
                               alt={row.name}
-                              className="seller-stock-alert-thumb"
+                              style={{
+                                width: "40px",
+                                height: "40px",
+                                objectFit: "cover",
+                                borderRadius: "8px",
+                                background: "#fff",
+                                flexShrink: 0,
+                              }}
                             />
                           )}
                           <div>
-                            <div className="seller-stock-alert-name">
+                            <div style={{ fontSize: "14px", fontWeight: 600, color: "#1a1a1a" }}>
                               {row.name}
                             </div>
-                            <div className="seller-stock-alert-variant">
+                            <div style={{ fontSize: "12px", color: "#6b6b6b" }}>
                               {row.variantLabel}
                             </div>
                           </div>
                         </div>
-                        <span className="seller-stock-alert-qty">
+                        <span style={{ fontSize: "13px", fontWeight: 700, color: "#791F1F", whiteSpace: "nowrap" }}>
                           {row.stock} {row.unitLabel}
                         </span>
                       </div>
                     ))}
                   </div>
-                </>
+                </div>
               )}
 
               {runningLowRows.length > 0 && (
-                <>
-                  <p className="seller-stock-alert-label seller-stock-alert-label--warning">
+                <div>
+                  <p
+                    style={{
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.04em",
+                      color: "#854F0B",
+                      marginBottom: "10px",
+                    }}
+                  >
                     Running low · {runningLowRows.length}
                   </p>
-                  <div className="seller-stock-alert-list">
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                     {runningLowRows.map((row) => (
                       <div
                         key={`${row.productId}-${row.variantId}`}
-                        className="seller-stock-alert-row seller-stock-alert-row--warning"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          background: "#FAEEDA",
+                          borderRadius: "10px",
+                          padding: "10px 14px",
+                        }}
                       >
-                        <div className="seller-stock-alert-info">
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                           {row.image && (
                             <img
                               src={row.image}
                               alt={row.name}
-                              className="seller-stock-alert-thumb"
+                              style={{
+                                width: "40px",
+                                height: "40px",
+                                objectFit: "cover",
+                                borderRadius: "8px",
+                                background: "#fff",
+                                flexShrink: 0,
+                              }}
                             />
                           )}
                           <div>
-                            <div className="seller-stock-alert-name">
+                            <div style={{ fontSize: "14px", fontWeight: 600, color: "#1a1a1a" }}>
                               {row.name}
                             </div>
-                            <div className="seller-stock-alert-variant">
+                            <div style={{ fontSize: "12px", color: "#6b6b6b" }}>
                               {row.variantLabel}
                             </div>
                           </div>
                         </div>
-                        <span className="seller-stock-alert-qty">
+                        <span style={{ fontSize: "13px", fontWeight: 700, color: "#633806", whiteSpace: "nowrap" }}>
                           {row.stock} {row.unitLabel}
                         </span>
                       </div>
                     ))}
                   </div>
-                </>
+                </div>
               )}
             </div>
           )}

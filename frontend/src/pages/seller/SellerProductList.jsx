@@ -9,6 +9,11 @@ import { useQuery } from "@tanstack/react-query";
 import Barcode from "react-barcode";
 
 const SellerProductList = () => {
+  // Same rule used across the storefront and seller dashboard: stock is
+  // always a plain piece count, so a flat threshold applies to every
+  // product type (electronics, clothing, grocery, etc).
+  const LOW_STOCK_THRESHOLD = 15;
+
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState(null);
@@ -140,16 +145,32 @@ const SellerProductList = () => {
                 const firstVariant = product.variants?.[0] || {};
                 const variantCount = product.variants?.length || 0;
 
-                // Stock is tracked per-variant, and each variant can have its
-                // own unit (Kg, Ltr, Pcs, Gm) — sum within each unit rather
-                // than adding raw numbers across different units together.
-                const stockByUnit = {};
-                (product.variants || []).forEach((v) => {
-                  const unit = v.stockUnit || v.unit || "";
-                  stockByUnit[unit] = (stockByUnit[unit] || 0) + (Number(v.stock) || 0);
+                // Stock is a plain piece count per variant — never grouped
+                // by unit/spec (a variant's unit like "Kg" or "Size" only
+                // describes what that variant IS, not how stock is counted).
+                // Total is a simple sum; each variant's own count is shown
+                // separately so a low variant never gets averaged away.
+                const variants = product.variants || [];
+                const totalStock = variants.reduce(
+                  (sum, v) => sum + (Number(v.stock) || 0),
+                  0
+                );
+                const hasOutOfStockVariant = variants.some(
+                  (v) => (Number(v.stock) || 0) <= 0
+                );
+                const hasLowStockVariant = variants.some((v) => {
+                  const s = Number(v.stock) || 0;
+                  return s > 0 && s < LOW_STOCK_THRESHOLD;
                 });
-                const stockEntries = Object.entries(stockByUnit);
-                const totalStockCount = stockEntries.reduce((sum, [, qty]) => sum + qty, 0);
+                const variantLabel = (v) =>
+                  v.sizeLabel ||
+                  (v.quantity ? `${v.quantity} ${v.unit}` : v.unit || "");
+                // Chip wording differs by variant type — "pack" only makes
+                // sense for weight/volume/count specs (500 Gm, 7 Kg, 42
+                // Inch); size-based variants (clothing, shoes) read as
+                // "Size S", not "S pack".
+                const variantChipLabel = (v) =>
+                  v.sizeLabel ? `Size ${v.sizeLabel}` : `${variantLabel(v)} pack`;
 
                 return (
                   <div key={product._id} className="product-card">
@@ -198,22 +219,51 @@ const SellerProductList = () => {
                       </div>
                     )}
 
-                    <p className="product-stock">
-                      Stock:{" "}
-                      {stockEntries.length > 0
-                        ? stockEntries.map(([unit, qty], i) => (
-                            <span key={unit}>
-                              {qty} {unit || "units"}
-                              {i < stockEntries.length - 1 ? ", " : ""}
+                    {variantCount <= 1 ? (
+                      <p className="product-stock" style={{ margin: "6px 0 2px" }}>
+                        {totalStock <= 0 ? (
+                          <span style={{ color: "#791F1F", fontWeight: 600, background: "#FCEBEB", padding: "3px 8px", borderRadius: "12px", fontSize: "12px" }}>
+                            ✕ Out of stock
+                          </span>
+                        ) : hasLowStockVariant ? (
+                          <span style={{ color: "#854F0B", fontWeight: 600, background: "#FAEEDA", padding: "3px 8px", borderRadius: "12px", fontSize: "12px" }}>
+                            ⚠ Only {totalStock} {firstVariant.stockUnit || firstVariant.unit || ""} left
+                          </span>
+                        ) : (
+                          <span style={{ color: "#1F7A4D", fontWeight: 600, background: "#E6F4EC", padding: "3px 8px", borderRadius: "12px", fontSize: "12px" }}>
+                            ✓ In stock ({totalStock} {firstVariant.stockUnit || firstVariant.unit || ""})
+                          </span>
+                        )}
+                      </p>
+                    ) : (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", margin: "6px 0 2px" }}>
+                        {variants.map((v) => {
+                          const s = Number(v.stock) || 0;
+                          const style =
+                            s <= 0
+                              ? { color: "#791F1F", background: "#FCEBEB" }
+                              : s < LOW_STOCK_THRESHOLD
+                              ? { color: "#854F0B", background: "#FAEEDA" }
+                              : { color: "#1F7A4D", background: "#E6F4EC" };
+                          const icon = s <= 0 ? "✕" : s < LOW_STOCK_THRESHOLD ? "⚠" : "✓";
+                          return (
+                            <span
+                              key={v._id}
+                              style={{
+                                ...style,
+                                fontWeight: 600,
+                                padding: "3px 8px",
+                                borderRadius: "12px",
+                                fontSize: "12px",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {icon} {variantChipLabel(v)} — {s <= 0 ? "out of stock" : `${s} ${v.stockUnit || v.unit || ""} left`}
                             </span>
-                          ))
-                        : "0"}{" "}
-                      {totalStockCount < 10 && (
-                        <span className="low-stock-alert">
-                          ⚠️ Low Stock
-                        </span>
-                      )}
-                    </p>
+                          );
+                        })}
+                      </div>
+                    )}
 
                     <div className="product-actions">
                       <button

@@ -6,6 +6,11 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const ProductList = () => {
+  // Same rule used across the storefront and seller pages: stock is
+  // always a plain piece count, so a flat threshold applies to every
+  // product type (electronics, clothing, grocery, etc).
+  const LOW_STOCK_THRESHOLD = 15;
+
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -73,16 +78,31 @@ const ProductList = () => {
                   const firstVariant = product.variants?.[0] || {};
                   const variantCount = product.variants?.length || 0;
 
-                  // Stock is tracked per-variant with its own unit
-                  // (Kg/Ltr/Pcs/Gm) — group and sum within each unit rather
-                  // than adding raw numbers across different units.
-                  const stockByUnit = {};
-                  (product.variants || []).forEach((v) => {
-                    const unit = v.stockUnit || v.unit || "";
-                    stockByUnit[unit] = (stockByUnit[unit] || 0) + (Number(v.stock) || 0);
+                  // Stock is a plain piece count per variant — never
+                  // grouped by unit/spec (a variant's unit like "Kg" or
+                  // "Size" describes what that variant IS, not how stock
+                  // is counted). Total is a simple sum; per-variant flags
+                  // catch a low variant even if the total still looks fine.
+                  const variants = product.variants || [];
+                  const totalStockCount = variants.reduce(
+                    (sum, v) => sum + (Number(v.stock) || 0),
+                    0
+                  );
+                  const hasOutOfStockVariant = variants.some(
+                    (v) => (Number(v.stock) || 0) <= 0
+                  );
+                  const hasLowStockVariant = variants.some((v) => {
+                    const s = Number(v.stock) || 0;
+                    return s > 0 && s < LOW_STOCK_THRESHOLD;
                   });
-                  const stockEntries = Object.entries(stockByUnit);
-                  const totalStockCount = stockEntries.reduce((sum, [, qty]) => sum + qty, 0);
+                  const variantLabel = (v) =>
+                    v.sizeLabel ||
+                    (v.quantity ? `${v.quantity} ${v.unit}` : v.unit || "");
+                  // "pack" only makes sense for weight/volume/count specs
+                  // (500 Gm, 7 Kg, 42 Inch); size-based variants read as
+                  // "Size S", not "S pack".
+                  const variantChipLabel = (v) =>
+                    v.sizeLabel ? `Size ${v.sizeLabel}` : `${variantLabel(v)} pack`;
 
                   return (
                     <tr key={product._id}>
@@ -111,17 +131,28 @@ const ProductList = () => {
                         )}
                       </td>
                       <td>
-                        {stockEntries.length > 0 ? (
-                          <span className={`badge ${totalStockCount > 10 ? "badge-green" : totalStockCount > 0 ? "badge-amber" : "badge-red"}`}>
-                            {stockEntries.map(([unit, qty], i) => (
-                              <span key={unit}>
-                                {qty} {unit || "units"}
-                                {i < stockEntries.length - 1 ? ", " : ""}
-                              </span>
-                            ))}
-                          </span>
+                        {variantCount <= 1 ? (
+                          totalStockCount <= 0 ? (
+                            <span className="badge badge-red">✕ Out of stock</span>
+                          ) : hasLowStockVariant ? (
+                            <span className="badge badge-amber">⚠ Only {totalStockCount} {firstVariant.stockUnit || firstVariant.unit || ""} left</span>
+                          ) : (
+                            <span className="badge badge-green">✓ In stock ({totalStockCount} {firstVariant.stockUnit || firstVariant.unit || ""})</span>
+                          )
                         ) : (
-                          <span className="badge badge-red">Out of stock</span>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+                            {variants.map((v) => {
+                              const s = Number(v.stock) || 0;
+                              const cls =
+                                s <= 0 ? "badge-red" : s < LOW_STOCK_THRESHOLD ? "badge-amber" : "badge-green";
+                              const icon = s <= 0 ? "✕" : s < LOW_STOCK_THRESHOLD ? "⚠" : "✓";
+                              return (
+                                <span key={v._id} className={`badge ${cls}`} style={{ whiteSpace: "nowrap" }}>
+                                  {icon} {variantChipLabel(v)} — {s <= 0 ? "out of stock" : `${s} ${v.stockUnit || v.unit || ""} left`}
+                                </span>
+                              );
+                            })}
+                          </div>
                         )}
                       </td>
                     </tr>

@@ -1,11 +1,11 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "main": "server.js",
+  "main": "index.cjs",
   "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "build": "npm install"
+     "start": "node index.cjs",
+  "build": "npm install"
   },
   "dependencies": {
     "@chroma-core/default-embed": "^0.1.9",
