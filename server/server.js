@@ -1,86 +1,184 @@
-import { createRequire } from 'module';
-import cookieParser from 'cookie-parser';
-import express from 'express';
-import cors from 'cors';
+import cookieParser from "cookie-parser";
+import express from "express";
+import cors from "cors";
 import path from "path";
-import connectDB from './configs/db.js';
-import dotenv from 'dotenv';
-import axios from 'axios';
+import { fileURLToPath } from "url";
+import dotenv from "dotenv";
+import axios from "axios";
+import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
-import userRouter from './routes/userRouter.js';
-import sellerRouter from './routes/sellerRoute.js';
-import connectCloudinary from './configs/cloudinary.js';
-import productRouter from './routes/productRoute.js';
-import cartRouter from './routes/cartRouter.js';
-import addressRouter from './routes/addressRoute.js';
-import orderRouter from './routes/orderRoute.js';
-import adminRouter from './routes/adminRoutes.js';
-import contactRouter from './routes/contactRoute.js';
-import brandRouter from './routes/admin/Brandroute.js';
-import admin from './models/Admin.js';
-import adminRouterData from './routes/admin/CategoryRoute.js';
-import paymentRoutes from './routes/paymentRoute.js';
+// ================= CONFIG =================
+
+import connectDB from "./configs/db.js";
+import connectCloudinary from "./configs/cloudinary.js";
+
+// ================= ROUTES =================
+
+import userRouter from "./routes/userRouter.js";
+import sellerRouter from "./routes/sellerRoute.js";
+import productRouter from "./routes/productRoute.js";
+import cartRouter from "./routes/cartRouter.js";
+import addressRouter from "./routes/addressRoute.js";
+import orderRouter from "./routes/orderRoute.js";
+import adminRouter from "./routes/adminRoutes.js";
+import contactRouter from "./routes/contactRoute.js";
+import brandRouter from "./routes/admin/Brandroute.js";
+import adminRouterData from "./routes/admin/CategoryRoute.js";
+import paymentRoutes from "./routes/paymentRoute.js";
 import subCategoryRoutes from "./routes/admin/subCategoryRoutes.js";
 import variantRoutes from "./routes/admin/variantRoutes.js";
-import testRoute from './routes/testRoute.js';
-import locationRoute from './routes/locationRoute.js';
-import Product from './models/Product.js';
-import Order from './models/orderModel.js';
-import User from './models/User.js';
-import sendEmail from './utils/sendEmail.js';
-import orderEmailTemplate from './utils/orderEmailTemplate.js';
-import { sendWhatsAppMessage } from './utils/whatsapp.js';
-import jwt from "jsonwebtoken";
-import returnRouter from './routes/returnRoutes.js';
+import testRoute from "./routes/testRoute.js";
+import locationRoute from "./routes/locationRoute.js";
+import returnRouter from "./routes/returnRoutes.js";
 import deliveryRoutes from "./routes/deliveryRoute.js";
-import aiRouter from './routes/aiRouter.js';
-import Invoice from './models/Invoice.js';
-import invoiceRouter from './routes/invoiceRoute.js';
-import mongoose from "mongoose";
+import aiRouter from "./routes/aiRouter.js";
+import invoiceRouter from "./routes/invoiceRoute.js";
+
+// ================= MODELS =================
+
+import Product from "./models/Product.js";
+import Order from "./models/orderModel.js";
+import User from "./models/User.js";
+import Invoice from "./models/Invoice.js";
+
+// ================= UTILS =================
+
+import sendEmail from "./utils/sendEmail.js";
+import orderEmailTemplate from "./utils/orderEmailTemplate.js";
+import { sendWhatsAppMessage } from "./utils/whatsapp.js";
+
+// ================= ENV =================
 
 dotenv.config();
 
+// ================= APP =================
+
 const app = express();
 
-// Project root directory
-const __dirname = path.resolve();
+// Get the actual directory where server.js exists.
+// This is safer than using path.resolve().
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Hostinger provides PORT.
-// Localhost will use 5000.
-const port = process.env.PORT || 5000;
+// Local development uses 5000.
+const port = Number(process.env.PORT) || 5000;
+
+// Hostinger needs the server accessible externally.
+const host = "0.0.0.0";
 
 // ================= DATABASE =================
 
-await connectDB();
-await connectCloudinary();
+try {
+  await connectDB();
+  console.log("Database Connected");
+} catch (error) {
+  console.error("Database connection failed:", error);
+  process.exit(1);
+}
+
+// ================= CLOUDINARY =================
+
+try {
+  await connectCloudinary();
+  console.log("Cloudinary Connected");
+} catch (error) {
+  console.error("Cloudinary connection failed:", error);
+}
 
 // ================= CORS =================
 
+// Add your actual frontend domain here if it is different.
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:4000",
+
   "http://31.97.237.98:5000",
+
   "https://online-store.staging-rdegi.com",
+
   "https://maligaijaman.com",
-  "https://maligaijaman-demo.rdegi.com"
+
+  "https://maligaijaman-demo.rdegi.com",
+];
+
+// Add CLIENT_URL automatically if it exists.
+if (process.env.CLIENT_URL) {
+  allowedOrigins.push(process.env.CLIENT_URL);
+}
+
+// Remove duplicate domains.
+const uniqueAllowedOrigins = [
+  ...new Set(allowedOrigins)
 ];
 
 const corsOptions = {
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
+
+    // Allow requests without Origin
+    // such as Postman/server-to-server requests.
+    if (!origin) {
+      return callback(null, true);
     }
+
+    if (uniqueAllowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    console.log("Blocked CORS origin:", origin);
+
+    return callback(
+      new Error(`CORS blocked for origin: ${origin}`)
+    );
   },
-  credentials: true
+
+  credentials: true,
+
+  methods: [
+    "GET",
+    "POST",
+    "PUT",
+    "PATCH",
+    "DELETE",
+    "OPTIONS"
+  ],
+
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization"
+  ]
 };
 
 app.use(cors(corsOptions));
 
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true }));
+// ================= MIDDLEWARE =================
+
+app.use(
+  express.json({
+    limit: "10mb"
+  })
+);
+
+app.use(
+  express.urlencoded({
+    extended: true
+  })
+);
+
 app.use(cookieParser());
+
+// ================= HEALTH CHECK =================
+
+// Use this to check whether Hostinger backend is running.
+app.get("/api/health", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Maligaijaman backend is running",
+    environment: process.env.NODE_ENV || "development",
+    timestamp: new Date().toISOString()
+  });
+});
 
 // ================= CASHFREE ENV =================
 
@@ -93,7 +191,9 @@ const {
 // ================= CASHFREE CREATE ORDER =================
 
 app.post("/api/create-order", async (req, res) => {
+
   try {
+
     const {
       amount,
       cart,
@@ -101,299 +201,568 @@ app.post("/api/create-order", async (req, res) => {
       deliveryAddress
     } = req.body;
 
-    const orderId = "order_" + Date.now();
+    if (!amount || isNaN(amount)) {
+
+      return res.status(400).json({
+        error: "Invalid amount received"
+      });
+
+    }
+
+    if (!CF_APP_ID || !CF_SECRET_KEY || !CF_ENV) {
+
+      console.error(
+        "Cashfree environment variables are missing"
+      );
+
+      return res.status(500).json({
+        error: "Cashfree configuration is missing"
+      });
+
+    }
+
+    const orderId =
+      "order_" + Date.now();
 
     const payload = {
-      order_amount: amount,
+
+      order_amount: Number(amount),
+
       order_currency: "INR",
 
       customer_details: {
-        customer_id: user?.username || "guest",
-        customer_email: user?.email || "test@test.com",
-        customer_phone: user?.phone || "9999999999"
+
+        customer_id:
+          user?.username || "guest",
+
+        customer_email:
+          user?.email || "test@test.com",
+
+        customer_phone:
+          user?.phone ||
+          user?.phoneNumber ||
+          "9999999999"
+
       },
 
       order_meta: {
+
         return_url:
           `${process.env.CLIENT_URL}/payment-success?order_id=${orderId}`
+
       },
 
       order_id: orderId
     };
 
     const response = await axios.post(
+
       `https://${CF_ENV}.cashfree.com/pg/orders`,
+
       payload,
+
       {
         headers: {
-          "x-client-id": CF_APP_ID,
-          "x-client-secret": CF_SECRET_KEY,
-          "x-api-version": "2023-08-01",
-          "Content-Type": "application/json"
+
+          "x-client-id":
+            CF_APP_ID,
+
+          "x-client-secret":
+            CF_SECRET_KEY,
+
+          "x-api-version":
+            "2023-08-01",
+
+          "Content-Type":
+            "application/json"
+
         }
       }
+
     );
 
-    global.orders = global.orders || {};
+    global.orders =
+      global.orders || {};
 
     global.orders[orderId] = {
+
       cart,
       user,
       amount,
       deliveryAddress
+
     };
 
     res.json(response.data);
 
   } catch (err) {
+
     console.error(
-      err.response?.data || err.message
+      "Cashfree create order error:",
+      err.response?.data ||
+      err.message
     );
 
     res.status(500).json({
       error: "Order creation failed"
     });
+
   }
+
 });
 
 // ================= CASHFREE VERIFY PAYMENT =================
 
-app.get("/api/verify-payment/:orderId", async (req, res) => {
-  try {
+app.get(
+  "/api/verify-payment/:orderId",
+  async (req, res) => {
 
-    const { orderId } = req.params;
+    try {
 
-    const response = await axios.get(
-      `https://${CF_ENV}.cashfree.com/pg/orders/${orderId}`,
-      {
-        headers: {
-          "x-client-id": CF_APP_ID,
-          "x-client-secret": CF_SECRET_KEY,
-          "x-api-version": "2023-08-01"
-        }
+      const {
+        orderId
+      } = req.params;
+
+      if (
+        !CF_APP_ID ||
+        !CF_SECRET_KEY ||
+        !CF_ENV
+      ) {
+
+        return res.status(500).json({
+          error:
+            "Cashfree configuration is missing"
+        });
+
       }
-    );
 
-    if (response.data.order_status !== "PAID") {
-      return res.json({
-        success: false
-      });
-    }
+      const response =
+        await axios.get(
 
-    const savedOrder = global.orders?.[orderId];
+          `https://${CF_ENV}.cashfree.com/pg/orders/${orderId}`,
 
-    if (!savedOrder) {
-      return res.status(400).json({
-        error: "Order not found"
-      });
-    }
+          {
+            headers: {
 
-    const {
-      cart,
-      user,
-      amount,
-      deliveryAddress
-    } = savedOrder;
+              "x-client-id":
+                CF_APP_ID,
 
-    // ================= ENRICH PRODUCTS =================
+              "x-client-secret":
+                CF_SECRET_KEY,
 
-    const enrichedProducts = await Promise.all(
-      cart.map(async (item) => {
+              "x-api-version":
+                "2023-08-01"
 
-        const prod = await Product.findById(item._id)
-          .populate("seller", "name");
+            }
+          }
 
-        if (!prod) {
-          throw new Error("Product not found");
+        );
+
+      if (
+        response.data.order_status !==
+        "PAID"
+      ) {
+
+        return res.json({
+          success: false
+        });
+
+      }
+
+      const savedOrder =
+        global.orders?.[orderId];
+
+      if (!savedOrder) {
+
+        return res.status(400).json({
+          error: "Order not found"
+        });
+
+      }
+
+      const {
+        cart,
+        user,
+        amount,
+        deliveryAddress
+      } = savedOrder;
+
+      // ================= ENRICH PRODUCTS =================
+
+      const enrichedProducts =
+        await Promise.all(
+
+          cart.map(async (item) => {
+
+            const prod =
+              await Product.findById(
+                item._id
+              ).populate(
+                "seller",
+                "name"
+              );
+
+            if (!prod) {
+
+              throw new Error(
+                "Product not found"
+              );
+
+            }
+
+            const purchaseQty =
+              Number(item.cartQty) ||
+              Number(item.quantity) ||
+              1;
+
+            if (
+              prod.stock <
+              purchaseQty
+            ) {
+
+              throw new Error(
+                `${prod.name} out of stock`
+              );
+
+            }
+
+            prod.stock =
+              Number(prod.stock) -
+              purchaseQty;
+
+            await prod.save();
+
+            const matchedVariant =
+              prod.variants?.find(
+
+                (v) =>
+                  v._id?.toString() ===
+                  item.variant?._id?.toString()
+
+              );
+
+            const resolvedPrice =
+
+              Number(item.price) ||
+
+              Number(
+                item.variant?.offerPrice
+              ) ||
+
+              Number(
+                matchedVariant?.offerPrice
+              ) ||
+
+              Number(
+                prod.variants?.[0]?.offerPrice
+              ) ||
+
+              0;
+
+            return {
+
+              id: prod._id,
+
+              name: prod.name,
+
+              quantity:
+                purchaseQty,
+
+              price:
+                resolvedPrice,
+
+              seller:
+                prod.seller?._id ||
+                null,
+
+              sellerName:
+                prod.seller?.name ||
+                "N/A"
+
+            };
+
+          })
+
+        );
+
+      // ================= SAVE ORDER =================
+
+      const newOrder =
+        await Order.create({
+
+          userId:
+            user?.id ||
+            user?._id,
+
+          products:
+            enrichedProducts,
+
+          amount,
+
+          paymentId:
+            response.data.cf_order_id,
+
+          orderId,
+
+          status: "Paid",
+
+          paymentGateway:
+            "Cashfree",
+
+          deliveryAddress:
+            deliveryAddress || {}
+
+        });
+
+      // ================= CREATE INVOICES =================
+
+      const sellerGroups = {};
+
+      enrichedProducts.forEach(
+        (item) => {
+
+          const sId =
+            item.seller?.toString() ||
+            "unknown";
+
+          if (!sellerGroups[sId]) {
+
+            sellerGroups[sId] = [];
+
+          }
+
+          sellerGroups[sId].push(item);
+
+        }
+      );
+
+      for (
+        const [
+          sellerId,
+          sellerItems
+        ]
+        of Object.entries(
+          sellerGroups
+        )
+      ) {
+
+        if (
+          sellerId === "unknown"
+        ) {
+
+          continue;
+
         }
 
-        const purchaseQty =
-          Number(item.cartQty) ||
-          Number(item.quantity) ||
-          1;
+        const safeItems =
+          sellerItems.map(
+            (item) => {
 
-        if (prod.stock < purchaseQty) {
-          throw new Error(
-            `${prod.name} out of stock`
+              const safePrice =
+                Number(item.price) ||
+                0;
+
+              const safeQty =
+                Number(item.quantity) ||
+                0;
+
+              return {
+
+                name:
+                  item.name,
+
+                quantity:
+                  safeQty,
+
+                price:
+                  safePrice,
+
+                subtotal:
+                  safePrice *
+                  safeQty
+
+              };
+
+            }
           );
+
+        const sellerTotal =
+          safeItems.reduce(
+
+            (sum, item) =>
+              sum +
+              item.subtotal,
+
+            0
+
+          );
+
+        await Invoice.create({
+
+          invoiceNumber:
+            `INV-${Date.now()}-${sellerId.slice(-4)}`,
+
+          orderId:
+            newOrder._id,
+
+          sellerId,
+
+          userId:
+            user?.id ||
+            user?._id,
+
+          items:
+            safeItems,
+
+          totalAmount:
+            sellerTotal,
+
+          paymentType:
+            "ONLINE",
+
+          razorpayPaymentId:
+            response.data.cf_order_id
+
+        });
+
+      }
+
+      // ================= EMAIL =================
+
+      try {
+
+        const dbUser =
+          await User.findById(
+            user?.id ||
+            user?._id
+          );
+
+        if (dbUser) {
+
+          const subtotal =
+            Math.floor(
+              amount / 1.05
+            );
+
+          const tax =
+            amount -
+            subtotal;
+
+          const emailHTML =
+            orderEmailTemplate({
+
+              userName:
+                dbUser.username,
+
+              orderId,
+
+              products:
+                enrichedProducts,
+
+              subtotal,
+
+              tax,
+
+              total:
+                amount
+
+            });
+
+          await sendEmail(
+
+            dbUser.email,
+
+            "maligaijaman - Order Confirmation",
+
+            emailHTML
+
+          );
+
+          console.log(
+            "Order confirmation email sent to",
+            dbUser.email
+          );
+
         }
 
-        prod.stock -= purchaseQty;
+      } catch (emailErr) {
 
-        await prod.save();
-
-        const matchedVariant = prod.variants?.find(
-          (v) =>
-            v._id?.toString() ===
-            item.variant?._id?.toString()
+        console.error(
+          "[verifyPayment] Email failed:",
+          emailErr.message
         );
 
-        const resolvedPrice =
-          Number(item.price) ||
-          Number(item.variant?.offerPrice) ||
-          Number(matchedVariant?.offerPrice) ||
-          Number(prod.variants?.[0]?.offerPrice) ||
-          0;
-
-        return {
-          id: prod._id,
-          name: prod.name,
-          quantity: purchaseQty,
-          price: resolvedPrice,
-          seller: prod.seller._id,
-          sellerName: prod.seller.name
-        };
-      })
-    );
-
-    // ================= SAVE ORDER =================
-
-    const newOrder = await Order.create({
-      userId: user.id,
-      products: enrichedProducts,
-      amount,
-      paymentId: response.data.cf_order_id,
-      orderId,
-      status: "Paid",
-      paymentGateway: "Cashfree",
-      deliveryAddress: deliveryAddress || {}
-    });
-
-    // ================= CREATE INVOICES =================
-
-    const sellerGroups = {};
-
-    enrichedProducts.forEach((item) => {
-
-      const sId =
-        item.seller?.toString() ||
-        "unknown";
-
-      if (!sellerGroups[sId]) {
-        sellerGroups[sId] = [];
       }
 
-      sellerGroups[sId].push(item);
-    });
+      // ================= WHATSAPP =================
 
-    for (
-      const [sellerId, sellerItems]
-      of Object.entries(sellerGroups)
-    ) {
+      try {
 
-      if (sellerId === "unknown") {
-        continue;
-      }
+        const dbUser =
+          await User.findById(
+            user?.id ||
+            user?._id
+          );
 
-      const safeItems = sellerItems.map((item) => {
+        if (
+          dbUser?.phoneNumber
+        ) {
 
-        const safePrice =
-          Number(item.price) || 0;
+          const phone =
+            `91${dbUser.phoneNumber}`;
 
-        const safeQty =
-          Number(item.quantity) || 0;
+          await sendWhatsAppMessage(
 
-        return {
-          name: item.name,
-          quantity: safeQty,
-          price: safePrice,
-          subtotal: safePrice * safeQty
-        };
-      });
+            phone,
 
-      const sellerTotal =
-        safeItems.reduce(
-          (sum, item) =>
-            sum + item.subtotal,
-          0
+            dbUser.username,
+
+            orderId,
+
+            amount
+
+          );
+
+        }
+
+      } catch (whatsappErr) {
+
+        console.error(
+          "[verifyPayment] WhatsApp failed:",
+          whatsappErr.message
         );
 
-      await Invoice.create({
+      }
 
-        invoiceNumber:
-          `INV-${Date.now()}-${sellerId.slice(-4)}`,
+      // Remove temporary order
+      // after successful processing.
+      delete global.orders[orderId];
 
-        orderId: newOrder._id,
+      res.json({
 
-        sellerId,
+        success: true,
 
-        userId: user.id,
+        order:
+          newOrder
 
-        items: safeItems,
-
-        totalAmount: sellerTotal,
-
-        paymentType: "ONLINE",
-
-        razorpayPaymentId:
-          response.data.cf_order_id
       });
+
+    } catch (err) {
+
+      console.error(
+        "Cashfree verify error:",
+        err
+      );
+
+      res.status(500).json({
+        error:
+          err.message
+      });
+
     }
 
-    // ================= EMAIL =================
-
-    const dbUser =
-      await User.findById(user.id);
-
-    const subtotal =
-      Math.floor(amount / 1.05);
-
-    const tax =
-      amount - subtotal;
-
-    const emailHTML =
-      orderEmailTemplate({
-
-        userName: dbUser.username,
-
-        orderId,
-
-        products: enrichedProducts,
-
-        subtotal,
-
-        tax,
-
-        total: amount
-      });
-
-    await sendEmail(
-      dbUser.email,
-      "maligaijaman - Order Confirmation",
-      emailHTML
-    );
-
-    // ================= WHATSAPP =================
-
-    const phone =
-      `91${dbUser.phoneNumber}`;
-
-    await sendWhatsAppMessage(
-      phone,
-      dbUser.username,
-      orderId,
-      amount
-    );
-
-    delete global.orders[orderId];
-
-    res.json({
-      success: true,
-      order: newOrder
-    });
-
-  } catch (err) {
-
-    console.error(
-      "Cashfree verify error:",
-      err
-    );
-
-    res.status(500).json({
-      error: err.message
-    });
   }
-});
+);
 
 // ================= PHONE LOGIN =================
 
@@ -401,32 +770,67 @@ app.post(
   "/api/auth/phone-login",
   async (req, res) => {
 
-    const { phoneNumber } =
-      req.body;
+    try {
 
-    let user =
-      await User.findOne({
+      const {
         phoneNumber
+      } = req.body;
+
+      let user =
+        await User.findOne({
+          phoneNumber
+        });
+
+      if (!user) {
+
+        return res.status(400).json({
+
+          message:
+            "User not found. Please register first."
+
+        });
+
+      }
+
+      const token =
+        jwt.sign(
+
+          {
+            id: user._id
+          },
+
+          process.env.JWT_SECRET,
+
+          {
+            expiresIn: "1d"
+          }
+
+        );
+
+      res.json({
+
+        user,
+
+        token
+
       });
 
-    if (!user) {
-      return res.status(400).json({
-        message:
-          "User not found. Please register first."
-      });
-    }
+    } catch (error) {
 
-    const token =
-      jwt.sign(
-        { id: user._id },
-        process.env.JWT_SECRET,
-        { expiresIn: "1d" }
+      console.error(
+        "Phone login error:",
+        error
       );
 
-    res.json({
-      user,
-      token
-    });
+      res.status(500).json({
+
+        message:
+          "Phone login failed"
+
+      });
+
+    }
+
   }
 );
 
@@ -436,13 +840,25 @@ app.get(
   "/api/temp/products",
   async (req, res) => {
 
-    const products =
-      await Product.find(
-        {},
-        "name category"
-      ).lean();
+    try {
 
-    res.json(products);
+      const products =
+        await Product.find(
+          {},
+          "name category"
+        ).lean();
+
+      res.json(products);
+
+    } catch (error) {
+
+      res.status(500).json({
+        error:
+          error.message
+      });
+
+    }
+
   }
 );
 
@@ -455,7 +871,9 @@ app.get(
     try {
 
       const categories =
-        await mongoose.connection.db
+        await mongoose
+          .connection
+          .db
           .collection("categories")
           .find({})
           .toArray();
@@ -464,10 +882,13 @@ app.get(
 
     } catch (error) {
 
-      res.json({
-        error: error.message
+      res.status(500).json({
+        error:
+          error.message
       });
+
     }
+
   }
 );
 
@@ -480,22 +901,29 @@ app.get(
     try {
 
       const collections =
-        await mongoose.connection.db
+        await mongoose
+          .connection
+          .db
           .listCollections()
           .toArray();
 
       res.json(
+
         collections.map(
-          c => c.name
+          (c) => c.name
         )
+
       );
 
     } catch (error) {
 
-      res.json({
-        error: error.message
+      res.status(500).json({
+        error:
+          error.message
       });
+
     }
+
   }
 );
 
@@ -508,24 +936,51 @@ app.get(
     try {
 
       const Category =
-        mongoose.connection.db
-          .collection("categories");
+        mongoose
+          .connection
+          .db
+          .collection(
+            "categories"
+          );
 
       const fruitsCategory =
         await Category.findOne({
+
           name: {
-            $regex: "fruit",
-            $options: "i"
+            $regex:
+              "fruit",
+
+            $options:
+              "i"
           }
+
         });
+
+      if (!fruitsCategory) {
+
+        return res.status(404).json({
+
+          error:
+            "Fruits category not found"
+
+        });
+
+      }
 
       const products =
         await Product.find(
+
           {
+
             category:
-              fruitsCategory._id.toString()
+              fruitsCategory
+                ._id
+                .toString()
+
           },
+
           "name category"
+
         ).lean();
 
       res.json({
@@ -533,7 +988,9 @@ app.get(
         fruitsCategory,
 
         categoryId:
-          fruitsCategory._id.toString(),
+          fruitsCategory
+            ._id
+            .toString(),
 
         products
 
@@ -541,57 +998,62 @@ app.get(
 
     } catch (error) {
 
-      res.json({
-        error: error.message
+      res.status(500).json({
+        error:
+          error.message
       });
+
     }
+
   }
 );
 
-// ================= ROUTES =================
+// =====================================================
+// ROUTES
+// =====================================================
 
 app.use(
-  '/api/admin',
+  "/api/admin",
   adminRouter
 );
 
 app.use(
-  '/api/admindata',
+  "/api/admindata",
   adminRouterData
 );
 
 app.use(
-  '/api/user',
+  "/api/user",
   userRouter
 );
 
 app.use(
-  '/api/seller',
+  "/api/seller",
   sellerRouter
 );
 
 app.use(
-  '/api/product',
+  "/api/product",
   productRouter
 );
 
 app.use(
-  '/api/cart',
+  "/api/cart",
   cartRouter
 );
 
 app.use(
-  '/api/address',
+  "/api/address",
   addressRouter
 );
 
 app.use(
-  '/api/order',
+  "/api/order",
   orderRouter
 );
 
 app.use(
-  '/api/contact',
+  "/api/contact",
   contactRouter
 );
 
@@ -626,7 +1088,7 @@ app.use(
 );
 
 app.use(
-  '/api/returns',
+  "/api/returns",
   returnRouter
 );
 
@@ -646,33 +1108,28 @@ app.use(
 );
 
 app.use(
-  '/api/invoices',
+  "/api/invoices",
   invoiceRouter
 );
 
 // =====================================================
 // PRODUCTION FRONTEND
 // =====================================================
-//
-// IMPORTANT:
-// server.js is inside /server
-// frontend is outside /server
-//
-// Therefore:
-// __dirname = groceryapplication-main/server
-//
-// We need:
-// ../frontend/build
-//
-// =====================================================
 
 if (
-  process.env.NODE_ENV === "production"
+  process.env.NODE_ENV ===
+  "production"
 ) {
 
   console.log(
-    "Production mode"
+    "Production mode enabled"
   );
+
+  // server.js:
+  // E:\groceryapplication-main\server\server.js
+  //
+  // frontend build:
+  // E:\groceryapplication-main\frontend\build
 
   const frontendPath =
     path.join(
@@ -682,32 +1139,122 @@ if (
       "build"
     );
 
-  app.use(
-    express.static(frontendPath)
+  console.log(
+    "Frontend path:",
+    frontendPath
   );
 
+  app.use(
+    express.static(
+      frontendPath
+    )
+  );
+
+  // React SPA fallback.
   app.get(
     /^(?!\/api).*/,
     (req, res) => {
 
       res.sendFile(
-        path.resolve(
+        path.join(
           frontendPath,
           "index.html"
         )
       );
+
     }
   );
+
 }
 
-// ================= START SERVER =================
+// =====================================================
+// 404 API HANDLER
+// =====================================================
+
+app.use(
+  "/api",
+  (req, res) => {
+
+    res.status(404).json({
+
+      success: false,
+
+      message:
+        "API route not found",
+
+      path:
+        req.originalUrl
+
+    });
+
+  }
+);
+
+// =====================================================
+// GLOBAL ERROR HANDLER
+// =====================================================
+
+app.use(
+  (err, req, res, next) => {
+
+    console.error(
+      "Server error:",
+      err
+    );
+
+    if (
+      err.message?.startsWith(
+        "CORS blocked"
+      )
+    ) {
+
+      return res.status(403).json({
+
+        success: false,
+
+        message:
+          "CORS error",
+
+        error:
+          err.message
+
+      });
+
+    }
+
+    res.status(
+      err.status || 500
+    ).json({
+
+      success: false,
+
+      message:
+        err.message ||
+        "Internal server error"
+
+    });
+
+  }
+);
+
+// =====================================================
+// START SERVER
+// =====================================================
 
 app.listen(
   port,
+  host,
   () => {
 
     console.log(
-      `Server is running on port ${port}`
+      `Server is running on http://${host}:${port}`
+    );
+
+    console.log(
+      `Environment: ${
+        process.env.NODE_ENV ||
+        "development"
+      }`
     );
 
   }
