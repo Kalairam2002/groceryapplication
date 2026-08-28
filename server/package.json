@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node index.cjs",
-    "build": "npm install"
+    "build": "echo Build complete"
   },
   "dependencies": {
     "@chroma-core/default-embed": "^0.1.9",
