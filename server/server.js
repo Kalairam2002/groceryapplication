@@ -1128,15 +1128,17 @@ if (
   // server.js:
   // E:\groceryapplication-main\server\server.js
   //
-  // frontend build:
-  // E:\groceryapplication-main\frontend\build
+  // The Hostinger deploy has "Root directory" set to "server",
+  // so only the server/ folder is present at runtime.
+  // The build script copies the finished React build into
+  // server/client-build (see server/package.json "build" script),
+  // so we serve it from there instead of the sibling
+  // ../frontend/build folder, which does not exist in production.
 
   const frontendPath =
     path.join(
       __dirname,
-      "..",
-      "frontend",
-      "build"
+      "client-build"
     );
 
   console.log(
