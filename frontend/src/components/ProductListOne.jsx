@@ -212,14 +212,26 @@ const ProductListOne = () => {
     </div>
   );
 
+  // ✅ Slides shown / infinite-loop behavior now scale down to the actual
+  // number of products available. With infinite:true and a fixed
+  // slidesToShow, react-slick clones/repeats slides to fill empty slots
+  // when there are fewer real items than slidesToShow — that's what was
+  // causing the same product to visually appear 2-3 times. Capping
+  // slidesToShow at the real product count (and disabling infinite when
+  // there aren't enough items to loop) fixes that.
   const settings = {
-    dots: false, arrows: true, infinite: true, speed: 600,
-    slidesToShow: 5, slidesToScroll: 1,
-    nextArrow: <SampleNextArrow />, prevArrow: <SamplePrevArrow />,
+    dots: false,
+    arrows: true,
+    infinite: products.length > 5,
+    speed: 600,
+    slidesToShow: Math.min(products.length, 5) || 1,
+    slidesToScroll: 1,
+    nextArrow: <SampleNextArrow />,
+    prevArrow: <SamplePrevArrow />,
     responsive: [
-      { breakpoint: 1200, settings: { slidesToShow: 4 } },
-      { breakpoint: 992, settings: { slidesToShow: 3 } },
-      { breakpoint: 768, settings: { slidesToShow: 2 } },
+      { breakpoint: 1200, settings: { slidesToShow: Math.min(products.length, 4) || 1 } },
+      { breakpoint: 992, settings: { slidesToShow: Math.min(products.length, 3) || 1 } },
+      { breakpoint: 768, settings: { slidesToShow: Math.min(products.length, 2) || 1 } },
       { breakpoint: 480, settings: { slidesToShow: 1 } },
     ],
   };
