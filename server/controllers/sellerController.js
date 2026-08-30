@@ -2,7 +2,6 @@ import Seller from "../models/Seller.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import sendEmail from "../utils/sendEmail.js";
-import otpGenerator from "otp-generator";
 import nodemailer from "nodemailer";
 import crypto from "crypto";
 
@@ -22,7 +21,7 @@ export const registerSeller = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const otp = otpGenerator.generate(6, { upperCase: false, specialChars: false });
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpExpires = Date.now() + 10 * 60 * 1000;
 
     const newSeller = new Seller({
