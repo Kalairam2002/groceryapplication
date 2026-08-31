@@ -212,26 +212,40 @@ const ProductListOne = () => {
     </div>
   );
 
+  // ✅ Only keep products that actually have a valid variant to show.
+  // Slick's width math is based on the number of children it receives —
+  // if we let the .map() below return null for invalid products, Slick
+  // still thinks slidesToShow slots need filling from a larger raw
+  // products.length count, which breaks slide width and causes a single
+  // slide to stretch full width. Filtering here means the slide count
+  // Slick sees always matches what's actually rendered.
+  const displayProducts = products
+    .map((product) => {
+      const validVariants = getGroupedVariants(product.variants);
+      if (validVariants.length === 0) return null;
+      return { ...product, validVariants };
+    })
+    .filter(Boolean);
+
   // ✅ Slides shown / infinite-loop behavior now scale down to the actual
-  // number of products available. With infinite:true and a fixed
+  // number of renderable products. With infinite:true and a fixed
   // slidesToShow, react-slick clones/repeats slides to fill empty slots
   // when there are fewer real items than slidesToShow — that's what was
-  // causing the same product to visually appear 2-3 times. Capping
-  // slidesToShow at the real product count (and disabling infinite when
-  // there aren't enough items to loop) fixes that.
+  // causing the same product to visually appear 2-3 times, and mismatched
+  // counts caused the stretched full-width card.
   const settings = {
     dots: false,
     arrows: true,
-    infinite: products.length > 5,
+    infinite: displayProducts.length > 5,
     speed: 600,
-    slidesToShow: Math.min(products.length, 5) || 1,
+    slidesToShow: Math.min(displayProducts.length, 5) || 1,
     slidesToScroll: 1,
     nextArrow: <SampleNextArrow />,
     prevArrow: <SamplePrevArrow />,
     responsive: [
-      { breakpoint: 1200, settings: { slidesToShow: Math.min(products.length, 4) || 1 } },
-      { breakpoint: 992, settings: { slidesToShow: Math.min(products.length, 3) || 1 } },
-      { breakpoint: 768, settings: { slidesToShow: Math.min(products.length, 2) || 1 } },
+      { breakpoint: 1200, settings: { slidesToShow: Math.min(displayProducts.length, 4) || 1 } },
+      { breakpoint: 992, settings: { slidesToShow: Math.min(displayProducts.length, 3) || 1 } },
+      { breakpoint: 768, settings: { slidesToShow: Math.min(displayProducts.length, 2) || 1 } },
       { breakpoint: 480, settings: { slidesToShow: 1 } },
     ],
   };
@@ -246,15 +260,10 @@ const ProductListOne = () => {
             <h2 style={{ margin: 0, fontSize: "24px", color: "#333", fontWeight: "700" }}>Shop by Products</h2>
           </div>
 
-          {products.length > 0 ? (
+          {displayProducts.length > 0 ? (
             <Slider {...settings}>
-              {products.map((product) => {
-                // ✅ Get valid grouped variants for this product
-                const validVariants = getGroupedVariants(product.variants);
-
-                // ✅ If NO valid variants → skip this product entirely
-                if (validVariants.length === 0) return null;
-
+              {displayProducts.map((product) => {
+                const validVariants = product.validVariants;
                 const defaultVariant = validVariants[0];
                 const activeVariant = selectedVariant[product._id] || defaultVariant;
                 const stockBadge = getStockBadge(activeVariant);
