@@ -36,8 +36,12 @@ const AdminAddProduct = () => {
   const [barcode, setBarcode] = useState("");
   const [isPending, setIsPending] = useState(false);
   const [subcategories, setSubcategories] = useState([]);
-  const [variantsListdata, setVariantsListdata] = useState([]);
-  const [variantId, setVariantId] = useState("");
+
+  // ---- Variant-selector feature (the "-- No Variants Found --" dropdown) ----
+  // Commented out: not needed. Product is added without a selected
+  // "variant" record; variantdata is submitted as "".
+  // const [variantsListdata, setVariantsListdata] = useState([]);
+  // const [variantId, setVariantId] = useState("");
 
   // Fetch Categories
   const { data: categoryData, isLoading: categoryLoading } = useQuery({
@@ -118,24 +122,26 @@ const AdminAddProduct = () => {
       .catch((err) => console.error("Error fetching subcategories:", err));
   }, [Category]);
 
-  // Fetch Variants based on Subcategory
-  useEffect(() => {
-    if (!Subcategory) {
-      setVariantsListdata([]);
-      return;
-    }
-    axios
-      .get(`${process.env.REACT_APP_API_URL}/api/variant/bySubCategory/${Subcategory}`)
-      .then((res) => {
-        if (res.data.success && Array.isArray(res.data.variants)) setVariantsListdata(res.data.variants);
-        else if (Array.isArray(res.data)) setVariantsListdata(res.data);
-        else setVariantsListdata([]);
-      })
-      .catch((err) => {
-        console.error("Error fetching variants:", err);
-        setVariantsListdata([]);
-      });
-  }, [Subcategory]);
+  // ---- Variant-selector feature (continued) ----
+  // Fetch Variants based on Subcategory — commented out along with the
+  // dropdown below; not needed.
+  // useEffect(() => {
+  //   if (!Subcategory) {
+  //     setVariantsListdata([]);
+  //     return;
+  //   }
+  //   axios
+  //     .get(`${process.env.REACT_APP_API_URL}/api/variant/bySubCategory/${Subcategory}`)
+  //     .then((res) => {
+  //       if (res.data.success && Array.isArray(res.data.variants)) setVariantsListdata(res.data.variants);
+  //       else if (Array.isArray(res.data)) setVariantsListdata(res.data);
+  //       else setVariantsListdata([]);
+  //     })
+  //     .catch((err) => {
+  //       console.error("Error fetching variants:", err);
+  //       setVariantsListdata([]);
+  //     });
+  // }, [Subcategory]);
 
   const generateBarcode = () => "BC" + Date.now() + Math.floor(1000 + Math.random() * 9000);
 
@@ -188,7 +194,9 @@ const AdminAddProduct = () => {
           ...v,
           expiryDate: isGroceryOrFreshCategory ? v.expiryDate : null,
         })),
-        variantdata: variantId,
+        // Variant-selector feature commented out (see state/useEffect/dropdown
+        // above) — submitted as empty since no variant record is selected.
+        variantdata: "",
         barcode: finalBarcode,
         returnable,
       };
@@ -326,6 +334,9 @@ const AdminAddProduct = () => {
                   </select>
                 </div>
 
+                {/*
+                  Variant-selector dropdown — commented out (not needed).
+
                 <div className="form-group">
                   <select
                     className="admin-form-select"
@@ -341,6 +352,7 @@ const AdminAddProduct = () => {
                     ))}
                   </select>
                 </div>
+                */}
 
                 {/* NEW: Seller dropdown — placed just below the variant dropdown */}
                 <div className="form-group">
