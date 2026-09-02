@@ -355,13 +355,20 @@ const handlePay = async () => {
                           </td>
 
                           <td className="d-flex align-items-center gap-12">
-                            <img
-                              src={item.image}
-                              alt={item.name}
-                              style={{ width: 50, height: 50 }}
-                            />
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            style={{ width: 50, height: 50 }}
+                          />
+                          <div>
                             <span>{item.name}</span>
-                          </td>
+                            <div style={{ fontSize: "12px", color: "#777" }}>
+                              {item.variant.sizeLabel
+                                ? item.variant.sizeLabel
+                                : `${item.variant.quantity} ${item.variant.unit}`}
+                            </div>
+                          </div>
+                        </td>
 
                           {/* <td>₹{item.variant.offerPrice
 .toFixed(2)}</td> */}

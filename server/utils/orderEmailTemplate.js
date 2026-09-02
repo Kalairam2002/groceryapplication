@@ -5,15 +5,17 @@ const orderEmailTemplate = ({ userName, orderId, products, subtotal, tax, total,
     .map(
       (item, index) => `
         ${index + 1}. ${item.name}<br/>
-        Qty: ${item.quantity}<br/>
-        Price: ₹${item.price}<br/>
-        Total: ₹${item.price * item.quantity}<br/>
+       Qty: ${item.quantity} × ${item.sizeLabel || (item.unit ? `${item.variantQuantity} ${item.unit}` : "unit")}<br/>
+        Price: ₹${Number(item.price).toFixed(2)}<br/>
+        Total: ₹${(Number(item.price) * item.quantity).toFixed(2)}<br/>
         <hr/>
       `
     )
     .join("");
+
     console.log("Generating email with order ID:", dbOrderId );
     console.log(orderId,"orderid data in email template");
+
   // Return link — only shown if dbOrderId is provided
   const returnSection = dbOrderId
     ? `
@@ -53,9 +55,9 @@ const orderEmailTemplate = ({ userName, orderId, products, subtotal, tax, total,
     <p>${rows}</p>
 
     <p>
-      Subtotal: ₹${subtotal}<br/>
-      Tax: ₹${tax}<br/>
-      <b>Total Paid: ₹${total}</b>
+      Subtotal: ₹${Number(subtotal).toFixed(2)}<br/>
+      Tax: ₹${Number(tax).toFixed(2)}<br/>
+      <b>Total Paid: ₹${Number(total).toFixed(2)}</b>
     </p>
 
     ${returnSection}

@@ -109,12 +109,15 @@ export const verifyPayment = async (req, res) => {
         console.log("Final sellerName:", sellerName);
 
         return {
-          id:         prod._id,
-          name:       prod.name,
-          quantity:   qty,
-          price:      item.variant?.offerPrice || item.price || 0,
-          seller:     sellerId,
-          sellerName: sellerName,
+          id:              prod._id,
+          name:            prod.name,
+          quantity:        qty,
+          unit:            variant.unit,
+          variantQuantity: variant.quantity,
+          sizeLabel:       variant.sizeLabel,
+          price:           item.variant?.offerPrice || item.price || 0,
+          seller:          sellerId,
+          sellerName:      sellerName,
         };
       })
     );
@@ -170,10 +173,10 @@ export const verifyPayment = async (req, res) => {
     try {
       const user     = await User.findOne({ username: userId });
       const subtotal = Math.floor(amount / 1.02);
-      const tax      = amount - subtotal;
+      const tax      = Number((amount - subtotal).toFixed(2));
 
       const emailHTML = orderEmailTemplate({
-        userName:  user.username,
+        userName:  user.username.replace(/\d+$/, ''),
         orderId:   newOrder.orderId,
         products:  enrichedProducts,
         subtotal,
