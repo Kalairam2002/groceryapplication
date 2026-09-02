@@ -10,9 +10,24 @@ import path from "path";
 // Add Product : /api/product/add
 export const addProduct = async (req, res) => {
   try {
-    const sellerId = req.sellerId;
     const productData = JSON.parse(req.body.productData);
     const images = req.files;
+
+    // If this request came from an admin (authSellerOrAdmin sets
+    // req.isAdmin), use the seller chosen in the "Assign to seller"
+    // dropdown on the Admin Add Product form (productData.seller).
+    // Otherwise (a seller adding their own product), keep using the
+    // seller's own id from their auth token, same as before.
+    const sellerId = req.isAdmin ? productData.seller : req.sellerId;
+
+    if (!sellerId) {
+      return res.json({
+        success: false,
+        message: req.isAdmin
+          ? "Please select a seller to assign this product to"
+          : "Seller not found",
+      });
+    }
 
     const imagesUrl = await Promise.all(
       images.map(async (item) => {
