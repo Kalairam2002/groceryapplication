@@ -1,8 +1,9 @@
 import mongoose from "mongoose";
 
 const CategorySchema = new mongoose.Schema({
-    name:{type:String,requried:true},
-    image:{type:String,requried:true},
+    name: { type: String, required: true },
+    image: { type: String, required: true },
+    requiresExpiry: { type: Boolean, default: false },
 
 },{timestamps:true})
 
@@ -14,4 +15,3 @@ export default Category;
     //     type:mongoose.Schema.Types.ObjectId,
     //     ref:'MainCategory'
     // }
-

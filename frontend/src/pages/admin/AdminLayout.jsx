@@ -47,7 +47,8 @@ const AdminLayout = ({ children }) => {
   const fetchNotifications = async () => {
     try {
       const { data } = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/admin/notifications`
+        `${process.env.REACT_APP_API_URL}/api/admin/notifications`,
+        { withCredentials: true }
       );
       if (data.success) {
         setNotifications(data.notifications);
@@ -78,7 +79,11 @@ const AdminLayout = ({ children }) => {
   //  Mark all as read
   const handleMarkAllRead = async () => {
     try {
-      await axios.put(`${process.env.REACT_APP_API_URL}/api/admin/notifications/mark-read`);
+      await axios.put(
+        `${process.env.REACT_APP_API_URL}/api/admin/notifications/mark-read`,
+        {},
+        { withCredentials: true }
+      );
       setUnreadCount(0);
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
     } catch (err) {

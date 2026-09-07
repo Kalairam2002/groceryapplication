@@ -1,5 +1,6 @@
 import { v2 as cloudinary } from 'cloudinary';
 import Product from '../models/Product.js';
+import Category from '../models/admin/Category.model.js';
 import cron from "node-cron";
 import ExistingProduct from '../models/Existingproduct.js';
 import ExpiredVariant from '../models/ExpiredVariant.js';
@@ -13,11 +14,6 @@ export const addProduct = async (req, res) => {
     const productData = JSON.parse(req.body.productData);
     const images = req.files;
 
-    // If this request came from an admin (authSellerOrAdmin sets
-    // req.isAdmin), use the seller chosen in the "Assign to seller"
-    // dropdown on the Admin Add Product form (productData.seller).
-    // Otherwise (a seller adding their own product), keep using the
-    // seller's own id from their auth token, same as before.
     const sellerId = req.isAdmin ? productData.seller : req.sellerId;
 
     if (!sellerId) {
@@ -27,6 +23,20 @@ export const addProduct = async (req, res) => {
           ? "Please select a seller to assign this product to"
           : "Seller not found",
       });
+    }
+
+    // ✅ NEW — server-side expiry validation, mirrors the frontend check
+    const category = await Category.findById(productData.category);
+    if (category?.requiresExpiry) {
+      const missingExpiry = (productData.variants || []).some((v) =>
+        (v.batches || []).some((b) => !b.expiryDate)
+      );
+      if (missingExpiry) {
+        return res.json({
+          success: false,
+          message: "Expiry date is required for every batch in this category",
+        });
+      }
     }
 
     const imagesUrl = await Promise.all(
@@ -111,6 +121,11 @@ export const createExpiredVariant = async (req, res) => {
   }
 };
 
+// ⚠️ NOT MODIFIED — flagging only: this cron job still reads
+// variant.expiryDate / variant.stock directly. Since expiry now lives in
+// variant.batches[], this job will silently stop archiving/cleaning up
+// expired batch-based stock. Left untouched per your request — let me know
+// when you want this migrated to be batch-aware.
 cron.schedule("0 0 * * *", async () => {
   try {
     const today = new Date();
@@ -318,6 +333,20 @@ export const updateProduct = async (req, res) => {
     const product = await Product.findById(req.params.id);
 
     if (!product) return res.status(404).json({ success: false, message: "Product not found" });
+
+    // ✅ NEW — server-side expiry validation, mirrors the frontend check
+    const category = await Category.findById(data.category);
+    if (category?.requiresExpiry) {
+      const missingExpiry = (data.variants || []).some((v) =>
+        (v.batches || []).some((b) => !b.expiryDate)
+      );
+      if (missingExpiry) {
+        return res.status(400).json({
+          success: false,
+          message: "Expiry date is required for every batch in this category",
+        });
+      }
+    }
 
     product.name = data.name;
     product.description = data.description;

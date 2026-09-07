@@ -10,7 +10,7 @@ const DismissAlertButton = ({ color, onClick, title }) => (
     onClick={onClick}
     title={title || "Dismiss notification"}
     style={{
-      background: `"none",
+      background: "none",
       border: "none",
       cursor: "pointer",
       padding: "4px",
@@ -100,7 +100,17 @@ const Sellerdashboard = () => {
   // threshold is the correct rule here.
   const LOW_STOCK_THRESHOLD = 15;
 
-  const isLowStock = (v) => v.stock < LOW_STOCK_THRESHOLD;
+  // Total stock is the sum of a variant's batches (each batch = one
+  // delivery/lot). Falls back to the legacy single `stock` field for any
+  // pre-migration documents that don't have batches yet.
+  const getVariantStock = (v) => {
+    if (v.batches && v.batches.length > 0) {
+      return v.batches.reduce((sum, b) => sum + (Number(b.stock) || 0), 0);
+    }
+    return Number(v.stock) || 0;
+  };
+
+  const isLowStock = (v) => getVariantStock(v) < LOW_STOCK_THRESHOLD;
 
   const lowStockRows = products.flatMap((product) =>
     (product.variants || [])
@@ -111,7 +121,7 @@ const Sellerdashboard = () => {
         alertKey: `${product._id}-${v._id}-stock`,
         name: product.name,
         image: product.image?.[0],
-        stock: v.stock,
+        stock: getVariantStock(v),
         unitLabel: v.stockUnit || v.unit || "",
         variantLabel:
           v.sizeLabel ||
@@ -132,66 +142,81 @@ const Sellerdashboard = () => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  // Get the batches to check for a variant — real batches if present,
+  // otherwise a single pseudo-batch built from the legacy stock/expiryDate
+  // fields so pre-migration documents still work.
+  const getVariantBatches = (v) => {
+    if (v.batches && v.batches.length > 0) return v.batches;
+    if (v.expiryDate) return [{ stock: v.stock, expiryDate: v.expiryDate, _id: v._id }];
+    return [];
+  };
+
   const expiredRows = products
     .flatMap((product) =>
-      (product.variants || [])
-        .filter((v) => {
-          if (!v.expiryDate) return false;
-          const expiry = new Date(v.expiryDate);
-          expiry.setHours(0, 0, 0, 0);
-          return expiry < today;
-        })
-        .map((v) => {
-          const expiry = new Date(v.expiryDate);
-          expiry.setHours(0, 0, 0, 0);
-          const daysAgo = Math.round((today - expiry) / (1000 * 60 * 60 * 24));
-          return {
-            productId: product._id,
-            variantId: v._id,
-            alertKey: `${product._id}-${v._id}-expired`,
-            name: product.name,
-            image: product.image?.[0],
-            variantLabel:
-              v.sizeLabel ||
-              (v.quantity ? `${v.quantity} ${v.unit}` : v.unit || ""),
-            daysAgo,
-          };
-        })
+      (product.variants || []).flatMap((v) =>
+        getVariantBatches(v)
+          .filter((b) => {
+            if (!b.expiryDate || (Number(b.stock) || 0) <= 0) return false;
+            const expiry = new Date(b.expiryDate);
+            expiry.setHours(0, 0, 0, 0);
+            return expiry < today;
+          })
+          .map((b, i) => {
+            const expiry = new Date(b.expiryDate);
+            expiry.setHours(0, 0, 0, 0);
+            const daysAgo = Math.round((today - expiry) / (1000 * 60 * 60 * 24));
+            return {
+              productId: product._id,
+              variantId: v._id,
+              alertKey: `${product._id}-${v._id}-${b._id || i}-expired`,
+              name: product.name,
+              image: product.image?.[0],
+              variantLabel:
+                v.sizeLabel ||
+                (v.quantity ? `${v.quantity} ${v.unit}` : v.unit || ""),
+              batchStock: Number(b.stock) || 0,
+              daysAgo,
+            };
+          })
+      )
     )
     .filter((row) => !dismissedAlerts.has(row.alertKey))
     .sort((a, b) => b.daysAgo - a.daysAgo);
 
-  // Expiring soon: variants whose expiryDate is today or up to
+  // Expiring soon: batches whose expiryDate is today or up to
   // EXPIRING_SOON_DAYS ahead — not expired yet, but close enough that a
   // seller should know before it's too late.
   const EXPIRING_SOON_DAYS = 3;
 
   const expiringSoonRows = products
     .flatMap((product) =>
-      (product.variants || [])
-        .filter((v) => {
-          if (!v.expiryDate) return false;
-          const expiry = new Date(v.expiryDate);
-          expiry.setHours(0, 0, 0, 0);
-          const daysUntil = Math.round((expiry - today) / (1000 * 60 * 60 * 24));
-          return daysUntil >= 0 && daysUntil <= EXPIRING_SOON_DAYS;
-        })
-        .map((v) => {
-          const expiry = new Date(v.expiryDate);
-          expiry.setHours(0, 0, 0, 0);
-          const daysUntil = Math.round((expiry - today) / (1000 * 60 * 60 * 24));
-          return {
-            productId: product._id,
-            variantId: v._id,
-            alertKey: `${product._id}-${v._id}-expiring`,
-            name: product.name,
-            image: product.image?.[0],
-            variantLabel:
-              v.sizeLabel ||
-              (v.quantity ? `${v.quantity} ${v.unit}` : v.unit || ""),
-            daysUntil,
-          };
-        })
+      (product.variants || []).flatMap((v) =>
+        getVariantBatches(v)
+          .filter((b) => {
+            if (!b.expiryDate || (Number(b.stock) || 0) <= 0) return false;
+            const expiry = new Date(b.expiryDate);
+            expiry.setHours(0, 0, 0, 0);
+            const daysUntil = Math.round((expiry - today) / (1000 * 60 * 60 * 24));
+            return daysUntil >= 0 && daysUntil <= EXPIRING_SOON_DAYS;
+          })
+          .map((b, i) => {
+            const expiry = new Date(b.expiryDate);
+            expiry.setHours(0, 0, 0, 0);
+            const daysUntil = Math.round((expiry - today) / (1000 * 60 * 60 * 24));
+            return {
+              productId: product._id,
+              variantId: v._id,
+              alertKey: `${product._id}-${v._id}-${b._id || i}-expiring`,
+              name: product.name,
+              image: product.image?.[0],
+              variantLabel:
+                v.sizeLabel ||
+                (v.quantity ? `${v.quantity} ${v.unit}` : v.unit || ""),
+              batchStock: Number(b.stock) || 0,
+              daysUntil,
+            };
+          })
+      )
     )
     .filter((row) => !dismissedAlerts.has(row.alertKey))
     .sort((a, b) => a.daysUntil - b.daysUntil);
@@ -466,7 +491,7 @@ const Sellerdashboard = () => {
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                           <span style={{ fontSize: "12px", fontWeight: 700, color: "#633806", whiteSpace: "nowrap" }}>
-                            {row.daysUntil === 0 ? "Expires today" : `Expires in ${row.daysUntil} day${row.daysUntil === 1 ? "" : "s"}`}
+                            {row.daysUntil === 0 ? "Expires today" : `Expires in ${row.daysUntil} day${row.daysUntil === 1 ? "" : "s"}`} ({row.batchStock} units)
                           </span>
                           <DismissAlertButton
                             color="#854F0B"
@@ -533,7 +558,7 @@ const Sellerdashboard = () => {
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                           <span style={{ fontSize: "12px", fontWeight: 700, color: "#791F1F", whiteSpace: "nowrap" }}>
-                            {row.daysAgo === 0 ? "Expired today" : `Expired ${row.daysAgo} day${row.daysAgo === 1 ? "" : "s"} ago`}
+                            {row.daysAgo === 0 ? "Expired today" : `Expired ${row.daysAgo} day${row.daysAgo === 1 ? "" : "s"} ago`} ({row.batchStock} units)
                           </span>
                           <DismissAlertButton
                             color="#A32D2D"

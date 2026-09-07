@@ -4,23 +4,27 @@ import AdminLayout from "./AdminLayout";
 import "./AdminDashboard.css";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useNavigate } from "react-router-dom";
 
 const ProductList = () => {
-  // Same rule used across the storefront and seller pages: stock is
-  // always a plain piece count, so a flat threshold applies to every
-  // product type (electronics, clothing, grocery, etc).
   const LOW_STOCK_THRESHOLD = 15;
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
+  const [deletingId, setDeletingId] = useState(null);
+
+  const [searchTerm, setSearchTerm] = useState("");
+
   const fetchProducts = async () => {
     try {
       const { data } = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/admin/getProductList`
+        `${process.env.REACT_APP_API_URL}/api/admin/getProductList`,
+        { withCredentials: true }
       );
       if (data.success) setProducts(data.products || []);
     } catch (error) {
@@ -34,12 +38,43 @@ const ProductList = () => {
     fetchProducts();
   }, []);
 
-  const totalPages = Math.ceil(products.length / itemsPerPage);
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this product?")) return;
+
+    try {
+      setDeletingId(id);
+      const { data } = await axios.delete(
+        `${process.env.REACT_APP_API_URL}/api/product/${id}`,
+        { withCredentials: true }
+      );
+
+      if (data.success) {
+        toast.success("✅ Product deleted successfully!");
+        setProducts(products.filter((p) => p._id !== id));
+      } else {
+        toast.error("❌ Failed to delete product");
+      }
+    } catch (err) {
+      toast.error("❌ Something went wrong");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const filteredProducts = products.filter((p) =>
+    p.name?.toLowerCase().includes(searchTerm.trim().toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentProducts = products.slice(indexOfFirstItem, indexOfLastItem);
+  const currentProducts = filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
 
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   return (
     <AdminLayout page="product-list">
@@ -52,10 +87,31 @@ const ProductList = () => {
           </div>
         </div>
 
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search products by name..."
+          style={{
+            width: "100%",
+            maxWidth: "420px",
+            padding: "10px 16px",
+            borderRadius: "999px",
+            border: "1px solid #E4E7F0",
+            background: "#fff",
+            fontSize: "13.5px",
+            outline: "none",
+            marginBottom: "20px",
+            boxSizing: "border-box",
+          }}
+        />
+
         {loading ? (
           <p>Loading products...</p>
         ) : products.length === 0 ? (
           <p>No products found.</p>
+        ) : filteredProducts.length === 0 ? (
+          <p style={{ color: "#6B7280" }}>No products match "{searchTerm}".</p>
         ) : (
           <div className="table-card">
             <table className="classic-table">
@@ -69,38 +125,28 @@ const ProductList = () => {
                   <th>Price</th>
                   <th>Offer price</th>
                   <th>Stock</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {currentProducts.map((product, index) => {
-                  // Price/offer price come from the first pricing variant —
-                  // there's no top-level price on the product itself.
                   const firstVariant = product.variants?.[0] || {};
                   const variantCount = product.variants?.length || 0;
 
-                  // Stock is a plain piece count per variant — never
-                  // grouped by unit/spec (a variant's unit like "Kg" or
-                  // "Size" describes what that variant IS, not how stock
-                  // is counted). Total is a simple sum; per-variant flags
-                  // catch a low variant even if the total still looks fine.
                   const variants = product.variants || [];
-                  const totalStockCount = variants.reduce(
-                    (sum, v) => sum + (Number(v.stock) || 0),
-                    0
-                  );
-                  const hasOutOfStockVariant = variants.some(
-                    (v) => (Number(v.stock) || 0) <= 0
-                  );
+                  const getStock = (v) =>
+                    v.batches && v.batches.length > 0
+                      ? v.batches.reduce((sum, b) => sum + (Number(b.stock) || 0), 0)
+                      : Number(v.stock) || 0;
+                  const totalStockCount = variants.reduce((sum, v) => sum + getStock(v), 0);
+                  const hasOutOfStockVariant = variants.some((v) => getStock(v) <= 0);
                   const hasLowStockVariant = variants.some((v) => {
-                    const s = Number(v.stock) || 0;
+                    const s = getStock(v);
                     return s > 0 && s < LOW_STOCK_THRESHOLD;
                   });
                   const variantLabel = (v) =>
                     v.sizeLabel ||
                     (v.quantity ? `${v.quantity} ${v.unit}` : v.unit || "");
-                  // "pack" only makes sense for weight/volume/count specs
-                  // (500 Gm, 7 Kg, 42 Inch); size-based variants read as
-                  // "Size S", not "S pack".
                   const variantChipLabel = (v) =>
                     v.sizeLabel ? `Size ${v.sizeLabel}` : `${variantLabel(v)} pack`;
 
@@ -142,7 +188,7 @@ const ProductList = () => {
                         ) : (
                           <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
                             {variants.map((v) => {
-                              const s = Number(v.stock) || 0;
+                              const s = getStock(v);
                               const cls =
                                 s <= 0 ? "badge-red" : s < LOW_STOCK_THRESHOLD ? "badge-amber" : "badge-green";
                               const icon = s <= 0 ? "✕" : s < LOW_STOCK_THRESHOLD ? "⚠" : "✓";
@@ -154,6 +200,25 @@ const ProductList = () => {
                             })}
                           </div>
                         )}
+                      </td>
+                      <td>
+                        <div style={{ display: "flex", gap: "6px" }}>
+                          <button
+                            className="seller-btn-edit"
+                            style={{ whiteSpace: "nowrap", minWidth: "60px", padding: "6px 10px" }}
+                            onClick={() => navigate(`/admin/edit-product/${product._id}`)}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="seller-btn-delete"
+                            style={{ whiteSpace: "nowrap", minWidth: "60px", padding: "6px 10px" }}
+                            disabled={deletingId === product._id}
+                            onClick={() => handleDelete(product._id)}
+                          >
+                            {deletingId === product._id ? "Deleting..." : "Delete"}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

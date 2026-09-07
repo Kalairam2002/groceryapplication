@@ -17,33 +17,62 @@ const ProductListOne = () => {
     ? JSON.parse(localStorage.getItem("user"))
     : null;
 
+  // Total stock from batches that are actually purchasable right now
+  // (in-stock AND not expired). Falls back to the legacy single
+  // stock/expiryDate fields for any pre-migration documents.
+  const getSellableBatches = (v, today) => {
+    const batches =
+      v.batches && v.batches.length > 0
+        ? v.batches
+        : v.stock || v.expiryDate
+        ? [{ stock: v.stock, expiryDate: v.expiryDate }]
+        : [];
+    return batches.filter((b) => {
+      if ((Number(b.stock) || 0) <= 0) return false;
+      if (b.expiryDate) {
+        const expiry = new Date(b.expiryDate);
+        expiry.setHours(0, 0, 0, 0);
+        if (expiry < today) return false;
+      }
+      return true;
+    });
+  };
+
   // ✅ KEY LOGIC: Get the best valid variant for a product
   // Groups variants by quantity+unit, picks earliest non-expired, in-stock variant
   const getBestVariant = (variants) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Filter: stock > 0 AND (no expiryDate OR expiryDate >= today)
-    const validVariants = variants.filter((v) => {
-      if (v.stock <= 0) return false;
-      if (v.expiryDate) {
-        const expiry = new Date(v.expiryDate);
-        expiry.setHours(0, 0, 0, 0);
-        if (expiry < today) return false;
-      }
-      return true;
-    });
+    // Build an "effective" variant per source variant: stock = sum of its
+    // sellable batches, expiryDate = the soonest of those batches. A
+    // variant with zero sellable stock (all batches expired or empty) is
+    // dropped entirely.
+    const effectiveVariants = variants
+      .map((v) => {
+        const sellable = getSellableBatches(v, today);
+        const totalStock = sellable.reduce((sum, b) => sum + (Number(b.stock) || 0), 0);
+        if (totalStock <= 0) return null;
+        const earliestExpiry = sellable
+          .filter((b) => b.expiryDate)
+          .reduce((earliest, b) => {
+            const d = new Date(b.expiryDate);
+            return !earliest || d < earliest ? d : earliest;
+          }, null);
+        return { ...v, stock: totalStock, expiryDate: earliestExpiry };
+      })
+      .filter(Boolean);
 
-    if (validVariants.length === 0) return null;
+    if (effectiveVariants.length === 0) return null;
 
     // Sort by earliest expiryDate first (null expiryDate goes last)
-    validVariants.sort((a, b) => {
+    effectiveVariants.sort((a, b) => {
       if (!a.expiryDate) return 1;
       if (!b.expiryDate) return -1;
       return new Date(a.expiryDate) - new Date(b.expiryDate);
     });
 
-    return validVariants[0];
+    return effectiveVariants[0];
   };
 
   // ✅ KEY LOGIC: Group variants by quantity+unit, get best per group
@@ -212,40 +241,14 @@ const ProductListOne = () => {
     </div>
   );
 
-  // ✅ Only keep products that actually have a valid variant to show.
-  // Slick's width math is based on the number of children it receives —
-  // if we let the .map() below return null for invalid products, Slick
-  // still thinks slidesToShow slots need filling from a larger raw
-  // products.length count, which breaks slide width and causes a single
-  // slide to stretch full width. Filtering here means the slide count
-  // Slick sees always matches what's actually rendered.
-  const displayProducts = products
-    .map((product) => {
-      const validVariants = getGroupedVariants(product.variants);
-      if (validVariants.length === 0) return null;
-      return { ...product, validVariants };
-    })
-    .filter(Boolean);
-
-  // ✅ Slides shown / infinite-loop behavior now scale down to the actual
-  // number of renderable products. With infinite:true and a fixed
-  // slidesToShow, react-slick clones/repeats slides to fill empty slots
-  // when there are fewer real items than slidesToShow — that's what was
-  // causing the same product to visually appear 2-3 times, and mismatched
-  // counts caused the stretched full-width card.
   const settings = {
-    dots: false,
-    arrows: true,
-    infinite: displayProducts.length > 5,
-    speed: 600,
-    slidesToShow: Math.min(displayProducts.length, 5) || 1,
-    slidesToScroll: 1,
-    nextArrow: <SampleNextArrow />,
-    prevArrow: <SamplePrevArrow />,
+    dots: false, arrows: true, infinite: true, speed: 600,
+    slidesToShow: 5, slidesToScroll: 1,
+    nextArrow: <SampleNextArrow />, prevArrow: <SamplePrevArrow />,
     responsive: [
-      { breakpoint: 1200, settings: { slidesToShow: Math.min(displayProducts.length, 4) || 1 } },
-      { breakpoint: 992, settings: { slidesToShow: Math.min(displayProducts.length, 3) || 1 } },
-      { breakpoint: 768, settings: { slidesToShow: Math.min(displayProducts.length, 2) || 1 } },
+      { breakpoint: 1200, settings: { slidesToShow: 4 } },
+      { breakpoint: 992, settings: { slidesToShow: 3 } },
+      { breakpoint: 768, settings: { slidesToShow: 2 } },
       { breakpoint: 480, settings: { slidesToShow: 1 } },
     ],
   };
@@ -260,10 +263,15 @@ const ProductListOne = () => {
             <h2 style={{ margin: 0, fontSize: "24px", color: "#333", fontWeight: "700" }}>Shop by Products</h2>
           </div>
 
-          {displayProducts.length > 0 ? (
+          {products.length > 0 ? (
             <Slider {...settings}>
-              {displayProducts.map((product) => {
-                const validVariants = product.validVariants;
+              {products.map((product) => {
+                // ✅ Get valid grouped variants for this product
+                const validVariants = getGroupedVariants(product.variants);
+
+                // ✅ If NO valid variants → skip this product entirely
+                if (validVariants.length === 0) return null;
+
                 const defaultVariant = validVariants[0];
                 const activeVariant = selectedVariant[product._id] || defaultVariant;
                 const stockBadge = getStockBadge(activeVariant);

@@ -451,3 +451,29 @@ export const verifyEmailChange = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+
+// Admin adds a seller directly — no OTP, account is active immediately
+export const adminAddSeller = async (req, res) => {
+  try {
+    const { name, email, password, phonenumber, gstnumber, address } = req.body;
+    if (!name || !email || !password || !phonenumber || !gstnumber || !address) {
+      return res.status(400).json({ success: false, message: "All fields are required" });
+    }
+    const existingSeller = await Seller.findOne({ email });
+    if (existingSeller) {
+      return res.status(400).json({ success: false, message: "Seller already exists" });
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newSeller = new Seller({
+      name, email, password: hashedPassword, phonenumber, gstnumber, address,
+      isVerified: true,
+      status: true,
+    });
+    await newSeller.save();
+    res.status(201).json({ success: true, message: "Seller added successfully" });
+  } catch (error) {
+    console.error("Admin add seller error:", error.message);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};

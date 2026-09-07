@@ -7,9 +7,9 @@ import Barcode from "react-barcode";
 import { useQuery } from "@tanstack/react-query";
 
 const unitMapping = {
-  grocery: ["Gm", "Kg", "Ltr", "Pcs"],
-  fresh: ["Gm", "Kg", "Ltr", "Pcs"],
-  "electrical and electronics": ["Kg", "Litre", "Inch", "Watt"],
+  grocery: ["Gm", "Kg", "Ml", "Ltr", "Pcs"],
+  fresh: ["Gm", "Kg", "Ml", "Ltr", "Pcs"],
+  "electrical and electronics": ["Kg", "Ml", "Litre", "Inch", "Watt"],
   "clothing and garments": ["Size", "Waist", "Shoe-Size", "Pcs"],
 };
 
@@ -73,10 +73,9 @@ const SellerAddProduct = () => {
       quantity: "",
       unit: "Kg",
       tax: "",
-      stock: "",
       stockUnit: "Kg",
-      expiryDate: "",
       sizeLabel: "",
+      batches: [{ stock: "", expiryDate: "" }],
     },
   ]);
 
@@ -116,12 +115,12 @@ const SellerAddProduct = () => {
 
   const getUnitOptions = (catId) => {
     const id = catId || Category;
-    if (!id || !categoryData) return ["Pcs","Kg","Ltr","GM",];
+    if (!id || !categoryData) return ["Pcs","Kg","Ml","Ltr","GM",];
     const selectedCategory = categoryData.find(c => c._id === id)?.name?.toLowerCase();
     if (selectedCategory?.includes("grocery")) return unitMapping["grocery"];
     if (selectedCategory?.includes("electrical")) return unitMapping["electrical and electronics"];
     if (selectedCategory?.includes("clothing")) return unitMapping["clothing and garments"];
-    return ["Pcs","Kg","Ltr","GM"];
+    return ["Pcs","Kg","Ml","Ltr","GM"];
   };
 
   const handleCategoryChange = (e) => {
@@ -141,6 +140,36 @@ const SellerAddProduct = () => {
     setVariants(updated);
   };
 
+  // ---- Batch handling — a variant can hold multiple stock batches, each
+  // with its own quantity and expiry date, so restocking never overwrites
+  // an existing batch's real expiry.
+  const handleBatchChange = (variantIndex, batchIndex, field, value) => {
+    const updated = [...variants];
+    updated[variantIndex].batches[batchIndex][field] = value;
+    setVariants(updated);
+  };
+
+  const addBatchRow = (variantIndex) => {
+    const updated = [...variants];
+    updated[variantIndex].batches = [
+      ...(updated[variantIndex].batches || []),
+      { stock: "", expiryDate: "" },
+    ];
+    setVariants(updated);
+  };
+
+  const removeBatchRow = (variantIndex, batchIndex) => {
+    const updated = [...variants];
+    updated[variantIndex].batches = updated[variantIndex].batches.filter(
+      (_, i) => i !== batchIndex
+    );
+    // A variant should always have at least one batch row in the form.
+    if (updated[variantIndex].batches.length === 0) {
+      updated[variantIndex].batches = [{ stock: "", expiryDate: "" }];
+    }
+    setVariants(updated);
+  };
+
   const addVariantRow = () => {
     const units = getUnitOptions(Category);
     setVariants([
@@ -151,10 +180,9 @@ const SellerAddProduct = () => {
         quantity: "",
         unit: units[0],
         tax: "",
-        stock: "",
         stockUnit: units[0],
-        expiryDate: "",
         sizeLabel: "",
+        batches: [{ stock: "", expiryDate: "" }],
       },
     ]);
   };
@@ -200,10 +228,9 @@ const SellerAddProduct = () => {
       quantity: "",
       unit: "Size",
       tax: "",
-      stock: "",
       stockUnit: "Size",
-      expiryDate: "",
       sizeLabel: size,
+      batches: [{ stock: "", expiryDate: "" }],
     }));
     setVariants(newVariants);
   };
@@ -259,81 +286,11 @@ const SellerAddProduct = () => {
     ?.name?.toLowerCase()
     .includes("clothing");
 
-  // ✅ Check if current category is Grocery or Fresh
+  // ✅ Category-driven expiry flag — reads the real `requiresExpiry` field
+  // set on the Category document, instead of guessing from the name.
   const isGroceryOrFreshCategory = categoryData
     ?.find((c) => c._id === Category)
-    ?.name?.toLowerCase()
-    .match(/grocery|fresh/);
-
-  // Handle Submit
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-  //   setIsPending(true);
-
-  //   try {
-  //     let finalBarcode = barcode;
-  //     if (barcodeOption === "auto" && !barcode) {
-  //       finalBarcode = generateBarcode();
-  //       setBarcode(finalBarcode);
-  //     }
-
-  //     const productData = {
-  //       name,
-  //       description: description.split("\n"),
-  //       brand: Brand,
-  //       category: Category,
-  //       subcategory: Subcategory,
-  //       variants: variants,
-  //       variantdata: variantId,
-  //       barcode: finalBarcode,
-  //       // expiryDate: isGroceryOrFreshCategory ? expiryDate : null, 
-  //     };
-
-  //     const formData = new FormData();
-  //     formData.append("productData", JSON.stringify(productData));
-  //     formData.append("variants", JSON.stringify(variants));
-  //     files.forEach((file) => formData.append("images", file));
-
-  //     const res = await axios.post(
-  //       `${process.env.REACT_APP_API_URL}/api/product/add`,
-  //       formData,
-  //       {
-  //         headers: { "Content-Type": "multipart/form-data" },
-  //         withCredentials: true,
-  //       }
-  //     );
-
-  //     alert(res.data.message);
-  //     if (res.data.success) {
-  //       setName("");
-  //       setDescription("");
-  //       setFiles([]);
-  //       setCategory("");
-  //       setSubcategory("");
-  //       setBrand("");
-  //       setBarcode("");
-  //       setBarcodeOption("manual");
-  //       setSelectedSizeType("");
-  //     // ✅ Reset expiry date on success
-  //       setVariants([
-  //         {
-  //           price: "",
-  //           offerPrice: "",
-  //           quantity: "",
-  //           unit: "Kg",
-  //           tax: "",
-  //           stock: "",
-  //           expiryDate: "",
-  //           sizeLabel: "",
-  //         },
-  //       ]);
-  //     }
-  //   } catch (error) {
-  //     console.error("Error adding product:", error.message);
-  //   } finally {
-  //     setIsPending(false);
-  //   }
-  // };
+    ?.requiresExpiry === true;
 
   const handleSubmit = async (e) => {
   e.preventDefault();
@@ -343,8 +300,15 @@ const SellerAddProduct = () => {
   if (files.filter(Boolean).length === 0) missing.push("at least one product image");
   if (!Category) missing.push("a category");
   if (!Subcategory) missing.push("a subcategory");
-  const missingPricing = variants.some((v) => !v.price || !v.quantity || v.stock === "");
-  if (missingPricing) missing.push("price, quantity, and stock for every variant");
+  const missingPricing = variants.some(
+    (v) =>
+      !v.price ||
+      !v.quantity ||
+      !v.batches ||
+      v.batches.length === 0 ||
+      v.batches.some((b) => b.stock === "")
+  );
+  if (missingPricing) missing.push("price, quantity, and stock for every batch");
 
   if (missing.length > 0) {
     alert("Please provide: " + missing.join(", "));
@@ -354,11 +318,13 @@ const SellerAddProduct = () => {
   setIsPending(true);
 
   try {
-    // ✅ Validate expiryDate for Grocery/Fresh category
+    // ✅ Validate expiryDate for Grocery/Fresh category — every batch needs one
     if (isGroceryOrFreshCategory) {
-      const missingExpiry = variants.some((v) => !v.expiryDate);
+      const missingExpiry = variants.some((v) =>
+        v.batches.some((b) => !b.expiryDate)
+      );
       if (missingExpiry) {
-        alert("Please fill Expiry Date for all variants!");
+        alert("Please fill Expiry Date for every batch!");
         setIsPending(false);
         return;
       }
@@ -376,10 +342,14 @@ const SellerAddProduct = () => {
       brand: Brand,
       category: Category,
       subcategory: Subcategory,
-      // ✅ Clean variants — send expiryDate only for grocery/fresh, null for others
+      // ✅ Clean variants — batches carry their own expiryDate; strip it for
+      // non-grocery/fresh categories where expiry doesn't apply.
       variants: variants.map((v) => ({
         ...v,
-        expiryDate: isGroceryOrFreshCategory ? v.expiryDate : null,
+        batches: v.batches.map((b) => ({
+          stock: Number(b.stock) || 0,
+          expiryDate: isGroceryOrFreshCategory ? b.expiryDate : null,
+        })),
       })),
       // Variant-selector feature commented out (see state/useEffect/dropdown
       // above) — submitted as empty since no variant record is selected.
@@ -420,10 +390,9 @@ const SellerAddProduct = () => {
           quantity: "",
           unit: "Kg",
           tax: "",
-          stock: "",
           stockUnit: "Kg",
-          expiryDate: "",
           sizeLabel: "",
+          batches: [{ stock: "", expiryDate: "" }],
         },
       ]);
     }
@@ -747,21 +716,13 @@ const SellerAddProduct = () => {
                     />
                   </div>
                   <div className="variant-row">
-                    <input
-                      className="variant-input"
-                      placeholder="Stock"
-                      type="number"
-                      value={v.stock}
-                      onChange={(e) =>
-                        handleVariantChange(index, "stock", e.target.value)
-                      }
-                    />
                     <select
                       className="variant-input"
                       value={v.stockUnit}
                       onChange={(e) =>
                         handleVariantChange(index, "stockUnit", e.target.value)
                       }
+                      style={{ width: "100%" }}
                     >
                       {getUnitOptions(Category).map((u) => (
                         <option key={u} value={u}>
@@ -770,23 +731,91 @@ const SellerAddProduct = () => {
                       ))}
                     </select>
                   </div>
-             <div className="variant-row">
-  {isGroceryOrFreshCategory && (
-    <div className="form-group mt-2" style={{ width: "100%" }}>
-      <label style={{ fontSize: "13px", fontWeight: "600", marginBottom: "5px", display: "block" }}>
-        Expiry Date
-      </label>
-      <input
-        type="date"
-        className="form-input"
-        value={v.expiryDate}   // ✅ variant's own expiryDate
-        min={new Date().toISOString().split("T")[0]}
-        onChange={(e) => handleVariantChange(index, "expiryDate", e.target.value)}  // ✅ update that variant
-        required
-      />
-    </div>
-  )}
-</div>
+
+                  {/* Batches — each batch is its own delivery/lot with its
+                      own stock count and (for grocery/fresh) its own expiry
+                      date, so restocking never overwrites an older batch. */}
+                  <div style={{ marginTop: "6px" }}>
+                    <label style={{ fontSize: "12px", fontWeight: "600", color: "#555", display: "block", marginBottom: "4px" }}>
+                      Batches
+                    </label>
+                    {v.batches.map((batch, batchIndex) => (
+                      <div
+                        key={batchIndex}
+                        style={{
+                          display: "flex",
+                          gap: "8px",
+                          alignItems: "flex-end",
+                          marginBottom: "6px",
+                          background: "#f9fafb",
+                          padding: "8px",
+                          borderRadius: "8px",
+                        }}
+                      >
+                        <div style={{ flex: 1 }}>
+                          <input
+                            className="variant-input"
+                            placeholder={`Batch ${batchIndex + 1} stock`}
+                            type="number"
+                            value={batch.stock}
+                            onChange={(e) =>
+                              handleBatchChange(index, batchIndex, "stock", e.target.value)
+                            }
+                            style={{ width: "100%" }}
+                          />
+                        </div>
+                        {isGroceryOrFreshCategory && (
+                          <div style={{ flex: 1 }}>
+                            <input
+                              type="date"
+                              className="form-input"
+                              value={batch.expiryDate}
+                              min={new Date().toISOString().split("T")[0]}
+                              onChange={(e) =>
+                                handleBatchChange(index, batchIndex, "expiryDate", e.target.value)
+                              }
+                              style={{ width: "100%" }}
+                              required
+                            />
+                          </div>
+                        )}
+                        {v.batches.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeBatchRow(index, batchIndex)}
+                            style={{
+                              background: "none",
+                              border: "none",
+                              color: "#A32D2D",
+                              cursor: "pointer",
+                              fontSize: "14px",
+                              padding: "6px",
+                            }}
+                            title="Remove this batch"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => addBatchRow(index)}
+                      style={{
+                        background: "none",
+                        border: "1px dashed #6c63ff",
+                        color: "#6c63ff",
+                        borderRadius: "6px",
+                        padding: "6px 10px",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        cursor: "pointer",
+                        width: "100%",
+                      }}
+                    >
+                      + Add Batch
+                    </button>
+                  </div>
                 </div>
               ))}
 

@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import SellerLayout from "./SellerLayout";
-import "./SellerDashboard.css";
-import { image } from "./image";
+import AdminLayout from "./AdminLayout";
+import "./AdminDashboard.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useQuery } from "@tanstack/react-query";
 import Barcode from "react-barcode";
+import { image } from "../seller/image";
 
 // ✅ NEW — same unit mapping used on the Add Product forms, so the
 // Stock Unit dropdown here offers the same options per category.
@@ -18,7 +18,7 @@ const unitMapping = {
   "clothing and garments": ["Size", "Waist", "Shoe-Size", "Pcs"],
 };
 
-const SellerEditProduct = () => {
+const AdminEditProduct = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const API = process.env.REACT_APP_API_URL;
@@ -252,7 +252,7 @@ const SellerEditProduct = () => {
 
       if (data.success) {
         toast.success("✅ Product updated successfully");
-        setTimeout(() => navigate("/SellerProductList"), 1500);
+        setTimeout(() => navigate("/admin/product-list"), 1500);
       } else {
         toast.error("❌ Failed to update product");
       }
@@ -308,7 +308,7 @@ const SellerEditProduct = () => {
   if (loading || isCategoryLoading) return <p>Loading product...</p>;
 
   return (
-    <SellerLayout page="edit-product">
+    <AdminLayout page="edit-product">
       <div className="card product-card">
         <h4>Edit Product</h4>
         <form onSubmit={handleSubmit}>
@@ -583,8 +583,8 @@ const SellerEditProduct = () => {
         </form>
       </div>
       <ToastContainer position="top-right" autoClose={2000} />
-    </SellerLayout>
+    </AdminLayout>
   );
 };
 
-export default SellerEditProduct;
+export default AdminEditProduct;

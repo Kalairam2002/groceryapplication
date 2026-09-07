@@ -148,18 +148,18 @@ const SellerProductList = () => {
                 // Stock is a plain piece count per variant — never grouped
                 // by unit/spec (a variant's unit like "Kg" or "Size" only
                 // describes what that variant IS, not how stock is counted).
-                // Total is a simple sum; each variant's own count is shown
-                // separately so a low variant never gets averaged away.
+                // Total is the sum of a variant's batches (each batch is
+                // one delivery/lot); falls back to the legacy single
+                // `stock` field for pre-migration documents without batches.
                 const variants = product.variants || [];
-                const totalStock = variants.reduce(
-                  (sum, v) => sum + (Number(v.stock) || 0),
-                  0
-                );
-                const hasOutOfStockVariant = variants.some(
-                  (v) => (Number(v.stock) || 0) <= 0
-                );
+                const getStock = (v) =>
+                  v.batches && v.batches.length > 0
+                    ? v.batches.reduce((sum, b) => sum + (Number(b.stock) || 0), 0)
+                    : Number(v.stock) || 0;
+                const totalStock = variants.reduce((sum, v) => sum + getStock(v), 0);
+                const hasOutOfStockVariant = variants.some((v) => getStock(v) <= 0);
                 const hasLowStockVariant = variants.some((v) => {
-                  const s = Number(v.stock) || 0;
+                  const s = getStock(v);
                   return s > 0 && s < LOW_STOCK_THRESHOLD;
                 });
                 const variantLabel = (v) =>
@@ -238,7 +238,7 @@ const SellerProductList = () => {
                     ) : (
                       <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", margin: "6px 0 2px" }}>
                         {variants.map((v) => {
-                          const s = Number(v.stock) || 0;
+                          const s = getStock(v);
                           const style =
                             s <= 0
                               ? { color: "#791F1F", background: "#FCEBEB" }

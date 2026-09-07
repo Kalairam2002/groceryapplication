@@ -4,10 +4,12 @@ import AdminLayout from "./AdminLayout";
 import "./AdminDashboard.css";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useNavigate } from "react-router-dom";
 
 const SellerList = () => {
   const [sellers, setSellers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
@@ -15,7 +17,8 @@ const SellerList = () => {
   const fetchSellers = async () => {
     try {
       const { data } = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/seller/seller-list`
+        `${process.env.REACT_APP_API_URL}/api/seller/seller-list`,
+        { withCredentials: true }
       );
       if (data.success) setSellers(data.data || []);
     } catch (error) {
@@ -34,7 +37,8 @@ const SellerList = () => {
     try {
       const { data } = await axios.put(
         `${process.env.REACT_APP_API_URL}/api/seller/update-status`,
-        { id, status: updatedStatus }
+        { id, status: updatedStatus },
+        { withCredentials: true }
       );
       if (data.success) {
         setSellers((prev) =>
@@ -54,7 +58,8 @@ const SellerList = () => {
 
     try {
       const { data } = await axios.delete(
-        `${process.env.REACT_APP_API_URL}/api/seller/delete/${id}`
+        `${process.env.REACT_APP_API_URL}/api/seller/delete/${id}`,
+        { withCredentials: true }
       );
       if (data.success) {
         setSellers((prev) => prev.filter((seller) => seller._id !== id));
@@ -81,6 +86,12 @@ const SellerList = () => {
             <h4>Seller list</h4>
             <p className="subtitle">Vendors selling on the marketplace</p>
           </div>
+          <button
+            className="btn btn-primary"
+            onClick={() => navigate("/admin/add-seller")}
+          >
+            + Add Seller
+          </button>
         </div>
 
         {loading ? (

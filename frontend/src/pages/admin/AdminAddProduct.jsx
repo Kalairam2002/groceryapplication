@@ -5,14 +5,12 @@ import "./AdminDashboard.css";
 import Barcode from "react-barcode";
 import { useQuery } from "@tanstack/react-query";
 
-// NOTE: mirrors SellerAddProduct.jsx's image asset import — this file lives in
-// pages/admin/, and image.js lives in pages/seller/, so it's referenced from there.
 import { image } from "../seller/image";
 
 const unitMapping = {
-  grocery: ["Gm", "Kg", "Ltr", "Pcs"],
-  fresh: ["Gm", "Kg", "Ltr", "Pcs"],
-  "electrical and electronics": ["Kg", "Litre", "Inch", "Watt"],
+  grocery: ["Gm", "Kg", "Ml", "Ltr", "Pcs"],
+  fresh: ["Gm", "Kg", "Ml", "Ltr", "Pcs"],
+  "electrical and electronics": ["Kg", "Ml", "Litre", "Inch", "Watt"],
   "clothing and garments": ["Size", "Waist", "Shoe-Size", "Pcs"],
 };
 
@@ -25,11 +23,10 @@ const AdminAddProduct = () => {
   const [Brand, setBrand] = useState("");
   const [returnable, setReturnable] = useState(false);
 
-  // NEW: which seller this product is being added on behalf of
   const [sellerId, setSellerId] = useState("");
 
   const [variants, setVariants] = useState([
-    { price: "", offerPrice: "", quantity: "", unit: "Kg", tax: "", stock: "", stockUnit: "Kg", expiryDate: "" },
+    { price: "", offerPrice: "", quantity: "", unit: "Kg", tax: "", stockUnit: "Kg", batches: [{ stock: "", expiryDate: "" }] },
   ]);
 
   const [barcodeOption, setBarcodeOption] = useState("manual");
@@ -37,13 +34,6 @@ const AdminAddProduct = () => {
   const [isPending, setIsPending] = useState(false);
   const [subcategories, setSubcategories] = useState([]);
 
-  // ---- Variant-selector feature (the "-- No Variants Found --" dropdown) ----
-  // Commented out: not needed. Product is added without a selected
-  // "variant" record; variantdata is submitted as "".
-  // const [variantsListdata, setVariantsListdata] = useState([]);
-  // const [variantId, setVariantId] = useState("");
-
-  // Fetch Categories
   const { data: categoryData, isLoading: categoryLoading } = useQuery({
     queryKey: ["adminAddProduct-categoryData"],
     queryFn: async () => {
@@ -52,7 +42,6 @@ const AdminAddProduct = () => {
     },
   });
 
-  // Fetch Brands
   const { data: brandData, isLoading: brandLoading } = useQuery({
     queryKey: ["adminAddProduct-brandData"],
     queryFn: async () => {
@@ -61,23 +50,25 @@ const AdminAddProduct = () => {
     },
   });
 
-  // NEW: Fetch Sellers (same endpoint the Seller List admin page already uses)
-  const { data: sellerData, isLoading: sellerLoading } = useQuery({
+      const { data: sellerData, isLoading: sellerLoading } = useQuery({
     queryKey: ["adminAddProduct-sellerData"],
     queryFn: async () => {
-      const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/seller/seller-list`);
+      const res = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/seller/seller-list`,
+        { withCredentials: true }
+      );
       return res.data.data || [];
     },
   });
 
   const getUnitOptions = (catId) => {
     const id = catId || Category;
-    if (!id || !categoryData) return ["Pcs", "Kg", "Ltr", "GM"];
+    if (!id || !categoryData) return ["Pcs", "Kg", "Ml", "Ltr", "GM"];
     const selectedCategory = categoryData.find((c) => c._id === id)?.name?.toLowerCase();
     if (selectedCategory?.includes("grocery")) return unitMapping["grocery"];
     if (selectedCategory?.includes("electrical")) return unitMapping["electrical and electronics"];
     if (selectedCategory?.includes("clothing")) return unitMapping["clothing and garments"];
-    return ["Pcs", "Kg", "Ltr", "GM"];
+    return ["Pcs", "Kg", "Ml", "Ltr", "GM"];
   };
 
   const handleCategoryChange = (e) => {
@@ -94,11 +85,37 @@ const AdminAddProduct = () => {
     setVariants(updated);
   };
 
+  const handleBatchChange = (variantIndex, batchIndex, field, value) => {
+    const updated = [...variants];
+    updated[variantIndex].batches[batchIndex][field] = value;
+    setVariants(updated);
+  };
+
+  const addBatchRow = (variantIndex) => {
+    const updated = [...variants];
+    updated[variantIndex].batches = [
+      ...(updated[variantIndex].batches || []),
+      { stock: "", expiryDate: "" },
+    ];
+    setVariants(updated);
+  };
+
+  const removeBatchRow = (variantIndex, batchIndex) => {
+    const updated = [...variants];
+    updated[variantIndex].batches = updated[variantIndex].batches.filter(
+      (_, i) => i !== batchIndex
+    );
+    if (updated[variantIndex].batches.length === 0) {
+      updated[variantIndex].batches = [{ stock: "", expiryDate: "" }];
+    }
+    setVariants(updated);
+  };
+
   const addVariantRow = () => {
     const units = getUnitOptions(Category);
     setVariants([
       ...variants,
-      { price: "", offerPrice: "", quantity: "", unit: units[0], tax: "", stock: "", stockUnit: units[0], expiryDate: "" },
+      { price: "", offerPrice: "", quantity: "", unit: units[0], tax: "", stockUnit: units[0], batches: [{ stock: "", expiryDate: "" }] },
     ]);
   };
 
@@ -106,7 +123,6 @@ const AdminAddProduct = () => {
     setVariants(variants.filter((_, i) => i !== index));
   };
 
-  // Fetch Subcategories based on Category
   useEffect(() => {
     if (!Category) {
       setSubcategories([]);
@@ -122,45 +138,31 @@ const AdminAddProduct = () => {
       .catch((err) => console.error("Error fetching subcategories:", err));
   }, [Category]);
 
-  // ---- Variant-selector feature (continued) ----
-  // Fetch Variants based on Subcategory — commented out along with the
-  // dropdown below; not needed.
-  // useEffect(() => {
-  //   if (!Subcategory) {
-  //     setVariantsListdata([]);
-  //     return;
-  //   }
-  //   axios
-  //     .get(`${process.env.REACT_APP_API_URL}/api/variant/bySubCategory/${Subcategory}`)
-  //     .then((res) => {
-  //       if (res.data.success && Array.isArray(res.data.variants)) setVariantsListdata(res.data.variants);
-  //       else if (Array.isArray(res.data)) setVariantsListdata(res.data);
-  //       else setVariantsListdata([]);
-  //     })
-  //     .catch((err) => {
-  //       console.error("Error fetching variants:", err);
-  //       setVariantsListdata([]);
-  //     });
-  // }, [Subcategory]);
-
   const generateBarcode = () => "BC" + Date.now() + Math.floor(1000 + Math.random() * 9000);
 
+  // ✅ Category-driven expiry flag — reads the real `requiresExpiry` field
+  // set on the Category document, instead of guessing from the name.
   const isGroceryOrFreshCategory = categoryData
     ?.find((c) => c._id === Category)
-    ?.name?.toLowerCase()
-    .match(/grocery|fresh/);
+    ?.requiresExpiry === true;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // ---- Required-field checks (this is the disclaimer you asked for, enforced) ----
     const missing = [];
     if (files.filter(Boolean).length === 0) missing.push("at least one product image");
     if (!Category) missing.push("a category");
     if (!Subcategory) missing.push("a subcategory");
     if (!sellerId) missing.push("a seller");
-    const missingPricing = variants.some((v) => !v.price || !v.quantity || v.stock === "");
-    if (missingPricing) missing.push("price, quantity, and stock for every variant");
+    const missingPricing = variants.some(
+      (v) =>
+        !v.price ||
+        !v.quantity ||
+        !v.batches ||
+        v.batches.length === 0 ||
+        v.batches.some((b) => b.stock === "")
+    );
+    if (missingPricing) missing.push("price, quantity, and stock for every batch");
 
     if (missing.length > 0) {
       alert("Please provide: " + missing.join(", "));
@@ -168,9 +170,9 @@ const AdminAddProduct = () => {
     }
 
     if (isGroceryOrFreshCategory) {
-      const missingExpiry = variants.some((v) => !v.expiryDate);
+      const missingExpiry = variants.some((v) => v.batches.some((b) => !b.expiryDate));
       if (missingExpiry) {
-        alert("Please fill Expiry Date for all variants!");
+        alert("Please fill Expiry Date for every batch!");
         return;
       }
     }
@@ -189,13 +191,14 @@ const AdminAddProduct = () => {
         brand: Brand,
         category: Category,
         subcategory: Subcategory,
-        seller: sellerId, // NEW: which seller this listing belongs to
+        seller: sellerId,
         variants: variants.map((v) => ({
           ...v,
-          expiryDate: isGroceryOrFreshCategory ? v.expiryDate : null,
+          batches: v.batches.map((b) => ({
+            stock: Number(b.stock) || 0,
+            expiryDate: isGroceryOrFreshCategory ? b.expiryDate : null,
+          })),
         })),
-        // Variant-selector feature commented out (see state/useEffect/dropdown
-        // above) — submitted as empty since no variant record is selected.
         variantdata: "",
         barcode: finalBarcode,
         returnable,
@@ -223,7 +226,7 @@ const AdminAddProduct = () => {
         setSellerId("");
         setBarcode("");
         setBarcodeOption("manual");
-        setVariants([{ price: "", offerPrice: "", quantity: "", unit: "Kg", tax: "", stock: "", stockUnit: "Kg", expiryDate: "" }]);
+        setVariants([{ price: "", offerPrice: "", quantity: "", unit: "Kg", tax: "", stockUnit: "Kg", batches: [{ stock: "", expiryDate: "" }] }]);
         setReturnable(false);
       }
     } catch (error) {
@@ -249,7 +252,6 @@ const AdminAddProduct = () => {
 
         <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
 
-          {/* Requirements disclaimer */}
           <div className="requirements-banner">
             <span className="req-icon">!</span>
             <div>
@@ -266,7 +268,6 @@ const AdminAddProduct = () => {
           <form onSubmit={handleSubmit}>
             <div style={{ display: "flex", gap: "20px", alignItems: "flex-start", flexWrap: "wrap" }}>
 
-              {/* LEFT SIDE: Product Details */}
               <div style={{ flex: 1, minWidth: "320px", background: "#fff", border: "1px solid #E3E8DD", borderRadius: "14px", padding: "1.5rem" }}>
 
                 <div className="form-group">
@@ -334,27 +335,6 @@ const AdminAddProduct = () => {
                   </select>
                 </div>
 
-                {/*
-                  Variant-selector dropdown — commented out (not needed).
-
-                <div className="form-group">
-                  <select
-                    className="admin-form-select"
-                    value={variantId}
-                    onChange={(e) => setVariantId(e.target.value)}
-                    disabled={variantsListdata.length === 0}
-                  >
-                    <option value="">
-                      {variantsListdata.length === 0 ? "-- No Variants Found --" : "-- Select Variant --"}
-                    </option>
-                    {variantsListdata.map((v) => (
-                      <option key={v._id} value={v._id}>{v.name}</option>
-                    ))}
-                  </select>
-                </div>
-                */}
-
-                {/* NEW: Seller dropdown — placed just below the variant dropdown */}
                 <div className="form-group">
                   <label style={{ fontSize: "13px", fontWeight: "600", marginBottom: "6px", display: "block", color: "#1C2620" }}>
                     Assign to seller
@@ -383,7 +363,6 @@ const AdminAddProduct = () => {
                 />
               </div>
 
-              {/* RIGHT SIDE: Pricing Options */}
               <div style={{ flex: 1, minWidth: "320px", background: "#fff", border: "1px solid #E3E8DD", borderRadius: "14px", padding: "1.5rem" }}>
                 <div className="admin-variant-title" style={{ marginBottom: "12px" }}>Multiple Pricing Options</div>
 
@@ -411,29 +390,62 @@ const AdminAddProduct = () => {
                         onChange={(e) => handleVariantChange(index, "tax", e.target.value)} />
                     </div>
                     <div className="admin-variant-row">
-                      <input className="admin-variant-input" placeholder="Stock" type="number" value={v.stock}
-                        onChange={(e) => handleVariantChange(index, "stock", e.target.value)} />
-                      <select className="admin-variant-input" value={v.stockUnit} onChange={(e) => handleVariantChange(index, "stockUnit", e.target.value)}>
+                      <select className="admin-variant-input" value={v.stockUnit} onChange={(e) => handleVariantChange(index, "stockUnit", e.target.value)} style={{ width: "100%" }}>
                         {getUnitOptions(Category).map((u) => (<option key={u} value={u}>{u}</option>))}
                       </select>
                     </div>
-                    {isGroceryOrFreshCategory && (
-                      <div className="admin-variant-row">
-                        <div style={{ width: "100%" }}>
-                          <label style={{ fontSize: "12px", fontWeight: "600", marginBottom: "5px", display: "block", color: "#1C2620" }}>
-                            Expiry Date
-                          </label>
-                          <input
-                            type="date"
-                            className="admin-variant-input"
-                            style={{ width: "100%" }}
-                            value={v.expiryDate}
-                            min={new Date().toISOString().split("T")[0]}
-                            onChange={(e) => handleVariantChange(index, "expiryDate", e.target.value)}
-                          />
+
+                    <div style={{ marginTop: "6px" }}>
+                      <label style={{ fontSize: "12px", fontWeight: "600", color: "#555", display: "block", marginBottom: "4px" }}>
+                        Batches
+                      </label>
+                      {v.batches.map((batch, batchIndex) => (
+                        <div
+                          key={batchIndex}
+                          style={{ display: "flex", gap: "8px", alignItems: "flex-end", marginBottom: "6px", background: "#f9fafb", padding: "8px", borderRadius: "8px" }}
+                        >
+                          <div style={{ flex: 1 }}>
+                            <input
+                              className="admin-variant-input"
+                              placeholder={`Batch ${batchIndex + 1} stock`}
+                              type="number"
+                              value={batch.stock}
+                              onChange={(e) => handleBatchChange(index, batchIndex, "stock", e.target.value)}
+                              style={{ width: "100%" }}
+                            />
+                          </div>
+                          {isGroceryOrFreshCategory && (
+                            <div style={{ flex: 1 }}>
+                              <input
+                                type="date"
+                                className="admin-variant-input"
+                                value={batch.expiryDate}
+                                min={new Date().toISOString().split("T")[0]}
+                                onChange={(e) => handleBatchChange(index, batchIndex, "expiryDate", e.target.value)}
+                                style={{ width: "100%" }}
+                              />
+                            </div>
+                          )}
+                          {v.batches.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeBatchRow(index, batchIndex)}
+                              style={{ background: "none", border: "none", color: "#A32D2D", cursor: "pointer", fontSize: "14px", padding: "6px" }}
+                              title="Remove this batch"
+                            >
+                              ✕
+                            </button>
+                          )}
                         </div>
-                      </div>
-                    )}
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => addBatchRow(index)}
+                        style={{ background: "none", border: "1px dashed #2F6D4F", color: "#2F6D4F", borderRadius: "6px", padding: "6px 10px", fontSize: "12px", fontWeight: "600", cursor: "pointer", width: "100%" }}
+                      >
+                        + Add Batch
+                      </button>
+                    </div>
                   </div>
                 ))}
 

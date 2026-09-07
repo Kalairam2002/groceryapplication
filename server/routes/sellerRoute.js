@@ -5,6 +5,7 @@ import {
   sellerLogin,
   sellerLogout,
   registerSeller,
+  adminAddSeller,
   updateStatus,
   deleteSeller,
   sendOtp,
@@ -15,6 +16,7 @@ import {
   updateSellerProfile
 } from '../controllers/sellerController.js';
 import authSeller from '../middlewares/authSeller.js';
+import authAdmin from '../middlewares/authAdmin.js';
 
 const sellerRouter = express.Router();
 
@@ -24,6 +26,7 @@ sellerRouter.post('/verify-otp', verifyOtp);
 
 // Registration & login
 sellerRouter.post('/register', registerSeller);
+sellerRouter.post('/admin-add', authAdmin, adminAddSeller);
 sellerRouter.post('/login', sellerLogin);
 sellerRouter.post('/verify-login-otp', verifyLoginOtp);
 
@@ -31,10 +34,10 @@ sellerRouter.post('/verify-login-otp', verifyLoginOtp);
 sellerRouter.get('/is-auth', authSeller, isSellerAuth);
 sellerRouter.get('/logout', authSeller, sellerLogout);
 
-// Seller management
-sellerRouter.get('/seller-list', getSellerDetails);
-sellerRouter.put('/update-status', updateStatus);
-sellerRouter.delete('/delete/:id', deleteSeller);
+// Seller management (admin-only)
+sellerRouter.get('/seller-list', authAdmin, getSellerDetails);
+sellerRouter.put('/update-status', authAdmin, updateStatus);
+sellerRouter.delete('/delete/:id', authAdmin, deleteSeller);
 
 // ✅ Password Reset Flow
 sellerRouter.post('/forgot-password', forgotSellerPassword);

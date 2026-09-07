@@ -116,7 +116,7 @@ const Subcategorysection = ({ id }) => {
 
                   <div className="flex-between gap-16 flex-wrap mb-40">
               <span className="text-gray-900">
-                <b>Product List by Subcategorys</b>
+                <b>Product List by Subcategories</b>
               </span>
               <div className="position-relative flex-align gap-16 flex-wrap">
                 <div className="list-grid-btns flex-align gap-16">
