@@ -25,10 +25,12 @@ const SellerAuthForm = () => {
   const [otp, setOtp] = useState("");
   const [message, setMessage] = useState("");
 
-  // Login OTP flow — mirrors the registration OTP step below
-  const [loginStep, setLoginStep] = useState("credentials"); // "credentials" | "otp"
-  const [loginOtp, setLoginOtp] = useState("");
-  const [pendingLoginIdentifier, setPendingLoginIdentifier] = useState("");
+  // --- Login OTP flow — DISABLED (per instruction: seller login no longer requires OTP,
+  // works directly with email or username). Keeping the state/handlers here, commented,
+  // in case this needs to be re-enabled later.
+  // const [loginStep, setLoginStep] = useState("credentials"); // "credentials" | "otp"
+  // const [loginOtp, setLoginOtp] = useState("");
+  // const [pendingLoginIdentifier, setPendingLoginIdentifier] = useState("");
 
   // Keep OTP fields numeric-only, max 6 digits
   const handleOtpInput = (setter) => (e) => {
@@ -48,9 +50,8 @@ const SellerAuthForm = () => {
     e.preventDefault();
     setMessage("");
     try {
-      // NOTE: this endpoint now needs to check credentials, email an OTP,
-      // and respond with { success: true } WITHOUT a token — the actual
-      // login (token issuance) happens in handleLoginOtpVerify below.
+      // Login now completes in a single step — backend checks credentials
+      // and returns the token + seller directly, no OTP round-trip.
       const res = await fetch(`${process.env.REACT_APP_API_URL}/api/seller/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -61,10 +62,11 @@ const SellerAuthForm = () => {
       console.log("Login response:", data);
 
       if (data.success) {
-        setPendingLoginIdentifier(loginData.identifier);
-        setMessage(data.message || "OTP sent to your registered email.");
-        setLoginStep("otp");
+        localStorage.setItem("seller", JSON.stringify(data.seller));
+        localStorage.setItem("sellerToken", data.token);
+        setMessage(data.message || "Login Successful!");
         setLoginData({ identifier: "", password: "" });
+        navigate("/sellerDashboard");
       } else {
         setMessage(data.message || "Login failed");
       }
@@ -74,34 +76,33 @@ const SellerAuthForm = () => {
     }
   };
 
-  const handleLoginOtpVerify = async (e) => {
-    e.preventDefault();
-    setMessage("");
-    try {
-      // NOTE: assumed endpoint — adjust the path to whatever your backend
-      // actually exposes for completing a login after OTP verification.
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/seller/verify-login-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ identifier: pendingLoginIdentifier, otp: loginOtp }),
-      });
-      const data = await res.json();
-      console.log("Login OTP verify response:", data);
-      setMessage(data.message || (data.success ? "Login Successful!" : ""));
-
-      if (data.success) {
-        localStorage.setItem("seller", JSON.stringify(data.seller));
-        localStorage.setItem("sellerToken", data.token);
-        setLoginOtp("");
-        setLoginStep("credentials");
-        navigate("/sellerDashboard");
-      }
-    } catch (err) {
-      console.error("Login OTP verification error:", err.message);
-      setMessage("OTP verification failed!");
-    }
-  };
+  // --- Login OTP verify — DISABLED along with the OTP step above.
+  // const handleLoginOtpVerify = async (e) => {
+  //   e.preventDefault();
+  //   setMessage("");
+  //   try {
+  //     const res = await fetch(`${process.env.REACT_APP_API_URL}/api/seller/verify-login-otp`, {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       credentials: "include",
+  //       body: JSON.stringify({ identifier: pendingLoginIdentifier, otp: loginOtp }),
+  //     });
+  //     const data = await res.json();
+  //     console.log("Login OTP verify response:", data);
+  //     setMessage(data.message || (data.success ? "Login Successful!" : ""));
+  //
+  //     if (data.success) {
+  //       localStorage.setItem("seller", JSON.stringify(data.seller));
+  //       localStorage.setItem("sellerToken", data.token);
+  //       setLoginOtp("");
+  //       setLoginStep("credentials");
+  //       navigate("/sellerDashboard");
+  //     }
+  //   } catch (err) {
+  //     console.error("Login OTP verification error:", err.message);
+  //     setMessage("OTP verification failed!");
+  //   }
+  // };
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -220,7 +221,7 @@ const SellerAuthForm = () => {
               setActiveTab("login");
               setMessage("");
               setStep("register");
-              setLoginStep("credentials");
+              // setLoginStep("credentials"); // OTP step disabled
             }}
           >
             Login
@@ -231,18 +232,18 @@ const SellerAuthForm = () => {
               setActiveTab("register");
               setMessage("");
               setStep("register");
-              setLoginStep("credentials");
+              // setLoginStep("credentials"); // OTP step disabled
             }}
           >
             Register
           </button>
         </div>
 
-        {activeTab === "login" && loginStep === "credentials" && (
+        {activeTab === "login" && (
           <form className="auth-form" onSubmit={handleLogin}>
             <input
               type="text"
-              placeholder="UserName"
+              placeholder="UserName or Email"
               name="identifier"
               value={loginData.identifier}
               onChange={(e) => handleInputChange(e, "login")}
@@ -290,6 +291,7 @@ const SellerAuthForm = () => {
           </form>
         )}
 
+        {/* --- Login OTP step JSX — DISABLED along with loginStep state above.
         {activeTab === "login" && loginStep === "otp" && (
           <form className="auth-form" onSubmit={handleLoginOtpVerify}>
             <p style={{ fontSize: "13px", color: "#6b7280", margin: "0 0 4px" }}>
@@ -321,6 +323,7 @@ const SellerAuthForm = () => {
             </button>
           </form>
         )}
+        --- */}
 
         {activeTab === "register" && step === "register" && (
           <form className="auth-form" onSubmit={handleRegister}>

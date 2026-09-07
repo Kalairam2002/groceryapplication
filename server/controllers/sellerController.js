@@ -65,10 +65,6 @@ export const verifyOtp = async (req, res) => {
     const enteredOtp = otp?.trim().toLowerCase();
     const storedOtp = seller.otp?.trim().toLowerCase();
 
-    console.log("Entered OTP:", enteredOtp);
-    console.log("Stored OTP:", storedOtp);
-    console.log("OTP Expiry:", new Date(seller.otpExpires).toLocaleString());
-
     if (!storedOtp || storedOtp !== enteredOtp || seller.otpExpires < Date.now()) {
       return res.status(400).json({ success: false, message: "Invalid or expired OTP" });
     }
@@ -104,8 +100,8 @@ export const verifyOtp = async (req, res) => {
   }
 };
 
-// Seller Login — Step 1: validate credentials, email a login OTP
-// (no token is issued here anymore; that now happens in verifyLoginOtp below)
+// Seller Login — now completes in a single step (no login OTP).
+// Checks credentials and issues the session token directly.
 export const sellerLogin = async (req, res) => {
   try {
     const { identifier, password } = req.body;
@@ -131,11 +127,12 @@ export const sellerLogin = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid credentials" });
     }
 
-    // Credentials check out — generate and email a numeric login OTP
-    // instead of issuing the session token directly.
+    /* --- Login OTP step disabled (per instruction) — was emailing a login OTP here
+       and requiring verifyLoginOtp as a second step. Now issuing the token directly.
+
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     seller.otp = otp;
-    seller.otpExpires = Date.now() + 5 * 60 * 1000; // 5 minutes
+    seller.otpExpires = Date.now() + 5 * 60 * 1000;
     await seller.save();
 
     const html = `<p>Hello ${seller.name},</p><p>Your OTP to log in is: <strong>${otp}</strong></p><p>This code expires in 5 minutes.</p>`;
@@ -145,14 +142,31 @@ export const sellerLogin = async (req, res) => {
       success: true,
       message: "OTP sent to your registered email. Please verify to complete login.",
     });
+    --- */
+
+    const token = jwt.sign({ id: seller._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.json({
+      success: true,
+      message: "Login successful",
+      token: token,
+      seller: { email: seller.email, name: seller.name, sellerId: seller._id },
+    });
   } catch (error) {
     console.error("Login error:", error.message);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
-// Seller Login — Step 2: verify the OTP and actually issue the session token.
-// Mirrors verifyOtp above, but completes a login instead of a registration.
+// Seller Login OTP verify — no longer called by the frontend (login is single-step
+// now), kept here unused in case the OTP step needs to be re-enabled later.
 export const verifyLoginOtp = async (req, res) => {
   try {
     const { identifier, otp } = req.body;
@@ -176,7 +190,6 @@ export const verifyLoginOtp = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid or expired OTP" });
     }
 
-    // OTP is correct — clear it so it can't be reused, then log the seller in
     seller.otp = undefined;
     seller.otpExpires = undefined;
     await seller.save();
@@ -452,24 +465,38 @@ export const verifyEmailChange = async (req, res) => {
   }
 };
 
-
-// Admin adds a seller directly — no OTP, account is active immediately
+// Admin adds a seller directly — no OTP, account is active immediately.
+// email is optional here: admin can create a seller with just a username,
+// and that seller logs in via username on the seller login form.
 export const adminAddSeller = async (req, res) => {
   try {
     const { name, email, password, phonenumber, gstnumber, address } = req.body;
-    if (!name || !email || !password || !phonenumber || !gstnumber || !address) {
+
+    if (!name || !password || !phonenumber || !gstnumber || !address) {
       return res.status(400).json({ success: false, message: "All fields are required" });
     }
-    const existingSeller = await Seller.findOne({ email });
-    if (existingSeller) {
-      return res.status(400).json({ success: false, message: "Seller already exists" });
+
+    // Only check for a duplicate email if one was actually provided —
+    // otherwise multiple no-email sellers would collide on this check
+    if (email) {
+      const existingSeller = await Seller.findOne({ email });
+      if (existingSeller) {
+        return res.status(400).json({ success: false, message: "Seller already exists" });
+      }
     }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const newSeller = new Seller({
-      name, email, password: hashedPassword, phonenumber, gstnumber, address,
+      name,
+      ...(email && { email }),
+      password: hashedPassword,
+      phonenumber,
+      gstnumber,
+      address,
       isVerified: true,
       status: true,
     });
+
     await newSeller.save();
     res.status(201).json({ success: true, message: "Seller added successfully" });
   } catch (error) {

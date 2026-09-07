@@ -346,10 +346,10 @@ const AdminAddProduct = () => {
                     required
                     disabled={sellerLoading}
                   >
-                    <option value="">{sellerLoading ? "Loading sellers..." : "-- Select Seller --"}</option>
-                    {sellerData?.map((s) => (
-                      <option key={s._id} value={s._id}>{s.name} ({s.email})</option>
-                    ))}
+                   <option value="">{sellerLoading ? "Loading sellers..." : "-- Select Seller --"}</option>
+                  {sellerData?.map((s) => (
+                    <option key={s._id} value={s._id}>{s.email ? `${s.name} (${s.email})` : s.name}</option>
+                  ))}
                   </select>
                 </div>
 

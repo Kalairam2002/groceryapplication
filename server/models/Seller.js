@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const sellerSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
-    email: { type: String, required: true },
+    email: { type: String }, // optional — admin-added sellers may not have one
     tempmail: { type: String },
     password: { type: String, required: true },
     phonenumber: { type: String, required: true },
@@ -13,8 +13,8 @@ const sellerSchema = new mongoose.Schema(
     otp: { type: String },
     isVerified: { type: Boolean, default: false },
     otpExpires: { type: Date },
-    resetPasswordToken: { type:String },
-    resetPasswordExpires: { type : Date }
+    resetPasswordToken: { type: String },
+    resetPasswordExpires: { type: Date }
   },
   { timestamps: true }
 );

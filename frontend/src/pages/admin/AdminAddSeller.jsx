@@ -79,11 +79,10 @@ const AdminAddSeller = () => {
               <input
                 type="email"
                 className="form-input"
-                placeholder="Email Address"
+                placeholder="Email Address (optional)"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                required
               />
             </div>
 
