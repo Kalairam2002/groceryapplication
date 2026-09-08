@@ -9,6 +9,7 @@ const ProductListOne = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedVariant, setSelectedVariant] = useState({});
+  const [ratings, setRatings] = useState({}); // { [productId]: { avgRating, count } }
   const [wishlist, setWishlist] = useState(() => {
     return JSON.parse(localStorage.getItem("wishlist")) || [];
   });
@@ -44,10 +45,6 @@ const ProductListOne = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Build an "effective" variant per source variant: stock = sum of its
-    // sellable batches, expiryDate = the soonest of those batches. A
-    // variant with zero sellable stock (all batches expired or empty) is
-    // dropped entirely.
     const effectiveVariants = variants
       .map((v) => {
         const sellable = getSellableBatches(v, today);
@@ -65,7 +62,6 @@ const ProductListOne = () => {
 
     if (effectiveVariants.length === 0) return null;
 
-    // Sort by earliest expiryDate first (null expiryDate goes last)
     effectiveVariants.sort((a, b) => {
       if (!a.expiryDate) return 1;
       if (!b.expiryDate) return -1;
@@ -85,11 +81,10 @@ const ProductListOne = () => {
       groups[key].push(v);
     });
 
-    // For each group, pick the best valid variant
     const groupedOptions = [];
     Object.entries(groups).forEach(([key, groupVariants]) => {
       const best = getBestVariant(groupVariants);
-      if (best) groupedOptions.push(best); // only add if valid variant exists
+      if (best) groupedOptions.push(best);
     });
 
     return groupedOptions;
@@ -169,6 +164,23 @@ const ProductListOne = () => {
         );
         if (response.data.success) {
           setProducts(response.data.products);
+
+          // One batch call for every visible product's rating —
+          // avoids one request per card.
+          const productIds = response.data.products.map((p) => p._id);
+          if (productIds.length > 0) {
+            try {
+              const ratingRes = await axios.post(
+                `${process.env.REACT_APP_API_URL}/api/review/summary`,
+                { productIds }
+              );
+              if (ratingRes.data.success) {
+                setRatings(ratingRes.data.summary);
+              }
+            } catch (err) {
+              console.error("Rating summary error:", err);
+            }
+          }
         }
       } catch (error) {
         console.error("API Error:", error);
@@ -204,11 +216,6 @@ const ProductListOne = () => {
 
   // ✅ Low-stock badge shown on the product image, based on whichever
   // variant is currently selected in the dropdown for this card.
-  //
-  // NOTE: `quantity` is a per-variant spec (screen size, capacity, waist
-  // size, etc.), not a stocked pack size, so it can't be used for a %
-  // remaining calculation. `stock` is a plain piece count across every
-  // product type in this app, so a flat threshold is used here.
   const LOW_STOCK_THRESHOLD = 15;
 
   const getStockBadge = (variant) => {
@@ -227,6 +234,17 @@ const ProductListOne = () => {
     const day = String(date.getDate()).padStart(2, "0");
     const month = String(date.getMonth() + 1).padStart(2, "0");
     return `${day}/${month}/${date.getFullYear()}`;
+  };
+
+  // ✅ Star rating renderer — filled stars for the rounded average, muted for the rest
+  const renderStars = (avgRating) => {
+    const rounded = Math.round(avgRating);
+    return (
+      <span style={{ color: "#F2A623", fontSize: "13px", letterSpacing: "1px" }}>
+        {"★".repeat(rounded)}
+        <span style={{ color: "#ddd" }}>{"★".repeat(5 - rounded)}</span>
+      </span>
+    );
   };
 
   const SampleNextArrow = ({ onClick }) => (
@@ -266,15 +284,14 @@ const ProductListOne = () => {
           {products.length > 0 ? (
             <Slider {...settings}>
               {products.map((product) => {
-                // ✅ Get valid grouped variants for this product
                 const validVariants = getGroupedVariants(product.variants);
 
-                // ✅ If NO valid variants → skip this product entirely
                 if (validVariants.length === 0) return null;
 
                 const defaultVariant = validVariants[0];
                 const activeVariant = selectedVariant[product._id] || defaultVariant;
                 const stockBadge = getStockBadge(activeVariant);
+                const productRating = ratings[product._id];
 
                 return (
                   <div key={product._id} style={{ padding: "10px" }}>
@@ -317,8 +334,25 @@ const ProductListOne = () => {
                         />
                       </div>
 
+                      {/* BRAND */}
+                      {product.brand?.name && (
+                        <p style={{ fontSize: "12px", color: "#888", margin: "10px 0 2px", fontWeight: 500 }}>
+                          {product.brand.name}
+                        </p>
+                      )}
+
                       {/* NAME */}
-                      <h4 style={{ fontSize: "16px", margin: "10px 0" }}>{product.name}</h4>
+                      <h4 style={{ fontSize: "16px", margin: "0 0 10px" }}>{product.name}</h4>
+
+                      {/* RATING */}
+                      {productRating && productRating.count > 0 && (
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", marginBottom: "8px" }}>
+                          {renderStars(productRating.avgRating)}
+                          <span style={{ fontSize: "12px", color: "#777" }}>
+                            {productRating.avgRating} ({productRating.count})
+                          </span>
+                        </div>
+                      )}
 
                       {/* PRICE */}
                       <div style={{ background: "#f5f7f6", padding: "12px", borderRadius: "10px", marginBottom: "10px" }}>
@@ -360,10 +394,6 @@ const ProductListOne = () => {
                         </p>
                         <p style={{ margin: "3px 0" }}>💰 Tax: <b style={{ marginLeft: "5px" }}>{activeVariant.tax}%</b></p>
                         <p style={{ margin: "3px 0" }}>🏬 Seller: <b style={{ marginLeft: "5px" }}>{product.seller?.name || "N/A"}</b></p>
-                        {/* ✅ Show expiry from variant level */}
-                        {/* {activeVariant.expiryDate && (
-                          <p style={{ margin: "3px 0" }}>📅 Expiry: <b style={{ marginLeft: "5px" }}>{formatExpiryDate(activeVariant.expiryDate)}</b></p>
-                        )} */}
                       </div>
 
                       {/* ADD TO CART */}

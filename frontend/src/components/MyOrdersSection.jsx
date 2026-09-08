@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const API = process.env.REACT_APP_API_URL;
 
@@ -18,6 +20,12 @@ const MyOrdersSection = () => {
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [tracking, setTracking] = useState({});
   const [trackingLoading, setTrackingLoading] = useState(null);
+
+  // ✅ Review modal state
+  const [reviewModal, setReviewModal] = useState(null); // { orderId, productId, productName }
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
 
   const user = localStorage.getItem("user")
     ? JSON.parse(localStorage.getItem("user"))
@@ -55,7 +63,6 @@ const MyOrdersSection = () => {
     setExpandedOrder(mongoId);
     setTrackingLoading(mongoId);
     try {
-      // try orderId string first, then MongoDB _id
       const trackId = orderId || mongoId;
       const res = await axios.get(`${API}/api/order/track/${trackId}`);
       if (res.data.success) {
@@ -65,6 +72,45 @@ const MyOrdersSection = () => {
       console.error("Failed to fetch tracking:", err);
     } finally {
       setTrackingLoading(null);
+    }
+  };
+
+  // ✅ Review modal handlers
+  const openReviewModal = (orderId, productId, productName) => {
+    setReviewModal({ orderId, productId, productName });
+    setReviewRating(0);
+    setReviewComment("");
+  };
+
+  const closeReviewModal = () => setReviewModal(null);
+
+  const handleSubmitReview = async () => {
+    if (!reviewRating) {
+      toast.error("Please select a star rating");
+      return;
+    }
+    setReviewSubmitting(true);
+    try {
+      const res = await axios.post(
+        `${API}/api/review/add`,
+        {
+          orderId: reviewModal.orderId,
+          productId: reviewModal.productId,
+          rating: reviewRating,
+          comment: reviewComment,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data.success) {
+        toast.success("Thanks for rating! ⭐");
+        closeReviewModal();
+      } else {
+        toast.error(res.data.message || "Failed to submit rating");
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Something went wrong");
+    } finally {
+      setReviewSubmitting(false);
     }
   };
 
@@ -177,20 +223,40 @@ const MyOrdersSection = () => {
                   {order.products?.map((p, i) => (
                     <div key={i} style={{
                       display: "flex", gap: "10px",
-                      alignItems: "center", marginBottom: "8px",
+                      alignItems: "center", marginBottom: "8px", justifyContent: "space-between",
                     }}>
-                      <span style={{
-                        width: "28px", height: "28px", borderRadius: "50%",
-                        background: "#e8f5e9", display: "flex",
-                        alignItems: "center", justifyContent: "center",
-                        fontSize: "14px", flexShrink: 0,
-                      }}>🛍️</span>
-                      <span style={{ fontSize: "14px", color: "#333" }}>
-                        {p.name} × {p.quantity}
-                        <span style={{ color: "#1B5E20", fontWeight: "600", marginLeft: "8px" }}>
-                          ₹{p.price}
+                      <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                        <span style={{
+                          width: "28px", height: "28px", borderRadius: "50%",
+                          background: "#e8f5e9", display: "flex",
+                          alignItems: "center", justifyContent: "center",
+                          fontSize: "14px", flexShrink: 0,
+                        }}>🛍️</span>
+                        <span style={{ fontSize: "14px", color: "#333" }}>
+                          {p.name} × {p.quantity}
+                          <span style={{ color: "#1B5E20", fontWeight: "600", marginLeft: "8px" }}>
+                            ₹{p.price}
+                          </span>
                         </span>
-                      </span>
+                      </div>
+                      {order.deliveryStatus === "Delivered" && p.id && (
+                        <button
+                          onClick={() => openReviewModal(order._id, p.id, p.name)}
+                          style={{
+                            background: "none",
+                            border: "1px solid #F2A623",
+                            color: "#B8790A",
+                            borderRadius: "16px",
+                            padding: "4px 12px",
+                            fontSize: "12px",
+                            fontWeight: "600",
+                            cursor: "pointer",
+                            flexShrink: 0,
+                          }}
+                        >
+                          ⭐ Rate this product
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -303,6 +369,69 @@ const MyOrdersSection = () => {
           </div>
         )}
       </div>
+
+      {/* ✅ Rate this product modal */}
+      {reviewModal && (
+        <div
+          style={{
+            position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
+            background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center",
+            justifyContent: "center", zIndex: 9999,
+          }}
+        >
+          <div style={{ background: "#fff", borderRadius: "14px", padding: "24px", width: "360px" }}>
+            <h5 style={{ margin: "0 0 4px" }}>Rate this product</h5>
+            <p style={{ fontSize: "13px", color: "#888", margin: "0 0 16px" }}>{reviewModal.productName}</p>
+
+            <div style={{ display: "flex", gap: "6px", marginBottom: "16px" }}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <span
+                  key={star}
+                  onClick={() => setReviewRating(star)}
+                  style={{
+                    fontSize: "28px",
+                    cursor: "pointer",
+                    color: star <= reviewRating ? "#F2A623" : "#ddd",
+                  }}
+                >
+                  ★
+                </span>
+              ))}
+            </div>
+
+            <textarea
+              placeholder="Share a few words about this product (optional)"
+              rows={3}
+              value={reviewComment}
+              onChange={(e) => setReviewComment(e.target.value)}
+              style={{ width: "100%", borderRadius: "8px", border: "1px solid #ddd", padding: "8px", marginBottom: "16px", boxSizing: "border-box" }}
+            />
+
+            <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+              <button
+                onClick={closeReviewModal}
+                style={{ padding: "8px 16px", borderRadius: "8px", border: "1px solid #ddd", background: "#fff", cursor: "pointer" }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitReview}
+                disabled={reviewSubmitting}
+                style={{
+                  padding: "8px 16px", borderRadius: "8px", border: "none",
+                  background: "#1B5E20", color: "#fff", fontWeight: "600",
+                  cursor: reviewSubmitting ? "not-allowed" : "pointer",
+                  opacity: reviewSubmitting ? 0.7 : 1,
+                }}
+              >
+                {reviewSubmitting ? "Submitting..." : "Submit"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ToastContainer position="top-right" autoClose={2000} />
     </section>
   );
 };

@@ -1,7 +1,13 @@
 import jwt from 'jsonwebtoken';
 
 const authUser = (req, res, next) => {
-  const { token } = req.cookies;
+  // Customer login returns the token as JSON (stored in localStorage), not a
+  // cookie — so check the Authorization header first, falling back to the
+  // cookie for any flow that does use one.
+  const bearerToken = req.headers.authorization?.startsWith("Bearer ")
+    ? req.headers.authorization.split(" ")[1]
+    : null;
+  const token = bearerToken || req.cookies.token;
 
   if (!token) {
     return res.json({ success: false, message: 'Not Authorized token' });

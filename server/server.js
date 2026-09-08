@@ -7,6 +7,7 @@ import dotenv from "dotenv";
 import axios from "axios";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+import reviewRouter from "./routes/reviewRoutes.js";
 
 // ================= CONFIG =================
 
@@ -415,10 +416,10 @@ app.get(
               Number(item.quantity) ||
               1;
 
-            if (
-              prod.stock <
-              purchaseQty
-            ) {
+              if (
+                              prod.stock >
+                              purchaseQty
+                             ) {
 
               throw new Error(
                 `${prod.name} out of stock`
@@ -1110,6 +1111,11 @@ app.use(
 app.use(
   "/api/invoices",
   invoiceRouter
+);
+
+app.use(
+  "/api/review",
+  reviewRouter
 );
 
 // =====================================================
