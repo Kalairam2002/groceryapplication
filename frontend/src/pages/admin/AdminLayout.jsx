@@ -13,6 +13,7 @@ import {
   Tag,
   Grid,
   Bell,
+  Star,
 } from "lucide-react";
 
 const AdminLayout = ({ children }) => {
@@ -39,6 +40,7 @@ const AdminLayout = ({ children }) => {
     { name: "Product List",     href: "/adminProductList",icon: <ShoppingCart size={18} /> },
     { name: "Order List",       href: "/adminOrderList",  icon: <ShoppingCart size={18} /> },
     { name: "Seller List",      href: "/sellerList",      icon: <User size={18} /> },
+    { name: "Reviews",          href: "/adminReviews",    icon: <Star size={18} /> },
     { name: "Contact List",     href: "/contactList",     icon: <Settings size={18} /> },
     { name: "Delivery Boy List",href: "/deliveryBoyList", icon: <User size={18} /> },
   ];

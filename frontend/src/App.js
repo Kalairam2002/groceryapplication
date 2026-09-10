@@ -73,7 +73,9 @@ import AIChatbot from "./components/AIChatbot";
 import AdminAddProduct from "./pages/admin/AdminAddProduct";
 import AdminEditProduct from "./pages/admin/AdminEditProduct";
 import AdminAddSeller from "./pages/admin/AdminAddSeller";
-
+import AdminReviews from "./pages/admin/AdminReviews";
+import SellerReviews from "./pages/seller/SellerReviews";
+import PendingRatingsPrompt from "./components/PendingRatingsPrompt";
 
 function App() {
   return (
@@ -133,6 +135,7 @@ function App() {
         <Route exact path="/seller/expired" element={<SellerProtectedRoute><ExpiredVariantsTable /></SellerProtectedRoute>} />
         <Route path="/return/:orderId" element={<ReturnPage />} />
         <Route path="/seller/returns" element={<SellerProtectedRoute><SellerReturns /></SellerProtectedRoute>} />
+        <Route path="/seller/reviews" element={<SellerReviews />} />
 
         
         {/* Admin Routes */}
@@ -154,6 +157,7 @@ function App() {
         <Route exact path='/adminAddProduct' element={<AdminProtectedRoute><AdminAddProduct /></AdminProtectedRoute>} />
         <Route path="/admin/edit-product/:id" element={<AdminEditProduct />} />
         <Route path="/admin/add-seller" element={<AdminAddSeller />} />
+        <Route path="/adminReviews" element={<AdminReviews />} />
 
         {/* Delivery*/}
        <Route path="/delivery/login" element={<DeliveryAuth />} />
@@ -165,6 +169,9 @@ function App() {
 
       {/* AI Chatbot */}
       <AIChatbot />
+
+      {/* Post-login prompt for delivered-but-unrated products */}
+      <PendingRatingsPrompt />
       
     </BrowserRouter>
   );

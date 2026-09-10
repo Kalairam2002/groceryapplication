@@ -3,7 +3,8 @@ import axios from "axios";
 import { useEffect, useRef, useState } from "react";
 import {
   LayoutDashboard, PlusCircle, List, Barcode,
-  Package, LogOut, User, ShoppingBag, FileText, Bell,
+  Package, LogOut, User, ShoppingBag, FileText, Bell, Star,
+
 } from "lucide-react";
 import "./SellerLayout.css";
 import { RotateCcw } from "lucide-react";
@@ -27,6 +28,7 @@ const SellerLayout = ({ children }) => {
     { name: "Product List",      href: "/SellerProductList",      icon: <List size={18} /> },
     { name: "Barcode List",      href: "/barcodeScanner",         icon: <Barcode size={18} /> },
     { name: "Seller Orders",     href: "/sellerOrder",            icon: <Package size={18} /> },
+    { name: "Reviews",           href: "/seller/reviews",         icon: <Star size={18} /> },
     { name: "Invoices",          href: "/seller/invoices",        icon: <FileText size={18} /> },
     { name: "Billing",           href: "/seller/billing",         icon: <LayoutDashboard size={18} /> },
     { name: "Edit Profile",      href: "/seller/edit-profile",    icon: <User size={18} /> },
