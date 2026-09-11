@@ -86,13 +86,32 @@ export const verifyPayment = async (req, res) => {
         const qty = Number(item.quantity) || Number(item.cartQty) || 1;
         console.log("Item qty fields:", { cartQty: item.cartQty, quantity: item.quantity, qty });
 
-        //  Check stock
-        if (variant.stock < qty) {
+        //  Check stock — real total is the sum of batch stock, not the
+        //  legacy flat field, which goes stale once batches are in use
+        const totalStock = variant.getTotalStock();
+        if (totalStock < qty) {
           throw new Error(`${prod.name} is out of stock`);
         }
 
-        // Deduct stock safely
-        variant.stock = Number(variant.stock) - qty;
+        //  Deduct FIFO — take from the earliest-expiring batch(es) first,
+        //  falling back to the legacy field for pre-migration documents
+        //  with no batches at all
+        if (variant.batches && variant.batches.length > 0) {
+          let remaining = qty;
+          const sortedBatches = [...variant.batches].sort((a, b) => {
+            if (!a.expiryDate) return 1;
+            if (!b.expiryDate) return -1;
+            return new Date(a.expiryDate) - new Date(b.expiryDate);
+          });
+          for (const batch of sortedBatches) {
+            if (remaining <= 0) break;
+            const take = Math.min(batch.stock, remaining);
+            batch.stock -= take;
+            remaining -= take;
+          }
+        } else {
+          variant.stock = Number(variant.stock) - qty;
+        }
         await prod.save();
 
         // Get seller ID safely — from product or from cart item
