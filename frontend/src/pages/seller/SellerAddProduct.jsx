@@ -63,8 +63,6 @@ const SellerAddProduct = () => {
   const [Subcategory, setSubcategory] = useState("");
   const [Brand, setBrand] = useState("");
   const [returnable, setReturnable] = useState(false);
-  
-  // const [expiryDate, setExpiryDate] = useState(""); // ✅ Expiry Date State
 
   const [variants, setVariants] = useState([
     {
@@ -87,13 +85,6 @@ const SellerAddProduct = () => {
   const [barcode, setBarcode] = useState("");
   const [isPending, setIsPending] = useState(false);
   const [subcategories, setSubcategories] = useState([]);
-
-  // ---- Variant-selector feature (the "-- No Variants Found --" dropdown) ----
-  // Commented out: not needed. Product is added without a selected
-  // "variant" record; variantdata is submitted as "".
-  // const [variantsListdata, setVariantsListdata] = useState([]);
-  // const [variantId, setVariantId] = useState("");
-
 
   // Fetch Categories
   const { data: categoryData, isLoading: categoryLoading } = useQuery({
@@ -131,7 +122,6 @@ const SellerAddProduct = () => {
     setVariants((prev) =>
       prev.map((v) => ({ ...v, unit: firstUnit }))
     );
-    
   };
 
   const handleVariantChange = (index, field, value) => {
@@ -140,9 +130,6 @@ const SellerAddProduct = () => {
     setVariants(updated);
   };
 
-  // ---- Batch handling — a variant can hold multiple stock batches, each
-  // with its own quantity and expiry date, so restocking never overwrites
-  // an existing batch's real expiry.
   const handleBatchChange = (variantIndex, batchIndex, field, value) => {
     const updated = [...variants];
     updated[variantIndex].batches[batchIndex][field] = value;
@@ -163,7 +150,6 @@ const SellerAddProduct = () => {
     updated[variantIndex].batches = updated[variantIndex].batches.filter(
       (_, i) => i !== batchIndex
     );
-    // A variant should always have at least one batch row in the form.
     if (updated[variantIndex].batches.length === 0) {
       updated[variantIndex].batches = [{ stock: "", expiryDate: "" }];
     }
@@ -235,7 +221,6 @@ const SellerAddProduct = () => {
     setVariants(newVariants);
   };
 
-  // Fetch Subcategories based on Category
   useEffect(() => {
     if (!Category) {
       setSubcategories([]);
@@ -251,43 +236,13 @@ const SellerAddProduct = () => {
       .catch((err) => console.error("Error fetching subcategories:", err));
   }, [Category]);
 
-  // ---- Variant-selector feature (continued) ----
-  // Fetch Variants based on Subcategory — commented out along with the
-  // dropdown below; not needed.
-  // useEffect(() => {
-  //   if (!Subcategory) {
-  //     setVariantsListdata([]);
-  //     return;
-  //   }
-  //   axios
-  //     .get(`${process.env.REACT_APP_API_URL}/api/variant/bySubCategory/${Subcategory}`)
-  //     .then((res) => {
-  //       console.log("Variant API response:", res.data);
-  //       if (res.data.success && Array.isArray(res.data.variants)) {
-  //         setVariantsListdata(res.data.variants);
-  //       } else if (Array.isArray(res.data)) {
-  //         setVariantsListdata(res.data);
-  //       } else {
-  //         setVariantsListdata([]);
-  //       }
-  //     })
-  //     .catch((err) => {
-  //       console.error("Error fetching variants:", err);
-  //       setVariantsListdata([]);
-  //     });
-  // }, [Subcategory]);
-
-  // Generate Barcode
   const generateBarcode = () => "BC" + Date.now() + Math.floor(1000 + Math.random() * 9000);
 
-  // Check if current category is clothing
   const isClothingCategory = categoryData
     ?.find((c) => c._id === Category)
     ?.name?.toLowerCase()
     .includes("clothing");
 
-  // ✅ Category-driven expiry flag — reads the real `requiresExpiry` field
-  // set on the Category document, instead of guessing from the name.
   const isGroceryOrFreshCategory = categoryData
     ?.find((c) => c._id === Category)
     ?.requiresExpiry === true;
@@ -295,7 +250,6 @@ const SellerAddProduct = () => {
   const handleSubmit = async (e) => {
   e.preventDefault();
 
-  // ✅ Required-field checks — this is the disclaimer above, enforced
   const missing = [];
   if (files.filter(Boolean).length === 0) missing.push("at least one product image");
   if (!Category) missing.push("a category");
@@ -318,7 +272,6 @@ const SellerAddProduct = () => {
   setIsPending(true);
 
   try {
-    // ✅ Validate expiryDate for Grocery/Fresh category — every batch needs one
     if (isGroceryOrFreshCategory) {
       const missingExpiry = variants.some((v) =>
         v.batches.some((b) => !b.expiryDate)
@@ -342,8 +295,6 @@ const SellerAddProduct = () => {
       brand: Brand,
       category: Category,
       subcategory: Subcategory,
-      // ✅ Clean variants — batches carry their own expiryDate; strip it for
-      // non-grocery/fresh categories where expiry doesn't apply.
       variants: variants.map((v) => ({
         ...v,
         batches: v.batches.map((b) => ({
@@ -351,8 +302,6 @@ const SellerAddProduct = () => {
           expiryDate: isGroceryOrFreshCategory ? b.expiryDate : null,
         })),
       })),
-      // Variant-selector feature commented out (see state/useEffect/dropdown
-      // above) — submitted as empty since no variant record is selected.
       variantdata: "",
       barcode: finalBarcode,
       returnable,
@@ -360,7 +309,7 @@ const SellerAddProduct = () => {
 
     const formData = new FormData();
     formData.append("productData", JSON.stringify(productData));
-    formData.append("variants", JSON.stringify(productData.variants)); // ✅ use cleaned variants
+    formData.append("variants", JSON.stringify(productData.variants));
     files.forEach((file) => formData.append("images", file));
 
     const res = await axios.post(
@@ -396,7 +345,7 @@ const SellerAddProduct = () => {
         },
       ]);
     }
-    setReturnable(false); // ✅ Reset returnable on success
+    setReturnable(false);
   } catch (error) {
     console.error("Error adding product:", error.message);
   } finally {
@@ -434,7 +383,6 @@ const SellerAddProduct = () => {
 
             {/* LEFT SIDE: Product Details */}
             <div style={{ flex: 1, minWidth: "320px", background: "#fff", border: "1px solid #E4E7F0", borderRadius: "14px", padding: "1.5rem" }}>
-              {/* Upload Images */}
               <div className="form-group">
                 <label>Product Images</label>
                 <div className="image-upload-container">
@@ -465,7 +413,6 @@ const SellerAddProduct = () => {
                 </div>
               </div>
 
-              {/* Product Name + Brand */}
               <div className="form-row">
                 <input
                   type="text"
@@ -491,7 +438,6 @@ const SellerAddProduct = () => {
                 </select>
               </div>
 
-              {/* Category + Subcategory */}
               <div className="form-row mt-2">
                 <select
                   className="form-select"
@@ -524,32 +470,6 @@ const SellerAddProduct = () => {
                 </select>
               </div>
 
-              {/*
-                Variant-selector dropdown — commented out (not needed).
-
-              <div className="form-group mt-2">
-                <select
-                  className="form-select"
-                  value={variantId}
-                  onChange={(e) => setVariantId(e.target.value)}
-                  required
-                  disabled={variantsListdata.length === 0}
-                >
-                  <option value="">
-                    {variantsListdata.length === 0
-                      ? "-- No Variants Found --"
-                      : "-- Select Variant --"}
-                  </option>
-                  {variantsListdata.map((v) => (
-                    <option key={v._id} value={v._id}>
-                      {v.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              */}
-
-              {/* Description */}
               <textarea
                 className="form-textarea mt-2"
                 rows={4}
@@ -558,23 +478,6 @@ const SellerAddProduct = () => {
                 onChange={(e) => setDescription(e.target.value)}
                 required
               />
-
-              {/* ✅ Expiry Date — only shown for Grocery / Fresh categories */}
-              {/* {isGroceryOrFreshCategory && (
-                <div className="form-group mt-2">
-                  <label style={{ fontSize: "13px", fontWeight: "600", marginBottom: "5px", display: "block" }}>
-                    Expiry Date
-                  </label>
-                  <input
-                    type="date"
-                    className="form-input"
-                    value={expiryDate}
-                    min={new Date().toISOString().split("T")[0]}
-                    onChange={(e) => setExpiryDate(e.target.value)}
-                    required
-                  />
-                </div>
-              )} */}
             </div>
 
             {/* RIGHT SIDE: Pricing Options */}
@@ -583,7 +486,6 @@ const SellerAddProduct = () => {
                 Multiple Pricing Options
               </div>
 
-              {/* Size Type dropdown — only for Clothing and Garments */}
               {isClothingCategory && (
                 <div style={{ marginBottom: "8px" }}>
                   <select
@@ -607,7 +509,6 @@ const SellerAddProduct = () => {
                 </div>
               )}
 
-              {/* Auto-Fill Sizes button — for ALL categories */}
               {Category && (
                 <button
                   type="button"
@@ -631,7 +532,6 @@ const SellerAddProduct = () => {
 
               {variants.map((v, index) => (
                 <div key={index} className="variant-card">
-                  {/* Size badge */}
                   {v.sizeLabel && (
                     <div
                       style={{
@@ -715,26 +615,12 @@ const SellerAddProduct = () => {
                       }
                     />
                   </div>
-                  <div className="variant-row">
-                    <select
-                      className="variant-input"
-                      value={v.stockUnit}
-                      onChange={(e) =>
-                        handleVariantChange(index, "stockUnit", e.target.value)
-                      }
-                      style={{ width: "100%" }}
-                    >
-                      {getUnitOptions(Category).map((u) => (
-                        <option key={u} value={u}>
-                          {u}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
 
-                  {/* Batches — each batch is its own delivery/lot with its
-                      own stock count and (for grocery/fresh) its own expiry
-                      date, so restocking never overwrites an older batch. */}
+                  {/* Batches — unit dropdown is now attached to each batch
+                      stock input instead of a separate row above, so the
+                      unit reads as part of the batch entry. Unit still lives
+                      on the variant (stockUnit), so changing it on any
+                      batch row updates the same shared value. */}
                   <div style={{ marginTop: "6px" }}>
                     <label style={{ fontSize: "12px", fontWeight: "600", color: "#555", display: "block", marginBottom: "4px" }}>
                       Batches
@@ -753,16 +639,55 @@ const SellerAddProduct = () => {
                         }}
                       >
                         <div style={{ flex: 1 }}>
-                          <input
-                            className="variant-input"
-                            placeholder={`Batch ${batchIndex + 1} stock`}
-                            type="number"
-                            value={batch.stock}
-                            onChange={(e) =>
-                              handleBatchChange(index, batchIndex, "stock", e.target.value)
-                            }
-                            style={{ width: "100%" }}
-                          />
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "stretch",
+                              border: "1px solid #ddd",
+                              borderRadius: "8px",
+                              overflow: "hidden",
+                            }}
+                          >
+                            <input
+                              placeholder={`Batch ${batchIndex + 1} stock`}
+                              type="number"
+                              value={batch.stock}
+                              onChange={(e) =>
+                                handleBatchChange(index, batchIndex, "stock", e.target.value)
+                              }
+                              style={{
+                                flex: 1,
+                                border: "none",
+                                padding: "9px 10px",
+                                fontSize: "13px",
+                                outline: "none",
+                                minWidth: 0,
+                              }}
+                            />
+                            <select
+                              value={v.stockUnit}
+                              onChange={(e) =>
+                                handleVariantChange(index, "stockUnit", e.target.value)
+                              }
+                              style={{
+                                border: "none",
+                                borderLeft: "1px solid #ddd",
+                                background: "#f0f0fa",
+                                padding: "0 8px",
+                                fontSize: "12.5px",
+                                fontWeight: 600,
+                                color: "#1E2233",
+                                outline: "none",
+                                flexShrink: 0,
+                              }}
+                            >
+                              {getUnitOptions(Category).map((u) => (
+                                <option key={u} value={u}>
+                                  {u}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                         </div>
                         {isGroceryOrFreshCategory && (
                           <div style={{ flex: 1 }}>
@@ -827,7 +752,6 @@ const SellerAddProduct = () => {
                 + Add Another Variant
               </button>
 
-              {/* Barcode Options */}
               <div className="form-group mt-2">
                 <label>Barcode Option</label>
                 <div className="form-row">
@@ -871,18 +795,6 @@ const SellerAddProduct = () => {
                 </div>
               )}
 
-              {/* Returnable Option */}
-              {/* <div className="form-group mt-2">
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={returnable}
-                    onChange={(e) => setReturnable(e.target.checked)}
-                  />
-                  Returnable
-                </label>
-              </div> */}
-
               <div
   onClick={() => setReturnable(!returnable)}
   style={{
@@ -894,7 +806,6 @@ const SellerAddProduct = () => {
     transition: "all 0.2s", marginTop: "8px",
   }}
 >
-  {/* Left — icon + text */}
   <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
     <div style={{
       width: "36px", height: "36px", borderRadius: "50%",
@@ -923,7 +834,6 @@ const SellerAddProduct = () => {
     </div>
   </div>
 
-  {/* Right — toggle switch */}
   <div style={{
     width: "40px", height: "22px", borderRadius: "11px",
     background: returnable ? "#22c55e" : "#d1d5db",
@@ -939,8 +849,6 @@ const SellerAddProduct = () => {
   </div>
 </div>
 
-
-              {/* Add Product Button */}
               <div style={{ marginTop: "20px" }}>
                 <button
                   type="submit"

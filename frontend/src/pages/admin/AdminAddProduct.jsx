@@ -346,10 +346,10 @@ const AdminAddProduct = () => {
                     required
                     disabled={sellerLoading}
                   >
-                   <option value="">{sellerLoading ? "Loading sellers..." : "-- Select Seller --"}</option>
-                  {sellerData?.map((s) => (
-                    <option key={s._id} value={s._id}>{s.email ? `${s.name} (${s.email})` : s.name}</option>
-                  ))}
+                    <option value="">{sellerLoading ? "Loading sellers..." : "-- Select Seller --"}</option>
+                    {sellerData?.map((s) => (
+                      <option key={s._id} value={s._id}>{s.email ? `${s.name} (${s.email})` : s.name}</option>
+                    ))}
                   </select>
                 </div>
 
@@ -389,11 +389,6 @@ const AdminAddProduct = () => {
                       <input className="admin-variant-input" placeholder="Tax %" type="number" value={v.tax}
                         onChange={(e) => handleVariantChange(index, "tax", e.target.value)} />
                     </div>
-                    <div className="admin-variant-row">
-                      <select className="admin-variant-input" value={v.stockUnit} onChange={(e) => handleVariantChange(index, "stockUnit", e.target.value)} style={{ width: "100%" }}>
-                        {getUnitOptions(Category).map((u) => (<option key={u} value={u}>{u}</option>))}
-                      </select>
-                    </div>
 
                     <div style={{ marginTop: "6px" }}>
                       <label style={{ fontSize: "12px", fontWeight: "600", color: "#555", display: "block", marginBottom: "4px" }}>
@@ -405,14 +400,49 @@ const AdminAddProduct = () => {
                           style={{ display: "flex", gap: "8px", alignItems: "flex-end", marginBottom: "6px", background: "#f9fafb", padding: "8px", borderRadius: "8px" }}
                         >
                           <div style={{ flex: 1 }}>
-                            <input
-                              className="admin-variant-input"
-                              placeholder={`Batch ${batchIndex + 1} stock`}
-                              type="number"
-                              value={batch.stock}
-                              onChange={(e) => handleBatchChange(index, batchIndex, "stock", e.target.value)}
-                              style={{ width: "100%" }}
-                            />
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "stretch",
+                                border: "1px solid #ddd",
+                                borderRadius: "8px",
+                                overflow: "hidden",
+                              }}
+                            >
+                              <input
+                                placeholder={`Batch ${batchIndex + 1} stock`}
+                                type="number"
+                                value={batch.stock}
+                                onChange={(e) => handleBatchChange(index, batchIndex, "stock", e.target.value)}
+                                style={{
+                                  flex: 1,
+                                  border: "none",
+                                  padding: "9px 10px",
+                                  fontSize: "13px",
+                                  outline: "none",
+                                  minWidth: 0,
+                                }}
+                              />
+                              <select
+                                value={v.stockUnit}
+                                onChange={(e) => handleVariantChange(index, "stockUnit", e.target.value)}
+                                style={{
+                                  border: "none",
+                                  borderLeft: "1px solid #ddd",
+                                  background: "#f0f2ec",
+                                  padding: "0 8px",
+                                  fontSize: "12.5px",
+                                  fontWeight: 600,
+                                  color: "#1C2620",
+                                  outline: "none",
+                                  flexShrink: 0,
+                                }}
+                              >
+                                {getUnitOptions(Category).map((u) => (
+                                  <option key={u} value={u}>{u}</option>
+                                ))}
+                              </select>
+                            </div>
                           </div>
                           {isGroceryOrFreshCategory && (
                             <div style={{ flex: 1 }}>

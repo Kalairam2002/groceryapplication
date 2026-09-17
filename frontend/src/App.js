@@ -76,6 +76,7 @@ import AdminAddSeller from "./pages/admin/AdminAddSeller";
 import AdminReviews from "./pages/admin/AdminReviews";
 import SellerReviews from "./pages/seller/SellerReviews";
 import PendingRatingsPrompt from "./components/PendingRatingsPrompt";
+import AdminExpiredVariantsTable from "./pages/admin/AdminExpiredVariantsTable";
 
 function App() {
   return (
@@ -158,6 +159,7 @@ function App() {
         <Route path="/admin/edit-product/:id" element={<AdminEditProduct />} />
         <Route path="/admin/add-seller" element={<AdminAddSeller />} />
         <Route path="/adminReviews" element={<AdminReviews />} />
+        <Route path="/admin/expired-variants" element={<AdminExpiredVariantsTable />} />
 
         {/* Delivery*/}
        <Route path="/delivery/login" element={<DeliveryAuth />} />
