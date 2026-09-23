@@ -129,6 +129,23 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
    return () => window.removeEventListener("storage", updateCartCount);
  }, []);
 
+ // update wishlist count — mirrors the cart count pattern above, reading
+ // the same "wishlist" localStorage key that ProductListOne.jsx,
+ // ProductPage.jsx and WishListSection.jsx all read/write.
+ const [wishlistCount, setWishlistCount] = useState(0);
+
+ useEffect(() => {
+   const updateWishlistCount = () => {
+     const wishlist = JSON.parse(localStorage.getItem("wishlist")) || [];
+     setWishlistCount(wishlist.length);
+   };
+
+   updateWishlistCount();
+
+   window.addEventListener("storage", updateWishlistCount);
+   return () => window.removeEventListener("storage", updateWishlistCount);
+ }, []);
+
 
   //category header 
 
@@ -808,7 +825,7 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                     <Link to='/myorders' className='flex-align gap-4 item-hover'>
                       <span className='text-2xl text-gray-700 d-flex position-relative me-6 mt-6 item-hover__text'>
                       <b>
-                          <i className='ph ph-heart text-white' />
+                          <i className='ph ph-package text-white' />
                         <span className='w-16 h-16 flex-center rounded-circle bg-main-600 text-white text-xs position-absolute top-n6 end-n4'>
                            {orders.length} {/* Total orders */}
                         </span>
@@ -822,6 +839,24 @@ const HeaderOne = ({ onRecommendedClick, onBrandsClick }) => {
                     <>
                     </>
                   )}
+                {/* Wishlist — restored as its own link. This used to share the
+                    heart icon with "My Orders" above (which had been
+                    repointed to /myorders at some point), so the wishlist
+                    itself had no working nav entry. This is separate and
+                    reads the live wishlist count from localStorage. */}
+                <Link to='/wishlist' className='flex-align gap-4 item-hover'>
+                  <span className='text-2xl text-gray-700 d-flex position-relative me-6 mt-6 item-hover__text'>
+                    <b>
+                      <i className='ph ph-heart text-white' />
+                      <span className='w-16 h-16 flex-center rounded-circle bg-main-600 text-white text-xs position-absolute top-n6 end-n4'>
+                        {wishlistCount}
+                      </span>
+                    </b>
+                  </span>
+                  <span className='text-md text-white item-hover__text-white d-lg-flex'>
+                    <b>Wishlist</b>
+                  </span>
+                </Link>
                 <Link to='/cart' className='flex-align gap-4 item-hover'>
                   <span className='text-2xl text-gray-700 d-flex position-relative me-6 mt-6 item-hover__text'>
                     <b>                    <i className='ph ph-shopping-cart-simple text-white text-2xl'  />

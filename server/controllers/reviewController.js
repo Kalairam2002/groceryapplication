@@ -182,3 +182,22 @@ export const getPendingReviews = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+
+// Public — reviews for one product, for the storefront product page.
+// Populates the reviewer's name so the frontend doesn't have to make a
+// second request per review.
+export const getReviewsByProduct = async (req, res) => {
+  try {
+    const { productId } = req.params;
+
+    const reviews = await Review.find({ product: productId })
+      .populate("userId", "name username")
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, reviews });
+  } catch (error) {
+    console.error("getReviewsByProduct error:", error.message);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};

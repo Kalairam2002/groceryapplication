@@ -5,6 +5,7 @@ import {
   getReviewsBySeller,
   getAllReviews,
   deleteReview,
+  getReviewsByProduct,
   getPendingReviews,
 } from "../controllers/reviewController.js";
 import authUser from "../middlewares/authUser.js";
@@ -19,5 +20,8 @@ reviewRouter.get("/pending", authUser, getPendingReviews);
 reviewRouter.get("/seller", authSeller, getReviewsBySeller);
 reviewRouter.get("/all", authAdmin, getAllReviews);
 reviewRouter.delete("/:id", authAdmin, deleteReview);
+reviewRouter.post("/summary", getRatingSummary); // public — used to render stars on cards
+reviewRouter.get("/product/:productId", getReviewsByProduct);
+
 
 export default reviewRouter;

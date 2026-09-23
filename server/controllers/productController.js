@@ -381,7 +381,9 @@ export const updateProduct = async (req, res) => {
 
 export const getSingleProduct = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id).populate("brand", "name");
+    const product = await Product.findById(req.params.id)
+      .populate("brand", "name")
+      .populate("seller", "name");
 
     if (!product) {
       return res.json({ success: false, message: "Product not found" });

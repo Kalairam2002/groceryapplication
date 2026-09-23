@@ -302,8 +302,11 @@ const ProductListOne = () => {
                         {isWishlisted(product._id) ? "❤️" : "🤍"}
                       </div>
 
-                      {/* IMAGE */}
-                      <div style={{ height: "160px", position: "relative" }}>
+                      {/* IMAGE — now links to the product detail page */}
+                      <Link
+                        to={`/product/${product._id}`}
+                        style={{ height: "160px", position: "relative", display: "block", textDecoration: "none" }}
+                      >
                         {stockBadge && (
                           <span
                             style={{
@@ -332,7 +335,7 @@ const ProductListOne = () => {
                             opacity: stockBadge?.tone === "danger" ? 0.55 : 1,
                           }}
                         />
-                      </div>
+                      </Link>
 
                       {/* BRAND */}
                       {product.brand?.name && (
@@ -341,8 +344,15 @@ const ProductListOne = () => {
                         </p>
                       )}
 
-                      {/* NAME */}
-                      <h4 style={{ fontSize: "16px", margin: "0 0 10px" }}>{product.name}</h4>
+                      {/* NAME — now links to the product detail page */}
+                      <h4 style={{ fontSize: "16px", margin: "0 0 10px" }}>
+                        <Link
+                          to={`/product/${product._id}`}
+                          style={{ color: "inherit", textDecoration: "none" }}
+                        >
+                          {product.name}
+                        </Link>
+                      </h4>
 
                       {/* RATING */}
                       {productRating && productRating.count > 0 && (

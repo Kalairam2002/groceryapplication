@@ -77,6 +77,8 @@ import AdminReviews from "./pages/admin/AdminReviews";
 import SellerReviews from "./pages/seller/SellerReviews";
 import PendingRatingsPrompt from "./components/PendingRatingsPrompt";
 import AdminExpiredVariantsTable from "./pages/admin/AdminExpiredVariantsTable";
+import ProductPage from "./pages/Productpage";
+
 
 function App() {
   return (
@@ -118,6 +120,7 @@ function App() {
         <Route exact path='/Productlist/:id' element={<Shoppagesix />} />
         <Route exact path='/searchpage' element={<Searchpage />} />
         <Route exact path='/myorders' element={<MyOrdersPage />} />
+        <Route path="/product/:id" element={<ProductPage />} />
 
         {/* Seller Routes */}
         <Route exact path='/seller' element={<SellerAuthForm />} />
