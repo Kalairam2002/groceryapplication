@@ -74,7 +74,12 @@ useEffect(() => {
     (p) => p._id === selectedProduct
   );
 
-  if (foundProduct && foundProduct.returnable === true) {
+  // ✅ FIXED — was inverted: `returnable: true` means the product IS
+  // eligible for return (per Product.js schema default: false), so this
+  // should block when it's false, not when it's true. The old version
+  // was blocking returnable products and letting non-returnable ones
+  // through silently.
+  if (foundProduct && foundProduct.returnable === false) {
     alert("❌ This product is not eligible for return");
 
     // reset selection
@@ -130,6 +135,28 @@ useEffect(() => {
     <div style={styles.center}><h3>Loading order details...</h3></div>
   );
 
+  // ✅ NEW — delivery guard. A return can't logically be requested before
+  // the item has actually arrived, regardless of whether the button that
+  // links here was hidden or not (this is the safety net in case someone
+  // reaches this URL directly, e.g. a bookmarked link or a stale tab).
+  if (order && order.deliveryStatus !== "Delivered") {
+    return (
+      <div style={styles.center}>
+        <div style={styles.successBox}>
+          <h2>📦 Not delivered yet</h2>
+          <p>
+            This order hasn't been marked as delivered yet. You can request a
+            return once it arrives.
+          </p>
+          <p style={{ color: "#888", fontSize: "13px" }}>
+            Current status: <b>{order.deliveryStatus || "Pending"}</b>
+          </p>
+          <button onClick={() => navigate("/")} style={styles.btn}>Go to Home</button>
+        </div>
+      </div>
+    );
+  }
+
   if (submitted) return (
     <div style={styles.center}>
       <div style={styles.successBox}>
@@ -148,7 +175,7 @@ useEffect(() => {
           Order ID: <b>{order?.razorpayOrderId || orderId}</b>
         </p>
         <p style={{ color: "#e74c3c", fontSize: "13px", marginBottom: "20px" }}>
-          ⚠️ Returns are only accepted within <b>24 hours</b> of purchase.
+          ⚠️ Returns are only accepted within <b>24 hours</b> of delivery.
         </p>
 
         {/* Product Selection */}

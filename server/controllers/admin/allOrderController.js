@@ -117,6 +117,7 @@ export const updateDeliveryStatus = async (req, res) => {
           const emailHTML = deliveryConfirmationTemplate({
             userName:         user.username,
             orderId:          order.orderId || order._id,
+            dbOrderId:        order._id,
             products:         order.products,
             total:            order.amount,
             deliveryAddress:  order.deliveryAddress,

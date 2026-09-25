@@ -16,19 +16,25 @@ const orderEmailTemplate = ({ userName, orderId, products, subtotal, tax, total,
     console.log("Generating email with order ID:", dbOrderId );
     console.log(orderId,"orderid data in email template");
 
-  // Return link — only shown if dbOrderId is provided
+  // ✅ CHANGED — this email fires at payment-success time, before the
+  // order has shipped, let alone arrived. An actionable "Return Product"
+  // button here was misleading customers into thinking a return was
+  // available immediately. Emails are static once sent, so this can't
+  // dynamically "wait" for delivery — instead it now just points them to
+  // My Orders, where the real return option only appears once eligible.
   const returnSection = dbOrderId
     ? `
       <div style="margin-top: 20px; padding: 15px; background: #fff8e1; border-left: 4px solid #f0ad4e; border-radius: 6px;">
-        <p style="margin: 0 0 8px 0;"><b>🔄 Need to return a product?</b></p>
+        <p style="margin: 0 0 8px 0;"><b>🔄 Need to return something later?</b></p>
         <p style="margin: 0 0 10px 0; color: #555; font-size: 14px;">
-          You can request a return within <b>24 hours</b> of placing your order.
+          Once your order is delivered, you'll be able to request a return within
+          <b>24 hours</b> of delivery from your Order History.
         </p>
-        <a 
-          href="${CLIENT_URL}/return/${dbOrderId}" 
+        <a
+          href="${CLIENT_URL}/myorders"
           style="
             display: inline-block;
-            background: #e74c3c;
+            background: #6b7280;
             color: white;
             padding: 10px 20px;
             border-radius: 6px;
@@ -37,7 +43,7 @@ const orderEmailTemplate = ({ userName, orderId, products, subtotal, tax, total,
             font-size: 14px;
           "
         >
-          Return Product
+          View My Orders
         </a>
       </div>
     `

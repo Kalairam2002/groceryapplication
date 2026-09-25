@@ -1,4 +1,5 @@
-const deliveryConfirmationTemplate = ({ userName, orderId, products, total, deliveryAddress, deliveryTimeSlot }) => {
+const deliveryConfirmationTemplate = ({ userName, orderId, dbOrderId, products, total, deliveryAddress, deliveryTimeSlot }) => {
+  const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:3000";
 
   const rows = products
     .map(
@@ -11,6 +12,37 @@ const deliveryConfirmationTemplate = ({ userName, orderId, products, total, deli
       `
     )
     .join("");
+
+  // ✅ NEW — this is the actual moment the 24-hour return window opens
+  // (submitReturn now checks deliveryStatus === "Delivered" and measures
+  // the window from here), so this is the right place for a live,
+  // actionable return link — unlike the payment-success email, which
+  // fires before the order has even shipped.
+  const returnSection = dbOrderId
+    ? `
+      <div style="margin-top: 20px; padding: 15px; background: #fff8e1; border-left: 4px solid #f0ad4e; border-radius: 6px;">
+        <p style="margin: 0 0 8px 0;"><b>🔄 Not happy with something?</b></p>
+        <p style="margin: 0 0 10px 0; color: #555; font-size: 14px;">
+          You can request a return within <b>24 hours</b> of this delivery.
+        </p>
+        <a
+          href="${CLIENT_URL}/return/${dbOrderId}"
+          style="
+            display: inline-block;
+            background: #e74c3c;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+          "
+        >
+          Return Product
+        </a>
+      </div>
+    `
+    : "";
 
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
@@ -51,6 +83,8 @@ const deliveryConfirmationTemplate = ({ userName, orderId, products, total, deli
         <div style="background: #e8f5e9; padding: 16px; border-radius: 8px; margin: 16px 0;">
           <p style="margin: 0; font-size: 16px;"><b>Total Paid: ₹${total}</b></p>
         </div>
+
+        ${returnSection}
 
         <p style="color: #555; font-size: 14px;">If you have any issues with your order, please contact our support team.</p>
         <p>Thank you for shopping with <b>maligaijaman</b> 🙏</p>

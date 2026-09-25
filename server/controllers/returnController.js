@@ -217,3 +217,81 @@ export const updateReturnStatus = async (req, res) => {
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+// ✅ Mark a return as refunded — seller manually transfers money to the
+// bank details already on file, then records the transaction reference
+// here. Only allowed once the return itself has been Approved; refunding
+// a Pending or Rejected return doesn't make sense.
+export const markReturnRefunded = async (req, res) => {
+  try {
+    const sellerId = req.seller._id;
+    const { returnId } = req.params;
+    const { refundTransactionRef } = req.body;
+
+    if (!refundTransactionRef || !refundTransactionRef.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Transaction reference is required",
+      });
+    }
+
+    const returnDoc = await Return.findOne({ _id: returnId, seller: sellerId });
+    if (!returnDoc) {
+      return res.status(404).json({ success: false, message: "Return not found" });
+    }
+
+    if (returnDoc.status !== "Approved") {
+      return res.status(400).json({
+        success: false,
+        message: "Only an approved return can be marked as refunded",
+      });
+    }
+
+    if (returnDoc.refundStatus === "Completed") {
+      return res.status(400).json({
+        success: false,
+        message: "This return has already been refunded",
+      });
+    }
+
+    // ✅ Pull the amount from the order's line item at refund time — not
+    // the live Product price, which can drift after the order was placed.
+    const order = await Order.findById(returnDoc.orderId);
+    const item = order?.products.find((i) => i.id.toString() === returnDoc.product.toString());
+    const refundAmount = item ? item.price * item.quantity : null;
+
+    returnDoc.refundStatus = "Completed";
+    returnDoc.refundAmount = refundAmount;
+    returnDoc.refundedAt = new Date();
+    returnDoc.refundTransactionRef = refundTransactionRef.trim();
+    returnDoc.refundedBy = sellerId;
+    await returnDoc.save();
+
+    // ── Send email to user (non-blocking) ────────────────────────────────
+    try {
+      const user = await User.findOne({ username: returnDoc.userId });
+      if (user) {
+        const firstName = user.firstName || user.username;
+        const html = `
+          <h2>Your refund has been processed ✅</h2>
+          <p>Hi <b>${firstName}</b>,</p>
+          <p>We've refunded <b>₹${refundAmount ?? ""}</b> for <b>${returnDoc.productName}</b>
+          to your registered bank account.</p>
+          <p>Transaction reference: <b>${returnDoc.refundTransactionRef}</b></p>
+          <p>It may take a few business days to reflect depending on your bank.</p>
+          <br/>
+          <p>Thank you for shopping with <b>maligaijaman</b> 🙏</p>
+        `;
+        await sendEmail(user.email, "Your refund has been processed", html);
+        console.log(`[markReturnRefunded] Email sent to ${user.email}`);
+      }
+    } catch (emailErr) {
+      console.error("[markReturnRefunded] Email failed (non-fatal):", emailErr.message);
+    }
+
+    return res.json({ success: true, message: "Return marked as refunded", return: returnDoc });
+  } catch (error) {
+    console.error("markReturnRefunded error:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};

@@ -80,6 +80,32 @@ const returnSchema = new mongoose.Schema(
       type: bankDetailsSchema,
       required: true,
     },
+
+    // ✅ Refund tracking — kept separate from `status` above, because
+    // "return approved" and "money actually sent" are two different
+    // real-world events that can happen days apart.
+    refundStatus: {
+      type: String,
+      enum: ["Not Initiated", "Processing", "Completed", "Failed"],
+      default: "Not Initiated",
+    },
+    refundAmount: {
+      type: Number,
+      default: null,
+    },
+    refundedAt: {
+      type: Date,
+      default: null,
+    },
+    refundTransactionRef: {
+      type: String,
+      default: "",
+    },
+    refundedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Seller",
+      default: null,
+    },
   },
   { timestamps: true }
 );

@@ -8,6 +8,12 @@ const SellerReturns = () => {
   const [returns, setReturns] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // ✅ Refund modal state
+  const [refundModalReturn, setRefundModalReturn] = useState(null); // the return object being refunded, or null
+  const [transactionRef, setTransactionRef] = useState("");
+  const [refundError, setRefundError] = useState("");
+  const [refundSubmitting, setRefundSubmitting] = useState(false);
+
   useEffect(() => {
     fetchReturns();
   }, []);
@@ -39,6 +45,55 @@ const SellerReturns = () => {
       }
     } catch (err) {
       console.error("Failed to update return:", err);
+    }
+  };
+
+  // ✅ Open the refund modal for a specific return
+  const openRefundModal = (returnDoc) => {
+    setRefundModalReturn(returnDoc);
+    setTransactionRef("");
+    setRefundError("");
+  };
+
+  const closeRefundModal = () => {
+    if (refundSubmitting) return; // don't allow closing mid-submit
+    setRefundModalReturn(null);
+    setTransactionRef("");
+    setRefundError("");
+  };
+
+  // ✅ Submit the refund — validates input, calls the new endpoint, updates the row in place
+  const handleSubmitRefund = async () => {
+    if (!transactionRef.trim()) {
+      setRefundError("Enter a transaction reference first");
+      return;
+    }
+
+    setRefundSubmitting(true);
+    setRefundError("");
+
+    try {
+      const { data } = await axios.put(
+        `${BASE_URL}/api/returns/seller/${refundModalReturn._id}/refund`,
+        { refundTransactionRef: transactionRef.trim() },
+        { withCredentials: true }
+      );
+
+      if (data.success) {
+        setReturns((prev) =>
+          prev.map((r) => (r._id === refundModalReturn._id ? data.return : r))
+        );
+        setRefundModalReturn(null);
+        setTransactionRef("");
+      } else {
+        setRefundError(data.message || "Failed to mark as refunded");
+      }
+    } catch (err) {
+      setRefundError(
+        err.response?.data?.message || "Failed to mark as refunded"
+      );
+    } finally {
+      setRefundSubmitting(false);
     }
   };
 
@@ -165,6 +220,10 @@ const SellerReturns = () => {
                         {r.status}
                       </span>
                     </td>
+
+                    {/* ✅ Action column — three states: Pending (approve/reject,
+                        unchanged), Approved + not yet refunded (new "Mark as
+                        refunded" button), Approved + refunded (badge, no buttons) */}
                     <td style={{ padding: "14px 16px" }}>
                       {r.status === "Pending" ? (
                         <div style={{ display: "flex", gap: "6px" }}>
@@ -191,6 +250,30 @@ const SellerReturns = () => {
                             ❌
                           </button>
                         </div>
+                      ) : r.status === "Approved" && r.refundStatus === "Completed" ? (
+                        <span
+                          title={r.refundedAt ? new Date(r.refundedAt).toLocaleString("en-IN") : ""}
+                          style={{
+                            background: "#f0fdf4", color: "#166534",
+                            border: "1px solid #bbf7d0", borderRadius: "6px",
+                            padding: "5px 12px", fontSize: "12px",
+                            fontWeight: "500", display: "inline-block",
+                          }}
+                        >
+                          Refunded · {r.refundTransactionRef}
+                        </span>
+                      ) : r.status === "Approved" ? (
+                        <button
+                          onClick={() => openRefundModal(r)}
+                          style={{
+                            background: "#EEF1FA", color: "#3B4C8A",
+                            border: "1px solid #C7D0EA", borderRadius: "6px",
+                            padding: "5px 12px", fontSize: "12px",
+                            fontWeight: "500", cursor: "pointer",
+                          }}
+                        >
+                          Mark as refunded
+                        </button>
                       ) : (
                         <span style={{ color: "#aaa", fontSize: "13px" }}>—</span>
                       )}
@@ -202,6 +285,100 @@ const SellerReturns = () => {
           </div>
         )}
       </div>
+
+      {/* ✅ Refund modal — collects the transaction reference for the return
+          currently being refunded. Bank details are already on file, so
+          this is the only input needed. */}
+      {refundModalReturn && (
+        <div
+          style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            zIndex: 1000,
+          }}
+          onClick={closeRefundModal}
+        >
+          <div
+            style={{
+              background: "#fff", borderRadius: "14px", padding: "28px",
+              width: "420px", maxWidth: "90vw",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "17px", fontWeight: "600", marginBottom: "4px", color: "#1E2233" }}>
+              Mark as refunded
+            </h3>
+            <p style={{ fontSize: "13px", color: "#6B7280", marginBottom: "18px" }}>
+              {refundModalReturn.productName} · {refundModalReturn.userFirstName || refundModalReturn.userId}
+            </p>
+
+            <div style={{
+              background: "#EEF1FA", border: "1px solid #C7D0EA", borderRadius: "8px",
+              padding: "10px 12px", fontSize: "12px", lineHeight: "1.8", marginBottom: "18px",
+            }}>
+              <div style={{ color: "#374151" }}>
+                <span style={{ color: "#6b7280" }}>Name: </span>
+                <b>{refundModalReturn.bankDetails?.accountHolderName}</b>
+              </div>
+              <div style={{ color: "#374151" }}>
+                <span style={{ color: "#6b7280" }}>A/C: </span>
+                <b style={{ letterSpacing: "0.5px" }}>{refundModalReturn.bankDetails?.accountNumber}</b>
+              </div>
+              <div style={{ color: "#374151" }}>
+                <span style={{ color: "#6b7280" }}>IFSC: </span>
+                <b style={{ letterSpacing: "1px", color: "#3B4C8A" }}>{refundModalReturn.bankDetails?.ifscCode}</b>
+              </div>
+            </div>
+
+            <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "#374151", marginBottom: "6px" }}>
+              Transaction reference (UTR)
+            </label>
+            <input
+              type="text"
+              value={transactionRef}
+              onChange={(e) => {
+                setTransactionRef(e.target.value);
+                if (refundError) setRefundError("");
+              }}
+              placeholder="e.g. UTR2409231234567"
+              style={{
+                width: "100%", padding: "9px 12px", borderRadius: "8px",
+                border: refundError ? "1px solid #fca5a5" : "1px solid #d1d5db",
+                fontSize: "13px", marginBottom: "6px", boxSizing: "border-box",
+              }}
+            />
+            {refundError && (
+              <p style={{ color: "#991b1b", fontSize: "12px", marginBottom: "10px" }}>{refundError}</p>
+            )}
+
+            <div style={{ display: "flex", gap: "8px", marginTop: "18px" }}>
+              <button
+                onClick={closeRefundModal}
+                disabled={refundSubmitting}
+                style={{
+                  flex: 1, padding: "9px 0", borderRadius: "8px",
+                  border: "1px solid #d1d5db", background: "#fff",
+                  fontSize: "13px", fontWeight: "500", cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitRefund}
+                disabled={refundSubmitting}
+                style={{
+                  flex: 1, padding: "9px 0", borderRadius: "8px",
+                  border: "1px solid #166534", background: refundSubmitting ? "#86efac" : "#16a34a",
+                  color: "#fff", fontSize: "13px", fontWeight: "600",
+                  cursor: refundSubmitting ? "default" : "pointer",
+                }}
+              >
+                {refundSubmitting ? "Saving..." : "Confirm refund"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </SellerLayout>
   );
 };
