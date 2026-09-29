@@ -3,9 +3,9 @@ import Seller from "../models/Seller.js";
 
 const authSeller = async (req, res, next) => {
   try {
-    // ✅ Get token from cookie or header (for flexibility)
+    // ✅ Get token from the seller cookie or header (for flexibility)
     const token =
-      req.cookies.token || req.headers.authorization?.split(" ")[1];
+      req.cookies.sellerToken || req.headers.authorization?.split(" ")[1];
 
     if (!token) {
       return res

@@ -5,6 +5,7 @@ import "./SellerDashboard.css";
 import { image } from "./image";
 import Barcode from "react-barcode";
 import { useQuery } from "@tanstack/react-query";
+import BulkProductUpload from "./BulkProductUpload"; 
 
 const unitMapping = {
   grocery: ["Gm", "Kg", "Ml", "Ltr", "Pcs"],
@@ -377,6 +378,8 @@ const SellerAddProduct = () => {
             </ul>
           </div>
         </div>
+
+        <BulkProductUpload categoryData={categoryData} brandData={brandData} /> 
 
         <form onSubmit={handleSubmit}>
           <div style={{ display: "flex", gap: "20px", alignItems: "flex-start", flexWrap: "wrap" }}>

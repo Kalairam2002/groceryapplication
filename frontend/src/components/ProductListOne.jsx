@@ -76,7 +76,7 @@ const ProductListOne = () => {
     const groups = {};
 
     variants.forEach((v) => {
-      const key = `${v.quantity}_${v.unit}`;
+      const key = `${v.quantity}_${v.unit}_${v.sizeLabel || ""}`;
       if (!groups[key]) groups[key] = [];
       groups[key].push(v);
     });

@@ -1,43 +1,50 @@
 import jwt from "jsonwebtoken";
 import Seller from "../models/Seller.js";
 
-// Accepts either a seller token or an admin token.
-// - If the token belongs to a real Seller document, behaves exactly like
-//   authSeller: sets req.sellerId / req.seller and proceeds.
-// - Otherwise, treats it as an admin request: sets req.isAdmin = true and
-//   req.adminId = decoded.id, and leaves it to the controller to read the
-//   seller to attach the product to from the submitted form data
-//   (productData.seller) instead of from the auth token.
+// Accepts either a seller session or an admin session.
+// - Seller sessions live in the "sellerToken" cookie.
+// - Admin sessions live in the "token" cookie.
+// - The admin add-product form sends productData.seller (the seller to assign
+//   the product to); the seller form never does. That decides which session
+//   is used, so a leftover admin login can no longer hijack a seller request.
 const authSellerOrAdmin = async (req, res, next) => {
   try {
-    const token =
-      req.cookies.token || req.headers.authorization?.split(" ")[1];
-
-    if (!token) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Not Authorized: No Token" });
+    let adminForm = false;
+    try {
+      adminForm = !!JSON.parse(req.body?.productData || "{}").seller;
+    } catch (e) {
+      // productData missing or not JSON: treat as a seller request
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const bearer = req.headers.authorization?.split(" ")[1];
+    const sellerToken = req.cookies.sellerToken || bearer;
+    const adminToken = req.cookies.token || bearer;
 
-    if (!decoded.id) {
-      return res.status(401).json({ success: false, message: "Invalid Token" });
+    // Seller request
+    if (sellerToken && !adminForm) {
+      const decoded = jwt.verify(sellerToken, process.env.JWT_SECRET);
+      const seller = decoded.id && (await Seller.findById(decoded.id));
+      if (seller) {
+        req.sellerId = seller._id;
+        req.seller = seller;
+        req.isAdmin = false;
+        return next();
+      }
     }
 
-    const seller = await Seller.findById(decoded.id);
-
-    if (seller) {
-      req.sellerId = seller._id;
-      req.seller = seller;
-      req.isAdmin = false;
-      return next();
+    // Admin request
+    if (adminToken) {
+      const decoded = jwt.verify(adminToken, process.env.JWT_SECRET);
+      if (decoded.id && !(await Seller.findById(decoded.id))) {
+        req.isAdmin = true;
+        req.adminId = decoded.id;
+        return next();
+      }
     }
 
-    // Not a seller token — treat as an admin token.
-    req.isAdmin = true;
-    req.adminId = decoded.id;
-    next();
+    return res
+      .status(401)
+      .json({ success: false, message: "Not Authorized: No Token" });
   } catch (error) {
     console.log("Auth Error:", error.message);
     res

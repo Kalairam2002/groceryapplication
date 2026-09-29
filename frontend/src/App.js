@@ -78,6 +78,7 @@ import SellerReviews from "./pages/seller/SellerReviews";
 import PendingRatingsPrompt from "./components/PendingRatingsPrompt";
 import AdminExpiredVariantsTable from "./pages/admin/AdminExpiredVariantsTable";
 import ProductPage from "./pages/Productpage";
+import BulkProductUpload from "./pages/seller/BulkProductUpload";
 
 
 function App() {
@@ -140,6 +141,7 @@ function App() {
         <Route path="/return/:orderId" element={<ReturnPage />} />
         <Route path="/seller/returns" element={<SellerProtectedRoute><SellerReturns /></SellerProtectedRoute>} />
         <Route path="/seller/reviews" element={<SellerReviews />} />
+        <Route path="/selleraddproduct" element={<SellerAddProduct />} />
 
         
         {/* Admin Routes */}

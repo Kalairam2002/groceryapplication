@@ -76,7 +76,7 @@ export const verifyOtp = async (req, res) => {
 
     const token = jwt.sign({ id: seller._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
-    res.cookie("token", token, {
+    res.cookie("sellerToken", token, {
       httpOnly: true,
       secure: true,
       sameSite: "none",
@@ -146,7 +146,7 @@ export const sellerLogin = async (req, res) => {
 
     const token = jwt.sign({ id: seller._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
-    res.cookie("token", token, {
+    res.cookie("sellerToken", token, {
       httpOnly: true,
       secure: true,
       sameSite: "none",
@@ -196,7 +196,7 @@ export const verifyLoginOtp = async (req, res) => {
 
     const token = jwt.sign({ id: seller._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
-    res.cookie("token", token, {
+    res.cookie("sellerToken", token, {
       httpOnly: true,
       secure: true,
       sameSite: "none",
@@ -246,10 +246,10 @@ export const sendOtp = async (req, res) => {
 // Seller Logout
 export const sellerLogout = async (req, res) => {
   try {
-    res.clearCookie("token", {
+    res.clearCookie("sellerToken", {
       httpOnly: true,
-      secure: false,
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+      secure: true,
+      sameSite: "none",
     });
     return res.status(200).json({ success: true, message: "Logged Out" });
   } catch (error) {
