@@ -3,7 +3,7 @@ import axios from "axios";
 import ExcelJS from "exceljs/dist/exceljs.min.js";
 
 /**
- * Bulk product upload from an Excel sheet — now also reads images that are
+ * Bulk product upload from an Excel sheet — also reads images that are
  * embedded/pasted directly into a cell (not just text/URL columns).
  *
  * Sheet columns (header names must match):
@@ -18,7 +18,15 @@ import ExcelJS from "exceljs/dist/exceljs.min.js";
  * several rows. Those rows become ONE product with one pricing option per
  * row. Only the FIRST of those rows needs the image — later rows reuse it.
  *
- * Requires: npm install exceljs   (xlsx package is no longer needed here)
+ * Category / subcategory / brand rules (sellers cannot create these):
+ *   - Names from the sheet are matched to existing ones, ignoring capital
+ *     letters and extra spaces.
+ *   - If a name is not found, the card shows a warning (with a
+ *     "Did you mean ...?" hint) and the seller picks an existing one from the
+ *     dropdown. Nothing is ever created automatically.
+ *   - If the right one does not exist, the seller asks the admin to add it.
+ *
+ * Requires: npm install exceljs
  *
  * Usage inside SellerAddProduct.jsx:
  *   <BulkProductUpload categoryData={categoryData} brandData={brandData} />
@@ -27,18 +35,48 @@ import ExcelJS from "exceljs/dist/exceljs.min.js";
 const generateBarcode = () =>
   "BC" + Date.now() + Math.floor(1000 + Math.random() * 9000);
 
+// lower-case, trim, and collapse repeated spaces so "Fresh  Fruits " === "fresh fruits"
+const normalize = (t) => String(t ?? "").trim().replace(/\s+/g, " ").toLowerCase();
+
 const matchByName = (list, text) => {
   if (!text || !list) return null;
-  const clean = String(text).trim().toLowerCase();
-  const found = list.find((item) => item.name?.trim().toLowerCase() === clean);
+  const clean = normalize(text);
+  const found = list.find((item) => normalize(item.name) === clean);
   return found ? found._id : null;
 };
+
+// "Did you mean ...?" hint, e.g. sheet says "Snack" and the database has "Snacks"
+const suggestByName = (list, text) => {
+  const clean = normalize(text);
+  if (!clean || !list) return null;
+  const found = list.find((item) => {
+    const n = normalize(item.name);
+    return n && (n.includes(clean) || clean.includes(n));
+  });
+  return found ? found.name : null;
+};
+
+// Same unit lists as the manual Add Product form
+const unitOptionsFor = (categoryData, categoryId) => {
+  const name = categoryData?.find((c) => c._id === categoryId)?.name?.toLowerCase() || "";
+  if (name.includes("grocery")) return ["Gm", "Kg", "Ml", "Ltr", "Pcs"];
+  if (name.includes("electrical")) return ["Kg", "Ml", "Litre", "Inch", "Watt"];
+  if (name.includes("clothing")) return ["Size", "Waist", "Shoe-Size", "Pcs"];
+  return ["Pcs", "Kg", "Ml", "Ltr", "GM"];
+};
+
+// "gm" / "KG" from the sheet -> the exact spelling used in the dropdown
+const canonicalUnit = (list, val) =>
+  list.find((o) => o.toLowerCase() === String(val || "").trim().toLowerCase()) ||
+  String(val || "").trim() ||
+  list[0];
 
 const emptyVariant = () => ({
   price: "",
   offerPrice: "",
   quantity: "",
   unit: "Pcs",
+  stockUnit: "", // empty = same as unit
   tax: "",
   sizeLabel: "",
   stock: "",
@@ -127,6 +165,43 @@ const BulkProductUpload = ({ categoryData = [], brandData = [] }) => {
     return m;
   };
 
+  // Warnings for names in the sheet that don't exist in the system.
+  // Worked out fresh on every render, so a warning disappears as soon as
+  // the seller picks a valid option from the dropdown.
+  const getNotes = (row) => {
+    const notes = [];
+    const hint = (list, text) => {
+      const s = suggestByName(list, text);
+      return s ? ` Did you mean "${s}"?` : "";
+    };
+
+    if (!row.categoryId && row.sheetCategory)
+      notes.push(
+        `Category "${row.sheetCategory}" is not in the system.${hint(
+          categoryData,
+          row.sheetCategory
+        )} Pick one below, or ask the admin to add it.`
+      );
+
+    if (!row.brandId && row.sheetBrand)
+      notes.push(
+        `Brand "${row.sheetBrand}" is not in the system.${hint(
+          brandData,
+          row.sheetBrand
+        )} Pick one below, or ask the admin to add it.`
+      );
+
+    if (row.categoryId && !row.subcategoryId && row.subcategoryName)
+      notes.push(
+        `Subcategory "${row.subcategoryName}" is not in the system.${hint(
+          subcategoriesByCategory[row.categoryId],
+          row.subcategoryName
+        )} Pick one below, or ask the admin to add it.`
+      );
+
+    return notes;
+  };
+
   // ---------- 1. Parse the sheet: text via ExcelJS cell values, images via embedded media ----------
   const handleFileSelect = async (e) => {
     const file = e.target.files[0];
@@ -179,15 +254,14 @@ const BulkProductUpload = ({ categoryData = [], brandData = [] }) => {
         const rBrand = getCell(rowNumber, "brand");
         const rCategory = getCell(rowNumber, "category");
         const rSubcategory = getCell(rowNumber, "subcategory");
-        const key = [name, rCategory, rBrand]
-          .map((v) => String(v).trim().toLowerCase())
-          .join("|");
+        const key = [name, rCategory, rBrand].map(normalize).join("|");
 
         const variant = {
           price: getCell(rowNumber, "price"),
           offerPrice: getCell(rowNumber, "offerPrice"),
           quantity: getCell(rowNumber, "quantity"),
           unit: getCell(rowNumber, "unit") || "Pcs",
+          stockUnit: "", // empty = same as unit; seller can change it in the stock dropdown
           tax: getCell(rowNumber, "tax"),
           sizeLabel: getCell(rowNumber, "sizeLabel"),
           stock: getCell(rowNumber, "stock") || getCell(rowNumber, "quantity"),
@@ -203,19 +277,16 @@ const BulkProductUpload = ({ categoryData = [], brandData = [] }) => {
           groups.set(key, {
             name,
             description: String(getCell(rowNumber, "description") || ""),
-            sheetBrand: rBrand,
+            sheetBrand: String(rBrand || ""),
+            sheetCategory: String(rCategory || ""),
             brandId,
             categoryId,
-            subcategoryName: rSubcategory,
+            subcategoryName: String(rSubcategory || ""),
             subcategoryId: null,
             returnable: String(getCell(rowNumber, "returnable")).toUpperCase() === "TRUE",
             imageFile: rowImage,
             barcode: sheetBarcode,
             variants: [variant],
-            notes: [
-              !categoryId ? `Category "${rCategory}" not found — please pick one` : "",
-              categoryId && !brandId ? `Brand "${rBrand}" not found — please pick one` : "",
-            ].filter(Boolean),
           });
         } else {
           const g = groups.get(key);
@@ -228,6 +299,7 @@ const BulkProductUpload = ({ categoryData = [], brandData = [] }) => {
       const parsed = [...groups.values()].map((p, i) => ({ ...p, _rowId: i }));
       setRows(parsed);
 
+      // Fetch subcategories for every category that was matched, then match subcategory names
       const uniqueCategoryIds = [...new Set(parsed.map((r) => r.categoryId).filter(Boolean))];
       const subMap = {};
       await Promise.all(
@@ -247,14 +319,9 @@ const BulkProductUpload = ({ categoryData = [], brandData = [] }) => {
       setRows((prev) =>
         prev.map((row) => {
           if (!row.categoryId) return row;
-          const subId = matchByName(subMap[row.categoryId] || [], row.subcategoryName);
           return {
             ...row,
-            subcategoryId: subId,
-            notes:
-              row.subcategoryName && !subId
-                ? [...row.notes, `Subcategory "${row.subcategoryName}" not found — please pick one`]
-                : row.notes,
+            subcategoryId: matchByName(subMap[row.categoryId] || [], row.subcategoryName),
           };
         })
       );
@@ -276,18 +343,31 @@ const BulkProductUpload = ({ categoryData = [], brandData = [] }) => {
     setRows((prev) =>
       prev.map((r) => (r._rowId === rowId ? { ...r, categoryId: catId, subcategoryId: null } : r))
     );
-    if (catId && !subcategoriesByCategory[catId]) {
+    if (!catId) return;
+
+    let subs = subcategoriesByCategory[catId];
+    if (!subs) {
       try {
         const res = await axios.get(
           `${process.env.REACT_APP_API_URL}/api/subcategory/byCategory/${catId}`
         );
         if (res.data.success) {
-          setSubcategoriesByCategory((prev) => ({ ...prev, [catId]: res.data.subCategories }));
+          subs = res.data.subCategories;
+          setSubcategoriesByCategory((prev) => ({ ...prev, [catId]: subs }));
         }
       } catch (err) {
         console.error("subcategory fetch failed for", catId, err.message);
       }
     }
+
+    // try the sheet's subcategory name again inside the newly chosen category
+    setRows((prev) =>
+      prev.map((r) =>
+        r._rowId === rowId && r.categoryId === catId && !r.subcategoryId
+          ? { ...r, subcategoryId: matchByName(subs || [], r.subcategoryName) }
+          : r
+      )
+    );
   };
 
   const updateVariant = (rowId, vIndex, field, value) => {
@@ -339,14 +419,15 @@ const BulkProductUpload = ({ categoryData = [], brandData = [] }) => {
     for (const row of rows) {
       try {
         const requiresExpiry = needsExpiry(row);
+        const unitOpts = unitOptionsFor(categoryData, row.categoryId);
 
         const variants = row.variants.map((v) => ({
           price: v.price,
           offerPrice: v.offerPrice,
           quantity: v.quantity,
-          unit: v.unit,
+          unit: canonicalUnit(unitOpts, v.unit),
           tax: v.tax,
-          stockUnit: v.unit,
+          stockUnit: canonicalUnit(unitOpts, v.stockUnit || v.unit),
           sizeLabel: v.sizeLabel || "",
           batches: [{ stock: Number(v.stock) || 0, expiryDate: requiresExpiry ? v.expiryDate : null }],
         }));
@@ -421,6 +502,10 @@ const BulkProductUpload = ({ categoryData = [], brandData = [] }) => {
         <p style={{ fontSize: 12, color: C.muted, margin: "2px 0" }}>
           For multiple pricing options, repeat the same name, brand and category on several rows.
         </p>
+        <p style={{ fontSize: 12, color: C.muted, margin: "2px 0" }}>
+          Category, subcategory and brand must already exist. If one is not found, you can pick the
+          right one on the next screen.
+        </p>
         <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>
           To attach a photo, paste/insert the picture into any cell on that product's row — it will
           be picked up automatically. Only .xlsx (not .csv or .xls) supports embedded images.
@@ -459,21 +544,26 @@ const BulkProductUpload = ({ categoryData = [], brandData = [] }) => {
 
       {rows.map((row, idx) => {
         const missing = getMissing(row);
+        const notes = getNotes(row);
         const ready = missing.length === 0;
         const withSize = showSize(row);
         const withExpiry = needsExpiry(row);
+
+        const unitOpts = unitOptionsFor(categoryData, row.categoryId);
 
         const cols = [
           { key: "price", label: "Price (₹)", type: "number" },
           { key: "offerPrice", label: "Offer price (₹)", type: "number" },
           { key: "quantity", label: "Quantity", type: "number" },
-          { key: "unit", label: "Unit", type: "text" },
+          { key: "unit", label: "Unit", type: "unit" },
           { key: "tax", label: "Tax %", type: "number" },
           ...(withSize ? [{ key: "sizeLabel", label: "Size", type: "text" }] : []),
-          { key: "stock", label: "Stock", type: "number" },
+          { key: "stock", label: "Stock", type: "stock" },
           ...(withExpiry ? [{ key: "expiryDate", label: "Expiry date", type: "date" }] : []),
         ];
-        const gridCols = `repeat(${cols.length}, minmax(90px, 1fr)) 30px`;
+        const gridCols =
+          cols.map((c) => (c.type === "stock" ? "minmax(170px, 1.6fr)" : "minmax(90px, 1fr)")).join(" ") +
+          " 30px";
 
         return (
           <div key={row._rowId} style={{ border: `1.5px solid ${ready ? "#BFE8CC" : C.border}`, borderRadius: 12, padding: 16, marginBottom: 16, background: "#fff" }}>
@@ -496,7 +586,7 @@ const BulkProductUpload = ({ categoryData = [], brandData = [] }) => {
             </div>
 
             {!ready && <div style={{ fontSize: 12, color: C.red, marginBottom: 12 }}>Still needed: {missing.join(", ")}</div>}
-            {row.notes.map((n, i) => (
+            {notes.map((n, i) => (
               <div key={i} style={{ fontSize: 12, color: C.amber, marginBottom: 6 }}>⚠ {n}</div>
             ))}
 
@@ -567,16 +657,49 @@ const BulkProductUpload = ({ categoryData = [], brandData = [] }) => {
                 Pricing options <span style={{ fontWeight: 400, color: C.muted }}>({row.variants.length})</span>
               </div>
               <div style={{ overflowX: "auto" }}>
-                <div style={{ minWidth: cols.length * 100 }}>
+                <div style={{ minWidth: cols.length * 100 + 80 }}>
                   <div style={{ display: "grid", gridTemplateColumns: gridCols, gap: 8, marginBottom: 4 }}>
                     {cols.map((c) => <span key={c.key} style={{ ...labelStyle, marginBottom: 0 }}>{c.label}</span>)}
                     <span />
                   </div>
                   {row.variants.map((v, vi) => (
                     <div key={vi} style={{ display: "grid", gridTemplateColumns: gridCols, gap: 8, marginBottom: 8, alignItems: "center" }}>
-                      {cols.map((c) => (
-                        <input key={c.key} type={c.type} style={inputStyle} value={v[c.key]} onChange={(e) => updateVariant(row._rowId, vi, c.key, e.target.value)} />
-                      ))}
+                      {cols.map((c) => {
+                        if (c.type === "unit") {
+                          const uVal = canonicalUnit(unitOpts, v.unit);
+                          const opts = unitOpts.includes(uVal) ? unitOpts : [uVal, ...unitOpts];
+                          return (
+                            <select key={c.key} style={inputStyle} value={uVal} onChange={(e) => updateVariant(row._rowId, vi, "unit", e.target.value)}>
+                              {opts.map((u) => <option key={u} value={u}>{u}</option>)}
+                            </select>
+                          );
+                        }
+                        if (c.type === "stock") {
+                          const sVal = canonicalUnit(unitOpts, v.stockUnit || v.unit);
+                          const opts = unitOpts.includes(sVal) ? unitOpts : [sVal, ...unitOpts];
+                          return (
+                            <div key={c.key} style={{ display: "flex", alignItems: "stretch", border: "1px solid #D7DAE5", borderRadius: 8, overflow: "hidden", background: "#fff", minWidth: 0 }}>
+                              <input
+                                type="number"
+                                value={v.stock}
+                                placeholder="Stock"
+                                onChange={(e) => updateVariant(row._rowId, vi, "stock", e.target.value)}
+                                style={{ flex: 1, minWidth: 0, border: "none", padding: "8px 10px", fontSize: 13, outline: "none", color: C.ink }}
+                              />
+                              <select
+                                value={sVal}
+                                onChange={(e) => updateVariant(row._rowId, vi, "stockUnit", e.target.value)}
+                                style={{ border: "none", borderLeft: "1px solid #D7DAE5", background: "#f0f0fa", padding: "0 6px", fontSize: 12.5, fontWeight: 600, color: C.ink, outline: "none", flexShrink: 0 }}
+                              >
+                                {opts.map((u) => <option key={u} value={u}>{u}</option>)}
+                              </select>
+                            </div>
+                          );
+                        }
+                        return (
+                          <input key={c.key} type={c.type} style={inputStyle} value={v[c.key]} onChange={(e) => updateVariant(row._rowId, vi, c.key, e.target.value)} />
+                        );
+                      })}
                       <button type="button" onClick={() => removeVariant(row._rowId, vi)} disabled={row.variants.length === 1} title="Remove this pricing option" style={{ border: "none", background: "none", color: row.variants.length === 1 ? "#ccc" : C.red, cursor: row.variants.length === 1 ? "default" : "pointer", fontSize: 16 }}>
                         ✕
                       </button>

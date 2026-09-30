@@ -28,7 +28,7 @@ const authSeller = async (req, res, next) => {
     req.sellerId = seller._id;
     req.seller = seller;
 
-    next();
+    next();``
   } catch (error) {
     console.log("Auth Error:", error.message);
     res
