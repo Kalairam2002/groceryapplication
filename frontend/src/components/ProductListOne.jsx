@@ -273,6 +273,44 @@ const ProductListOne = () => {
 
   if (loading) return <div className="text-center py-5"><h4>Loading products...</h4></div>;
 
+  // ✅ ONE CARD PER GROUP of linked variations.
+  // Products uploaded with a `variation` (e.g. rice: Single Boiled / Steam
+  // Sortex) are separate products that share a `variationGroup`. They show
+  // as a single card here; the customer picks the variation on the product
+  // page. Linking is per seller, so two sellers with the same product name
+  // never merge. Only variations that can be bought right now (in stock,
+  // not expired) count — if none can, the whole group is hidden, exactly
+  // like a single out-of-stock product is today. Products with no
+  // variationGroup are untouched.
+  const sellerKeyOf = (p) => (p.seller && p.seller._id) || p.seller || "";
+  const groupKeyOf = (p) => `${p.variationGroup}|${sellerKeyOf(p)}`;
+
+  const displayProducts = (() => {
+    const byGroup = {};
+    products.forEach((p) => {
+      if (!p.variationGroup) return;
+      const key = groupKeyOf(p);
+      if (!byGroup[key]) byGroup[key] = [];
+      byGroup[key].push(p);
+    });
+
+    const done = new Set();
+    const out = [];
+    products.forEach((p) => {
+      if (!p.variationGroup) {
+        out.push({ product: p, otherCount: 0 });
+        return;
+      }
+      const key = groupKeyOf(p);
+      if (done.has(key)) return;
+      done.add(key);
+      const buyable = byGroup[key].filter((m) => getGroupedVariants(m.variants).length > 0);
+      if (buyable.length === 0) return;
+      out.push({ product: buyable[0], otherCount: buyable.length - 1 });
+    });
+    return out;
+  })();
+
   return (
     <div style={{ padding: "50px 0", background: "#f8f9fa" }}>
       <div style={{ width: "100%", margin: "0 auto" }}>
@@ -281,9 +319,9 @@ const ProductListOne = () => {
             <h2 style={{ margin: 0, fontSize: "24px", color: "#333", fontWeight: "700" }}>Shop by Products</h2>
           </div>
 
-          {products.length > 0 ? (
+          {displayProducts.length > 0 ? (
             <Slider {...settings}>
-              {products.map((product) => {
+              {displayProducts.map(({ product, otherCount }) => {
                 const validVariants = getGroupedVariants(product.variants);
 
                 if (validVariants.length === 0) return null;
@@ -292,6 +330,10 @@ const ProductListOne = () => {
                 const activeVariant = selectedVariant[product._id] || defaultVariant;
                 const stockBadge = getStockBadge(activeVariant);
                 const productRating = ratings[product._id];
+
+                // For a variation product the card shows the shared base name;
+                // the chosen variation is shown on its own line below it.
+                const cardName = product.variationName ? product.baseName || product.name : product.name;
 
                 return (
                   <div key={product._id} style={{ padding: "10px" }}>
@@ -327,7 +369,7 @@ const ProductListOne = () => {
                         )}
                         <img
                           src={product.image?.[0]}
-                          alt={product.name}
+                          alt={cardName}
                           style={{
                             width: "100%",
                             height: "100%",
@@ -350,9 +392,20 @@ const ProductListOne = () => {
                           to={`/product/${product._id}`}
                           style={{ color: "inherit", textDecoration: "none" }}
                         >
-                          {product.name}
+                          {cardName}
                         </Link>
                       </h4>
+
+                      {/* VARIATION — which one this card shows, and how many more exist */}
+                      {product.variationName && (
+                        <p style={{ fontSize: "12px", color: "#777", margin: "-4px 0 8px" }}>
+                          {product.variationType || "Option"}:{" "}
+                          <b style={{ color: "#444" }}>{product.variationName}</b>
+                          {otherCount > 0 && (
+                            <span style={{ color: "#28a745", fontWeight: 600 }}> +{otherCount} more</span>
+                          )}
+                        </p>
+                      )}
 
                       {/* RATING */}
                       {productRating && productRating.count > 0 && (

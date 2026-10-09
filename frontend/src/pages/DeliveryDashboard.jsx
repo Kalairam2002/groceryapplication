@@ -9,9 +9,12 @@ const DeliveryDashboard = () => {
   const [activeTab, setActiveTab] = useState("assigned");
   const [assignedOrders, setAssignedOrders] = useState([]);
   const [historyOrders, setHistoryOrders] = useState([]);
+  const [returnPickups, setReturnPickups] = useState([]); // ✅ returns assigned to this delivery boy
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
+  const [updatingReturnId, setUpdatingReturnId] = useState(null);
+  const [returnError, setReturnError] = useState("");
 
   const deliveryBoy = JSON.parse(localStorage.getItem("deliveryBoy"));
   const token = localStorage.getItem("deliveryToken");
@@ -51,6 +54,21 @@ const DeliveryDashboard = () => {
     } finally {
       setLoading(false);
     }
+
+    // ✅ Return pickups — fetched on their own so a problem here
+    // never stops the normal orders from loading.
+    fetchReturnPickups();
+  };
+
+  const fetchReturnPickups = async () => {
+    try {
+      const { data } = await axios.get(`${API}/api/delivery/my-returns`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (data.success) setReturnPickups(data.returns);
+    } catch (err) {
+      console.error("Error fetching return pickups:", err);
+    }
   };
 
   const handleStatusUpdate = async (orderId, newStatus) => {
@@ -66,6 +84,25 @@ const DeliveryDashboard = () => {
       console.error("Status update failed:", err);
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  // ✅ Move a return pickup forward: Assigned -> Picked Up -> Delivered to Seller
+  const handleReturnStatusUpdate = async (returnId, newStatus) => {
+    setUpdatingReturnId(returnId);
+    setReturnError("");
+    try {
+      await axios.put(
+        `${API}/api/delivery/returns/${returnId}/status`,
+        { pickupStatus: newStatus },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      await fetchReturnPickups();
+    } catch (err) {
+      console.error("Return status update failed:", err);
+      setReturnError(err.response?.data?.message || "Could not update. Please try again.");
+    } finally {
+      setUpdatingReturnId(null);
     }
   };
 
@@ -96,6 +133,21 @@ const DeliveryDashboard = () => {
     "Delivered": { bg: "#d4edda", color: "#155724" },
   };
 
+  // ✅ Return pickup steps
+  const nextReturnStatus = {
+    "Assigned": "Picked Up",
+    "Picked Up": "Delivered to Seller",
+  };
+
+  const returnStatusColor = {
+    "Assigned": { bg: "#fff3cd", color: "#856404" },
+    "Picked Up": { bg: "#cce5ff", color: "#004085" },
+    "Delivered to Seller": { bg: "#d4edda", color: "#155724" },
+  };
+
+  const activeReturnPickups = returnPickups.filter((r) => r.pickupStatus !== "Delivered to Seller");
+  const completedReturnPickups = returnPickups.filter((r) => r.pickupStatus === "Delivered to Seller");
+
   return (
     <div style={styles.page}>
 
@@ -110,6 +162,7 @@ const DeliveryDashboard = () => {
         <ul style={styles.navList}>
           {[
             { key: "assigned", label: "📦 Assigned Orders" },
+            { key: "returns",  label: "↩️ Return Pickups", count: activeReturnPickups.length },
             { key: "history",  label: "📋 Delivery History" },
             { key: "profile",  label: "👤 Profile" },
           ].map((item) => (
@@ -122,6 +175,7 @@ const DeliveryDashboard = () => {
               }}
             >
               {item.label}
+              {item.count > 0 && <span style={styles.navCount}>{item.count}</span>}
             </li>
           ))}
         </ul>
@@ -139,6 +193,10 @@ const DeliveryDashboard = () => {
           <div style={styles.statCard}>
             <h4>{assignedOrders.length}</h4>
             <p>Active Deliveries</p>
+          </div>
+          <div style={styles.statCard}>
+            <h4>{activeReturnPickups.length}</h4>
+            <p>Return Pickups</p>
           </div>
           <div style={styles.statCard}>
             <h4>{historyOrders.length}</h4>
@@ -217,6 +275,107 @@ const DeliveryDashboard = () => {
                       )}
                     </div>
                   ))
+                )}
+              </div>
+            )}
+
+            {/* ===== RETURN PICKUPS ===== */}
+            {activeTab === "returns" && (
+              <div>
+                <h3 style={styles.sectionTitle}>↩️ Return Pickups</h3>
+                <p style={styles.hint}>
+                  Collect the product from the customer, then hand it back to the seller.
+                </p>
+
+                {returnError && <p style={styles.errorText}>{returnError}</p>}
+
+                {activeReturnPickups.length === 0 ? (
+                  <p style={styles.empty}>No return pickups assigned to you right now.</p>
+                ) : (
+                  activeReturnPickups.map((ret) => (
+                    <div key={ret._id} style={styles.orderCard}>
+                      <div style={styles.orderHeader}>
+                        <span style={styles.orderId}>Return: {ret.productName}</span>
+                        <span style={{
+                          ...styles.statusBadge,
+                          background: returnStatusColor[ret.pickupStatus]?.bg,
+                          color: returnStatusColor[ret.pickupStatus]?.color,
+                        }}>
+                          {ret.pickupStatus}
+                        </span>
+                      </div>
+
+                      <div style={styles.section}>
+                        <b>❓ Reason:</b> {ret.reason}
+                        {ret.description && (
+                          <span style={{ color: "#777" }}> — {ret.description}</span>
+                        )}
+                      </div>
+
+                      {/* Step 1: where to collect from */}
+                      <div style={styles.section}>
+                        <b>📍 1. Collect from customer:</b>
+                        <p style={styles.addressText}>
+                          {ret.orderId?.deliveryAddress?.fullName}<br />
+                          📞 {ret.orderId?.deliveryAddress?.phone}<br />
+                          🏠 {ret.orderId?.deliveryAddress?.address}
+                          {ret.orderId?.deliveryAddress?.landmark && `, Near ${ret.orderId.deliveryAddress.landmark}`}<br />
+                          🏙️ {ret.orderId?.deliveryAddress?.city}, {ret.orderId?.deliveryAddress?.state} — {ret.orderId?.deliveryAddress?.pincode}
+                        </p>
+                      </div>
+
+                      {/* Step 2: where to drop it */}
+                      <div style={styles.section}>
+                        <b>🏪 2. Hand over to seller:</b>
+                        <p style={styles.addressText}>
+                          {ret.seller?.name}<br />
+                          📞 {ret.seller?.phonenumber}<br />
+                          🏠 {ret.seller?.address || "Address not available — contact the seller"}
+                        </p>
+                      </div>
+
+                      {nextReturnStatus[ret.pickupStatus] && (
+                        <button
+                          onClick={() => handleReturnStatusUpdate(ret._id, nextReturnStatus[ret.pickupStatus])}
+                          disabled={updatingReturnId === ret._id}
+                          style={styles.updateBtn}
+                        >
+                          {updatingReturnId === ret._id
+                            ? "Updating..."
+                            : `Mark as "${nextReturnStatus[ret.pickupStatus]}"`}
+                        </button>
+                      )}
+                    </div>
+                  ))
+                )}
+
+                {/* Completed pickups */}
+                {completedReturnPickups.length > 0 && (
+                  <>
+                    <h4 style={styles.subTitle}>Completed return pickups</h4>
+                    {completedReturnPickups.map((ret) => (
+                      <div key={ret._id} style={{ ...styles.orderCard, opacity: 0.85 }}>
+                        <div style={styles.orderHeader}>
+                          <span style={styles.orderId}>Return: {ret.productName}</span>
+                          <span style={{ ...styles.statusBadge, background: "#d4edda", color: "#155724" }}>
+                            ✅ Delivered to Seller
+                          </span>
+                        </div>
+                        <div style={styles.section}>
+                          <b>📍 Collected from:</b> {ret.orderId?.deliveryAddress?.fullName},{" "}
+                          {ret.orderId?.deliveryAddress?.city}
+                        </div>
+                        <div style={styles.section}>
+                          <b>🏪 Handed to:</b> {ret.seller?.name}
+                        </div>
+                        {ret.pickupDeliveredAt && (
+                          <div style={{ fontSize: "12px", color: "#888", marginTop: "8px" }}>
+                            🕒 {new Date(ret.pickupDeliveredAt).toLocaleString()}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </>
                 )}
               </div>
             )}
@@ -341,11 +500,22 @@ const styles = {
     fontSize: "14px",
     fontWeight: "500",
     transition: "all 0.2s",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   navItemActive: {
     background: "rgba(255,255,255,0.15)",
     color: "#fff",
     borderLeft: "3px solid #fff",
+  },
+  navCount: {
+    background: "#fff",
+    color: "#1B5E20",
+    borderRadius: "10px",
+    padding: "1px 8px",
+    fontSize: "11px",
+    fontWeight: "700",
   },
   logoutBtn: {
     margin: "16px",
@@ -381,6 +551,22 @@ const styles = {
     fontWeight: "700",
     color: "#1B5E20",
     marginBottom: "16px",
+  },
+  subTitle: {
+    fontSize: "15px",
+    fontWeight: "700",
+    color: "#555",
+    margin: "28px 0 12px",
+  },
+  hint: {
+    color: "#666",
+    fontSize: "13px",
+    margin: "-8px 0 16px",
+  },
+  errorText: {
+    color: "#c62828",
+    fontSize: "13px",
+    margin: "0 0 12px",
   },
   empty: {
     color: "#888",

@@ -1,6 +1,8 @@
+import mongoose from "mongoose";
 import Return from "../models/Return.js";
 import Order from "../models/orderModel.js";
 import User from "../models/User.js";
+import DeliveryBoy from "../models/DeliveryModel.js";
 import sendEmail from "../utils/sendEmail.js";
 
 // export const submitReturn = async (req, res) => {
@@ -140,13 +142,16 @@ export const getSellerReturns = async (req, res) => {
     const returns = await Return.find({ seller: sellerId })
       .populate("product", "name image")
       .populate("orderId", "razorpayOrderId amount createdAt")
-      .sort({ createdAt: -1 });
+      .populate("pickupDeliveryBoy", "name phone") // ✅ so the seller sees who was assigned
+      .sort({ createdAt: -1 })
+      .lean(); // ✅ raw stored data: returns made before pickup tracking have NO pickupStatus,
+               // which the Returns page uses to skip the pickup step for them
 
     // Attach firstName to each return for display
     const returnsWithName = await Promise.all(
       returns.map(async (r) => {
         const user = await User.findOne({ username: r.userId }, "firstName");
-        return { ...r.toObject(), userFirstName: user?.firstName || r.userId };
+        return { ...r, userFirstName: user?.firstName || r.userId };
       })
     );
 
@@ -218,6 +223,126 @@ export const updateReturnStatus = async (req, res) => {
   }
 };
 
+// ✅ Delivery boys a seller can choose from when assigning a return pickup.
+// Only name + phone are sent — nothing else about the delivery boy is exposed.
+export const getDeliveryBoysForSeller = async (req, res) => {
+  try {
+    const deliveryBoys = await DeliveryBoy.find({
+      isVerified: true,
+      isApproved: true,
+      isActive: true,
+    })
+      .select("name phone")
+      .sort({ name: 1 });
+
+    return res.json({ success: true, deliveryBoys });
+  } catch (error) {
+    console.error("getDeliveryBoysForSeller error:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// ✅ Seller assigns a delivery boy to collect an approved return from the
+// customer. Can be changed until the delivery boy has actually picked it up.
+export const assignReturnPickup = async (req, res) => {
+  try {
+    const sellerId = req.seller._id;
+    const { returnId } = req.params;
+    const { deliveryBoyId } = req.body;
+
+    if (!deliveryBoyId || !mongoose.Types.ObjectId.isValid(deliveryBoyId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please select a delivery boy",
+      });
+    }
+
+    const returnDoc = await Return.findOne({ _id: returnId, seller: sellerId });
+    if (!returnDoc) {
+      return res.status(404).json({ success: false, message: "Return not found" });
+    }
+
+    if (returnDoc.status !== "Approved") {
+      return res.status(400).json({
+        success: false,
+        message: "Approve the return before assigning a delivery boy",
+      });
+    }
+
+    if (returnDoc.refundStatus === "Completed") {
+      return res.status(400).json({
+        success: false,
+        message: "This return has already been refunded",
+      });
+    }
+
+    const currentPickup = returnDoc.pickupStatus || "Not Assigned";
+    if (currentPickup === "Picked Up" || currentPickup === "Delivered to Seller") {
+      return res.status(400).json({
+        success: false,
+        message: "The product has already been picked up — the delivery boy can no longer be changed",
+      });
+    }
+
+    const deliveryBoy = await DeliveryBoy.findOne({
+      _id: deliveryBoyId,
+      isVerified: true,
+      isApproved: true,
+      isActive: true,
+    }).select("name phone");
+
+    if (!deliveryBoy) {
+      return res.status(404).json({
+        success: false,
+        message: "Delivery boy not found or not active",
+      });
+    }
+
+    returnDoc.pickupDeliveryBoy = deliveryBoy._id;
+    returnDoc.pickupStatus = "Assigned";
+    returnDoc.pickupAssignedAt = new Date();
+    returnDoc.pickupPickedUpAt = null;
+    returnDoc.pickupDeliveredAt = null;
+    await returnDoc.save();
+
+    // ── Tell the customer someone is coming (non-blocking) ───────────────
+    try {
+      const user = await User.findOne({ username: returnDoc.userId });
+      if (user) {
+        const firstName = user.firstName || user.username;
+        const html = `
+          <h2>Pickup arranged for your return 🛵</h2>
+          <p>Hi <b>${firstName}</b>,</p>
+          <p>A delivery partner, <b>${deliveryBoy.name}</b>, has been assigned to collect
+          <b>${returnDoc.productName}</b> from you.</p>
+          <p>Please keep the product ready in its original packaging.</p>
+          <br/>
+          <p>Thank you for shopping with <b>maligaijaman</b> 🙏</p>
+        `;
+        await sendEmail(user.email, "Pickup arranged for your return", html);
+        console.log(`[assignReturnPickup] Email sent to ${user.email}`);
+      }
+    } catch (emailErr) {
+      console.error("[assignReturnPickup] Email failed (non-fatal):", emailErr.message);
+    }
+
+    // Send back the updated return with the delivery boy's name filled in
+    const updated = await Return.findById(returnDoc._id).populate(
+      "pickupDeliveryBoy",
+      "name phone"
+    );
+
+    return res.json({
+      success: true,
+      message: `Pickup assigned to ${deliveryBoy.name}`,
+      return: updated,
+    });
+  } catch (error) {
+    console.error("assignReturnPickup error:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 // ✅ Mark a return as refunded — seller manually transfers money to the
 // bank details already on file, then records the transaction reference
 // here. Only allowed once the return itself has been Approved; refunding
@@ -251,6 +376,21 @@ export const markReturnRefunded = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "This return has already been refunded",
+      });
+    }
+
+    // ✅ The product must be back with the seller before the money goes out.
+    // Returns created before pickup tracking existed have no pickupStatus
+    // stored in the database at all — those are let through, exactly as
+    // before, so they don't get stuck.
+    const stored = await Return.findById(returnId).select("pickupStatus").lean();
+    const isLegacyReturn = !!stored && stored.pickupStatus === undefined;
+
+    if (!isLegacyReturn && returnDoc.pickupStatus !== "Delivered to Seller") {
+      return res.status(400).json({
+        success: false,
+        message:
+          "The product must be delivered back to you by the delivery boy before you can mark it as refunded",
       });
     }
 

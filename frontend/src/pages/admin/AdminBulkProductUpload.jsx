@@ -3,8 +3,14 @@ import axios from "axios";
 import ExcelJS from "exceljs/dist/exceljs.min.js";
 
 /**
- * Bulk product upload from an Excel sheet — also reads images that are
+ * ADMIN bulk product upload from an Excel sheet — also reads images that are
  * embedded/pasted directly into a cell (not just text/URL columns).
+ *
+ * Same as the seller version, with these differences:
+ *   - The admin picks WHICH SELLER the products are uploaded for
+ *     (sent as `seller` in productData; the backend uses it when req.isAdmin).
+ *   - Missing category/brand wording points to admin management pages.
+ *   - Excel date cells and rich-text/formula cells are read safely.
  *
  * Sheet columns (header names must match):
  *   name, description, brand, category, subcategory,
@@ -26,18 +32,22 @@ import ExcelJS from "exceljs/dist/exceljs.min.js";
  *   photo, pack sizes and stock. `variationType` is the label for the selector
  *   (e.g. "Processing"). Rows with no `variation` behave exactly as before.
  *
- * Category / subcategory / brand rules (sellers cannot create these):
+ * Category / subcategory / brand rules:
  *   - Names from the sheet are matched to existing ones, ignoring capital
  *     letters and extra spaces.
  *   - If a name is not found, the card shows a warning (with a
- *     "Did you mean ...?" hint) and the seller picks an existing one from the
+ *     "Did you mean ...?" hint) and the admin picks an existing one from the
  *     dropdown. Nothing is ever created automatically.
- *   - If the right one does not exist, the seller asks the admin to add it.
  *
  * Requires: npm install exceljs
  *
- * Usage inside SellerAddProduct.jsx:
- *   <BulkProductUpload categoryData={categoryData} brandData={brandData} />
+ * Usage inside AdminAddProduct.jsx:
+ *   <AdminBulkProductUpload
+ *     categoryData={categoryData}
+ *     brandData={brandData}
+ *     sellerData={sellerData}
+ *     sellerLoading={sellerLoading}
+ *   />
  */
 
 const generateBarcode = () =>
@@ -64,14 +74,24 @@ const suggestByName = (list, text) => {
   return found ? found.name : null;
 };
 
+// Excel date cells come back as JS Date objects; <input type="date"> needs "YYYY-MM-DD".
+// Also accepts typed text like "31/12/2027" (dd/mm/yyyy).
+const toDateInput = (v) => {
+  if (!v) return "";
+  if (v instanceof Date) return v.toISOString().split("T")[0];
+  const s = String(v).trim();
+  const m = s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+  return m ? `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}` : s;
+};
+
 // ---------- variations ----------
 const slug = (t) =>
   normalize(t).replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
 // Same id every time for the same brand + category + base name, so a variation
 // uploaded later (in another sheet) links to the earlier ones automatically.
-// The storefront must also match on the same seller, so two sellers who list a
-// product with the same name never get mixed together.
+// The backend endpoint also matches on the same seller, so two sellers who list
+// a product with the same name never get mixed together.
 const makeGroupId = (row) => `vg_${slug(row.groupBase)}_${row.brandId}_${row.categoryId}`;
 
 // Keep the variations of one product next to each other, in the order they first appear
@@ -173,12 +193,18 @@ const Field = ({ label, children, style }) => (
 
 const EXT_TO_MIME = { png: "image/png", jpeg: "image/jpeg", jpg: "image/jpeg", gif: "image/gif" };
 
-const BulkProductUpload = ({ categoryData = [], brandData = [] }) => {
+const AdminBulkProductUpload = ({
+  categoryData = [],
+  brandData = [],
+  sellerData = [],
+  sellerLoading = false,
+}) => {
   const [rows, setRows] = useState([]);
   const [subcategoriesByCategory, setSubcategoriesByCategory] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [results, setResults] = useState(null);
   const [isParsing, setIsParsing] = useState(false);
+  const [sellerId, setSellerId] = useState(""); // seller the products are uploaded for
 
   // ---------- helpers about a product ----------
   const categoryOf = (row) => categoryData.find((c) => c._id === row.categoryId);
@@ -215,7 +241,7 @@ const BulkProductUpload = ({ categoryData = [], brandData = [] }) => {
 
   // Warnings for names in the sheet that don't exist in the system.
   // Worked out fresh on every render, so a warning disappears as soon as
-  // the seller picks a valid option from the dropdown.
+  // the admin picks a valid option from the dropdown.
   const getNotes = (row) => {
     const notes = [];
     const hint = (list, text) => {
@@ -228,7 +254,7 @@ const BulkProductUpload = ({ categoryData = [], brandData = [] }) => {
         `Category "${row.sheetCategory}" is not in the system.${hint(
           categoryData,
           row.sheetCategory
-        )} Pick one below, or ask the admin to add it.`
+        )} Pick one below, or add it in Category management first.`
       );
 
     if (!row.brandId && row.sheetBrand)
@@ -236,7 +262,7 @@ const BulkProductUpload = ({ categoryData = [], brandData = [] }) => {
         `Brand "${row.sheetBrand}" is not in the system.${hint(
           brandData,
           row.sheetBrand
-        )} Pick one below, or ask the admin to add it.`
+        )} Pick one below, or add it in Brand management first.`
       );
 
     if (row.categoryId && !row.subcategoryId && row.subcategoryName)
@@ -244,7 +270,7 @@ const BulkProductUpload = ({ categoryData = [], brandData = [] }) => {
         `Subcategory "${row.subcategoryName}" is not in the system.${hint(
           subcategoriesByCategory[row.categoryId],
           row.subcategoryName
-        )} Pick one below, or ask the admin to add it.`
+        )} Pick one below, or add it in Subcategory management first.`
       );
 
     return notes;
@@ -271,11 +297,19 @@ const BulkProductUpload = ({ categoryData = [], brandData = [] }) => {
         if (key) colMap[key] = colNumber;
       });
 
+      // Reads a cell safely: rich-text, formula and hyperlink cells come back
+      // from ExcelJS as objects, so they are turned into plain values here.
       const getCell = (rowNumber, key) => {
         const col = colMap[key];
         if (!col) return "";
         const val = sheet.getRow(rowNumber).getCell(col).value;
-        return val == null ? "" : val;
+        if (val == null) return "";
+        if (typeof val === "object" && !(val instanceof Date)) {
+          if (val.richText) return val.richText.map((t) => t.text).join("");
+          if ("result" in val) return val.result ?? "";
+          if (val.text) return val.text;
+        }
+        return val;
       };
 
       // Build one image (as a File) per Excel row number, from embedded media
@@ -313,11 +347,11 @@ const BulkProductUpload = ({ categoryData = [], brandData = [] }) => {
           offerPrice: getCell(rowNumber, "offerPrice"),
           quantity: getCell(rowNumber, "quantity"),
           unit: getCell(rowNumber, "unit") || "Pcs",
-          stockUnit: "", // empty = same as unit; seller can change it in the stock dropdown
+          stockUnit: "", // empty = same as unit; admin can change it in the stock dropdown
           tax: getCell(rowNumber, "tax"),
           sizeLabel: getCell(rowNumber, "sizeLabel"),
           stock: getCell(rowNumber, "stock") || getCell(rowNumber, "quantity"),
-          expiryDate: getCell(rowNumber, "expiryDate"),
+          expiryDate: toDateInput(getCell(rowNumber, "expiryDate")),
         };
 
         const rowImage = imagesByRow[rowNumber] || null;
@@ -490,6 +524,11 @@ const BulkProductUpload = ({ categoryData = [], brandData = [] }) => {
   const attentionCount = rows.length - readyCount;
 
   const handleBulkSubmit = async () => {
+    if (!sellerId) {
+      alert("Please select a seller first");
+      return;
+    }
+
     if (attentionCount > 0) {
       alert("Some products still need attention. Fill in what is marked in red.");
       return;
@@ -498,7 +537,6 @@ const BulkProductUpload = ({ categoryData = [], brandData = [] }) => {
     setIsSubmitting(true);
     const created = [];
     const failed = [];
-    const linkWarnings = []; // products saved but not linked to their variation group
 
     for (const row of rows) {
       let fullName = row.name;
@@ -527,6 +565,7 @@ const BulkProductUpload = ({ categoryData = [], brandData = [] }) => {
           brand: row.brandId,
           category: row.categoryId,
           subcategory: row.subcategoryId,
+          seller: sellerId, // admin uploads on behalf of this seller
           variants,
           variantdata: "",
           barcode: row.barcode,
@@ -553,34 +592,8 @@ const BulkProductUpload = ({ categoryData = [], brandData = [] }) => {
           { headers: { "Content-Type": "multipart/form-data" }, withCredentials: true }
         );
 
-        if (res.data.success) {
-          created.push(fullName);
-
-          // Link the saved product to its group of variations. This is a separate
-          // step on purpose: the product is already saved, so if linking has a
-          // problem it is reported as a warning and the product is NOT retried
-          // (a retry would fail on the duplicate barcode).
-          if (row.isVariant) {
-            try {
-              const link = await axios.post(
-                `${process.env.REACT_APP_API_URL}/api/product/link-variation`,
-                {
-                  barcode: row.barcode,
-                  baseName: row.name,
-                  groupBase: row.groupBase,
-                  variationName,
-                  variationType: (row.variationType || "").trim(),
-                },
-                { withCredentials: true }
-              );
-              if (!link.data.success) linkWarnings.push(`${fullName}: ${link.data.message}`);
-            } catch (linkErr) {
-              linkWarnings.push(
-                `${fullName}: ${linkErr.response?.data?.message || linkErr.message}`
-              );
-            }
-          }
-        } else failed.push({ name: fullName, rowId: row._rowId, reason: res.data.message });
+        if (res.data.success) created.push(fullName);
+        else failed.push({ name: fullName, rowId: row._rowId, reason: res.data.message });
       } catch (err) {
         failed.push({ name: fullName, rowId: row._rowId, reason: err.message });
       }
@@ -589,23 +602,38 @@ const BulkProductUpload = ({ categoryData = [], brandData = [] }) => {
     setResults({ created, failed });
     setIsSubmitting(false);
 
-    const linkNote = linkWarnings.length
-      ? `\n\nSaved, but NOT linked as variations:\n` + linkWarnings.map((w) => `- ${w}`).join("\n")
-      : "";
-
     if (failed.length === 0) {
-      alert(`${created.length} product(s) added successfully${linkNote}`);
+      alert(`${created.length} product(s) added successfully`);
       setRows([]);
     } else {
       alert(
         `${created.length} product(s) added successfully.\n${failed.length} failed:\n` +
-          failed.map((f) => `- ${f.name}: ${f.reason}`).join("\n") +
-          linkNote
+          failed.map((f) => `- ${f.name}: ${f.reason}`).join("\n")
       );
       const failedIds = new Set(failed.map((f) => f.rowId));
       setRows((prev) => prev.filter((r) => failedIds.has(r._rowId)));
     }
   };
+
+  // ---------- seller picker (shown on both screens) ----------
+  const sellerPicker = (
+    <div>
+      <span style={labelStyle}>Upload on behalf of seller *</span>
+      <select
+        style={inputStyle}
+        value={sellerId}
+        disabled={sellerLoading}
+        onChange={(e) => setSellerId(e.target.value)}
+      >
+        <option value="">{sellerLoading ? "Loading sellers..." : "-- Select Seller --"}</option>
+        {sellerData?.map((s) => (
+          <option key={s._id} value={s._id}>
+            {s.email ? `${s.name} (${s.email})` : s.name}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
 
   // ---------- upload box ----------
   if (rows.length === 0) {
@@ -620,10 +648,31 @@ const BulkProductUpload = ({ categoryData = [], brandData = [] }) => {
           textAlign: "center",
         }}
       >
-        <label style={{ cursor: "pointer", fontWeight: 700, color: C.purple, fontSize: 15 }}>
+        <div style={{ maxWidth: 420, margin: "0 auto 14px", textAlign: "left" }}>{sellerPicker}</div>
+
+        <label
+          style={{
+            cursor: sellerId ? "pointer" : "not-allowed",
+            opacity: sellerId ? 1 : 0.5,
+            fontWeight: 700,
+            color: C.purple,
+            fontSize: 15,
+          }}
+        >
           {isParsing ? "Reading sheet..." : "📄 Bulk Upload from Excel Sheet"}
-          <input type="file" accept=".xlsx" hidden onChange={handleFileSelect} disabled={isParsing} />
+          <input
+            type="file"
+            accept=".xlsx"
+            hidden
+            onChange={handleFileSelect}
+            disabled={isParsing || !sellerId}
+          />
         </label>
+        {!sellerId && (
+          <p style={{ fontSize: 12, color: C.amber, margin: "6px 0 0" }}>
+            Select a seller first, then choose your sheet.
+          </p>
+        )}
         <p style={{ fontSize: 12, color: C.muted, margin: "8px 0 2px" }}>
           Sheet columns: name, description, brand, category, subcategory, price, offerPrice,
           quantity, unit, tax, sizeLabel, stock, returnable, expiryDate, barcode
@@ -638,7 +687,7 @@ const BulkProductUpload = ({ categoryData = [], brandData = [] }) => {
         </p>
         <p style={{ fontSize: 12, color: C.muted, margin: "2px 0" }}>
           Category, subcategory and brand must already exist. If one is not found, you can pick the
-          right one on the next screen.
+          right one on the next screen, or add it in management first.
         </p>
         <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>
           To attach a photo, paste/insert the picture into any cell on that product's row — it will
@@ -667,6 +716,8 @@ const BulkProductUpload = ({ categoryData = [], brandData = [] }) => {
           <button type="button" style={{ ...smallBtn, color: C.red }} onClick={() => setRows([])}>Cancel upload</button>
         </div>
       </div>
+
+      <div style={{ maxWidth: 420, marginBottom: 14 }}>{sellerPicker}</div>
 
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 16, fontSize: 12.5, fontWeight: 600 }}>
         <span style={{ background: C.greenBg, color: C.green, padding: "5px 12px", borderRadius: 20 }}>
@@ -909,11 +960,16 @@ const BulkProductUpload = ({ categoryData = [], brandData = [] }) => {
       <button
         type="button"
         onClick={handleBulkSubmit}
-        disabled={isSubmitting || attentionCount > 0}
-        style={{ width: "100%", padding: 14, background: attentionCount > 0 ? "#9AA0B4" : C.ink, color: "#fff", border: "none", borderRadius: 10, fontWeight: 700, fontSize: 15, cursor: attentionCount > 0 || isSubmitting ? "not-allowed" : "pointer" }}
+        disabled={isSubmitting || attentionCount > 0 || !sellerId}
+        style={{ width: "100%", padding: 14, background: attentionCount > 0 || !sellerId ? "#9AA0B4" : C.ink, color: "#fff", border: "none", borderRadius: 10, fontWeight: 700, fontSize: 15, cursor: attentionCount > 0 || !sellerId || isSubmitting ? "not-allowed" : "pointer" }}
       >
         {isSubmitting ? "Adding products..." : `Add all ${rows.length} product${rows.length > 1 ? "s" : ""}`}
       </button>
+      {!sellerId && (
+        <p style={{ textAlign: "center", fontSize: 12, color: C.amber, margin: "8px 0 0" }}>
+          Select a seller above before adding.
+        </p>
+      )}
       {attentionCount > 0 && (
         <p style={{ textAlign: "center", fontSize: 12, color: C.amber, margin: "8px 0 0" }}>
           {attentionCount} product{attentionCount > 1 ? "s" : ""} still need attention — see "Still needed" on each card.
@@ -930,4 +986,4 @@ const BulkProductUpload = ({ categoryData = [], brandData = [] }) => {
   );
 };
 
-export default BulkProductUpload;
+export default AdminBulkProductUpload;

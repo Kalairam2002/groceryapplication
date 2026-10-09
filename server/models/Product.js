@@ -83,6 +83,10 @@ const productSchema = new mongoose.Schema(
       required: true,
     },
     returnable: { type: Boolean, default: false },
+    baseName:       { type: String, default: "" },   // "Deluxe Ponni Rice (BPT 5204)"
+    variationName:  { type: String, default: "" },   // "Single Boiled"
+    variationType:  { type: String, default: "" },   // "Processing" (selector label)
+    variationGroup: { type: String, default: "", index: true }, // same for every variation of one product
   },
   { timestamps: true }
 );

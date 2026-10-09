@@ -12,6 +12,10 @@ import {
   forgotDeliveryBoyPassword, 
   resetDeliveryBoyPassword,  
 } from "../controllers/deliveryController.js";
+import {
+  getMyReturnPickups,
+  updateReturnPickupStatus,
+} from "../controllers/deliveryReturnController.js"; // ✅ return pickups
 import { protectDeliveryBoy } from "../middlewares/delivery.middleware.js";
 
 const router = express.Router();
@@ -25,6 +29,8 @@ router.get("/all",                    getAllDeliveryBoys);
 router.put("/approve/:id",            approveDeliveryBoy);
 router.put("/reject/:id",             rejectDeliveryBoy);
 router.get("/my-orders",              protectDeliveryBoy, getMyOrders);
+router.get("/my-returns",             protectDeliveryBoy, getMyReturnPickups);            // ✅ returns assigned to this delivery boy
+router.put("/returns/:returnId/status", protectDeliveryBoy, updateReturnPickupStatus);    // ✅ Picked Up -> Delivered to Seller
 router.post("/forgot-password",       forgotDeliveryBoyPassword); 
 router.post("/reset-password/:token", resetDeliveryBoyPassword);
 

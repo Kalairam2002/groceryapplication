@@ -81,6 +81,40 @@ const returnSchema = new mongoose.Schema(
       required: true,
     },
 
+    // ✅ Return pickup — the delivery boy who collects the product from the
+    // customer and brings it back to the seller. Kept separate from `status`
+    // and `refundStatus`, because approval, pickup and refund are three
+    // different real-world events that happen at different times.
+    //
+    // Flow:  Not Assigned -> Assigned (seller picks a delivery boy)
+    //        -> Picked Up (delivery boy collected it from the customer)
+    //        -> Delivered to Seller (delivery boy handed it back)
+    //
+    // NOTE: returns created before this change have none of these fields.
+    // Treat a missing pickupStatus as "Not Assigned" wherever it is read.
+    pickupStatus: {
+      type: String,
+      enum: ["Not Assigned", "Assigned", "Picked Up", "Delivered to Seller"],
+      default: "Not Assigned",
+    },
+    pickupDeliveryBoy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "DeliveryBoy", // ⚠️ change this if your delivery boy model is registered under a different name
+      default: null,
+    },
+    pickupAssignedAt: {
+      type: Date,
+      default: null,
+    },
+    pickupPickedUpAt: {
+      type: Date,
+      default: null,
+    },
+    pickupDeliveredAt: {
+      type: Date,
+      default: null,
+    },
+
     // ✅ Refund tracking — kept separate from `status` above, because
     // "return approved" and "money actually sent" are two different
     // real-world events that can happen days apart.

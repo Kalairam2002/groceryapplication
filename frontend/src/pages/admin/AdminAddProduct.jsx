@@ -4,6 +4,7 @@ import AdminLayout from "./AdminLayout";
 import "./AdminDashboard.css";
 import Barcode from "react-barcode";
 import { useQuery } from "@tanstack/react-query";
+import AdminBulkProductUpload from "./AdminBulkProductUpload";
 
 import { image } from "../seller/image";
 
@@ -264,6 +265,14 @@ const AdminAddProduct = () => {
               </ul>
             </div>
           </div>
+
+          {/* ✅ NEW — bulk upload from Excel (admin version, assigns to a chosen seller) */}
+          <AdminBulkProductUpload
+            categoryData={categoryData}
+            brandData={brandData}
+            sellerData={sellerData}
+            sellerLoading={sellerLoading}
+          />
 
           <form onSubmit={handleSubmit}>
             <div style={{ display: "flex", gap: "20px", alignItems: "flex-start", flexWrap: "wrap" }}>

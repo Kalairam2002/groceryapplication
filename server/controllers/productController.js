@@ -64,6 +64,11 @@ export const addProduct = async (req, res) => {
       barcode: productData.barcode,
       seller: sellerId,
       returnable: productData.returnable || false,
+      // ✅ NEW — linked-variation fields (sent by bulk upload when the sheet has a `variation` column)
+      baseName: productData.baseName || "",
+      variationName: productData.variationName || "",
+      variationType: productData.variationType || "",
+      variationGroup: productData.variationGroup || "",
     });
 
     res.json({ success: true, message: "Product Added Successfully" });
@@ -431,5 +436,46 @@ export const getProductsBySeller = async (req, res) => {
       success: false,
       message: "Server error while fetching seller products",
     });
+  }
+};
+
+// ✅ NEW — Get linked variations of a product : GET /api/product/:id/variations
+// Returns the sibling products that share this product's variationGroup
+// (same seller), so the product page can show the variation selector.
+export const getProductVariations = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+
+    if (!product || !product.variationGroup) {
+      return res.json({ success: true, variations: [], variationType: "" });
+    }
+
+    const siblings = await Product.find({
+      variationGroup: product.variationGroup,
+      seller: product.seller,
+    }).sort({ createdAt: 1 });
+
+    const variations = siblings.map((p) => {
+      const totalStock = (p.variants || []).reduce((sum, v) => {
+        if (v.batches && v.batches.length > 0) {
+          return sum + v.batches.reduce((s, b) => s + (Number(b.stock) || 0), 0);
+        }
+        return sum + (Number(v.stock) || 0);
+      }, 0);
+
+      return {
+        _id: p._id,
+        variationName: p.variationName,
+        inStock: p.inStock && totalStock > 0,
+      };
+    });
+
+    res.json({
+      success: true,
+      variations,
+      variationType: product.variationType || "",
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };

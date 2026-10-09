@@ -4,16 +4,23 @@ import { upload } from '../configs/multer.js';
 import authSeller from '../middlewares/authSeller.js';
 import authSellerOrAdmin from '../middlewares/authSellerOrAdmin.js';
 import Product from "../models/Product.js";
+import { getProductVariations, linkProductVariation } from "../controllers/productVariationController.js";
+
+
 const productRouter = express.Router();
 // ── POST Routes 
 productRouter.post('/add', upload.array(['images']), authSellerOrAdmin, addProduct);
 productRouter.post('/existingproductadd', existingProductAdd);
 productRouter.post('/stock', authSeller, changeStock);
 productRouter.post("/expired-variant", createExpiredVariant);
+productRouter.post("/link-variation", authSeller, linkProductVariation); // ✅ links a saved product to its variation group (used by bulk upload)
 // ── GET Fixed Routes
 productRouter.get('/list', productList);
 productRouter.get('/id', productById);
 productRouter.get('/expired', expiredProducts);
+
+// Variation Routes
+productRouter.get("/:id/variations", getProductVariations);
 // ── Search Route
 productRouter.get("/search", async (req, res) => {
   try {

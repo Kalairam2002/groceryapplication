@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -19,6 +19,12 @@ import ProductListOne from "../components/ProductListOne";
 // - Reviews list below the description calls GET /api/review/product/:id
 //   — this endpoint is GUESSED, not confirmed. If it 404s, paste your
 //   reviewController.js/reviewRoute.js and I'll fix the path/shape.
+// - VARIATIONS: products uploaded with a `variation` (e.g. rice: Single
+//   Boiled / Steam Sortex) are separate products linked by `variationGroup`.
+//   GET /api/product/:id/variations returns the linked ones and this page
+//   shows them as a selector under the title. Clicking one opens that
+//   product's own page (own photo, barcode, stock, pack sizes, reviews).
+//   Products without a variation show no selector, exactly as before.
 //
 // STILL OPEN:
 // 1. ENDPOINT confirmed: GET /api/product/:id → getSingleProduct
@@ -33,6 +39,9 @@ import ProductListOne from "../components/ProductListOne";
 
 const PRODUCT_ENDPOINT = (id) =>
   `${process.env.REACT_APP_API_URL}/api/product/${id}`;
+
+const VARIATIONS_ENDPOINT = (id) =>
+  `${process.env.REACT_APP_API_URL}/api/product/${id}/variations`;
 
 const isObjectIdLike = (str) => typeof str === "string" && /^[0-9a-fA-F]{24}$/.test(str);
 
@@ -89,6 +98,10 @@ const ProductPage = () => {
   const [activeImage, setActiveImage] = useState(0);
   const [qty, setQty] = useState(1);
 
+  // Pack size the customer had selected before switching variation
+  // (e.g. "25 kg"), so the same pack is pre-selected on the next one.
+  const pendingPackLabel = useRef(null);
+
   // Same shape/keys as ProductListOne.jsx so cart/wishlist stay consistent
   // across the whole site (home page cards, cart page, wishlist page all
   // read these same localStorage keys).
@@ -111,6 +124,21 @@ const ProductPage = () => {
     enabled: !!id,
   });
 
+  // Linked variations (e.g. Single Boiled / Steam Sortex). Each one is its
+  // own product; this returns the siblings that share a variationGroup.
+  // If the route is missing or fails, the selector is simply not shown.
+  const { data: variationData } = useQuery({
+    queryKey: ["productVariations", id],
+    queryFn: async () => {
+      const res = await axios.get(VARIATIONS_ENDPOINT(id));
+      return res.data;
+    },
+    enabled: !!id,
+    retry: false,
+  });
+  const variations = variationData?.variations || [];
+  const variationType = variationData?.variationType || "";
+
   const product = data?.product || data;
   const allVariants = product?.variants || [];
   const variants = useMemo(
@@ -124,6 +152,15 @@ const ProductPage = () => {
     setActiveImage(0);
     setQty(1);
   }, [id]);
+
+  // After switching variation, pre-select the same pack size if the new
+  // variation offers it (declared AFTER the reset effect above, so it wins).
+  useEffect(() => {
+    if (!pendingPackLabel.current || variants.length === 0) return;
+    const idx = variants.findIndex((v) => getVariantLabel(v) === pendingPackLabel.current);
+    if (idx >= 0) setSelectedVariantIdx(idx);
+    pendingPackLabel.current = null;
+  }, [variants]);
 
   // Rating — same endpoint/shape ProductListOne.jsx already uses for the
   // home page cards, just called for this single product.
@@ -188,6 +225,14 @@ const ProductPage = () => {
 
   const isWishlisted = product && wishlist.some((item) => item._id === product._id);
 
+  // Open another linked variation. It is a different product, so this goes
+  // to its own page (own photo, stock, barcode and reviews).
+  const switchVariation = (targetId) => {
+    if (!product || targetId === product._id) return;
+    pendingPackLabel.current = variant ? getVariantLabel(variant) : null;
+    navigate(`/product/${targetId}`);
+  };
+
   const toggleWishlist = () => {
     if (!product) return;
     if (!user) {
@@ -227,7 +272,7 @@ const ProductPage = () => {
     } else {
       cart.push({
         _id: product._id,
-        name: product.name,
+        name: product.name, // includes the variation, e.g. "... - Single Boiled"
         image: product.image?.[0],
         seller: product.seller,
         variant,
@@ -272,6 +317,10 @@ const ProductPage = () => {
   }
 
   const images = product.image && product.image.length > 0 ? product.image : [];
+
+  // With a variation, the title is the shared base name (the chosen
+  // variation is shown by the selector below it).
+  const displayName = product.variationName ? product.baseName || product.name : product.name;
 
   return (
     <>
@@ -371,7 +420,7 @@ const ProductPage = () => {
               <h1
                 style={{ fontFamily: "var(--heading-font)", fontSize: 24, fontWeight: 600, color: "hsl(var(--neutral))", marginBottom: 14 }}
               >
-                {product.name}{variant ? `, ${getVariantLabel(variant)}` : ""}
+                {displayName}{variant ? `, ${getVariantLabel(variant)}` : ""}
               </h1>
 
               {rating && rating.count > 0 && (
@@ -383,6 +432,47 @@ const ProductPage = () => {
                   <a href="#reviews" className="text-decoration-none" style={{ color: "hsl(var(--gray-600))" }}>
                     {rating.avgRating} ({rating.count} review{rating.count === 1 ? "" : "s"})
                   </a>
+                </div>
+              )}
+
+              {/* ── Variation selector (only for products that have a variation) ── */}
+              {product.variationName && (
+                <div className="mb-4">
+                  <p className="mb-2" style={{ fontSize: 14, color: "hsl(var(--gray-600))" }}>
+                    {variationType || "Variation"}:{" "}
+                    <b style={{ color: "hsl(var(--neutral))" }}>{product.variationName}</b>
+                  </p>
+                  {variations.length > 1 && (
+                    <div className="d-flex flex-wrap gap-2">
+                      {variations.map((v) => {
+                        const selected = v._id === product._id;
+                        return (
+                          <button
+                            key={v._id}
+                            type="button"
+                            onClick={() => switchVariation(v._id)}
+                            aria-pressed={selected}
+                            style={{
+                              border: selected ? "2px solid hsl(var(--main))" : "1px solid hsl(var(--border-color))",
+                              background: selected ? "hsl(var(--main-50))" : "#fff",
+                              color: selected ? "hsl(var(--main-800))" : "hsl(var(--neutral))",
+                              borderRadius: 8,
+                              padding: "8px 16px",
+                              fontSize: 14,
+                              fontWeight: selected ? 600 : 500,
+                              cursor: selected ? "default" : "pointer",
+                              opacity: v.inStock ? 1 : 0.6,
+                            }}
+                          >
+                            {v.variationName}
+                            {!v.inStock && (
+                              <span style={{ fontSize: 11.5, fontWeight: 400, marginLeft: 6 }}>(Out of stock)</span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
 
